@@ -1,0 +1,12 @@
+gradio==4.9.0
+torch>=2.0.0
+torch>=2.0.0
+
+pedalboard
+pydub
+ffmpeg-python
+soundfile
+
+loguru
+faster_whisper==0.10.0
+tts>=0.22.0

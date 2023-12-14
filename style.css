@@ -1,0 +1,17 @@
+.model-choose__checkbox{
+    max-width: 310px;
+    
+}
+
+.model-choose{
+    max-width: 400px;
+}
+
+.model-choose__btn{
+    min-width: 80px;
+    flex: 0 0 80px;
+}
+
+.speaker-update__btn{
+    max-width: 30px;
+}
