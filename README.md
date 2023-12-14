@@ -15,6 +15,8 @@ XTTS-WebUI offers two interfaces designed to enhance your experience with XTTS. 
 - **xtts_finetune_webui.py**: An improved version of the official web interface tailored for ease of use on personal computers.
 - **xtts_webui.py**: Original work that will be further developed; currently operates flawlessly, featuring numerous settings and quick image addition capabilities.
 
+If you don't know where to start for xtts-finetune-webui, watch this [video](https://www.youtube.com/watch?v=8tpDiiouGxc)
+
 ## Install
 
 1. Make sure you have `CUDA` installed
