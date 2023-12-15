@@ -2,6 +2,8 @@ gradio==4.9.0
 torch>=2.0.0
 torch>=2.0.0
 
+numpy==1.26.2
+
 pedalboard
 pydub
 ffmpeg-python
