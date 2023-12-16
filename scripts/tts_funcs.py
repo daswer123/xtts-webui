@@ -16,6 +16,8 @@ import os
 import time 
 import re
 
+USE_DEEPSPEED = os.getenv("DEEPSPEED") == 'true'
+
 
 # List of supported language codes
 supported_languages = {
@@ -101,7 +103,7 @@ class TTSWrapper:
         config.load_json(str(config_path))
         
         self.model = Xtts.init_from_config(config)
-        self.model.load_checkpoint(config, checkpoint_dir=str(checkpoint_dir))
+        self.model.load_checkpoint(config,use_deepspeed=USE_DEEPSPEED, checkpoint_dir=str(checkpoint_dir))
         self.model.to(self.device)
 
     def switch_model_device(self):

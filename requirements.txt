@@ -1,8 +1,9 @@
-gradio==4.9.0
-torch>=2.0.0
-torch>=2.0.0
+gradio==4.9.1
 
-numpy==1.26.2
+torch==2.1.0
+torch==2.1.0
+
+numpy==1.22.0
 
 pedalboard
 pydub

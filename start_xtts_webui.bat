@@ -1,6 +1,6 @@
 @echo off
 
 call venv/scripts/activate
-python xtts_webui.py
+python app.py --deepspeed
 
 pause

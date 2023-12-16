@@ -10,6 +10,42 @@ from tqdm import tqdm
 from packaging import version
 from loguru import logger
 
+def install_package(package_link):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package_link])
+
+def is_package_installed(package_name):
+    try:
+        metadata.version(package_name)
+        return True
+    except metadata.PackageNotFoundError:
+        return False
+
+def install_deepspeed_based_on_python_version():
+    if not is_package_installed('deepspeed'):
+        python_version = sys.version_info
+
+        logger.info(f"Python version: {python_version}")
+        logger.info("Installing deepspeed package...")
+
+        # Define your package links here
+        py310 = "https://github.com/daswer123/xtts-webui/releases/download/deepspeed/deepspeed-0.11.2+cuda121-cp310-cp310-win_amd64.whl"
+        py311 = "https://github.com/daswer123/xtts-webui/releases/download/deepspeed/deepspeed-0.11.2+cuda121-cp311-cp311-win_amd64.whl"
+
+        # Install appropriate packages based on Python version
+        if python_version.major == 3 and python_version.minor == 10:
+            print("Python 3.10 detected.")
+            install_package(py310)
+
+        elif python_version.major == 3 and python_version.minor == 11:
+            print("Python 3.11 detected.")
+            install_package(py311)
+        
+        logger.info("Installing deepspeed package...")
+
+    else:
+        print("'deepspeed' already installed.")
+
+
 
 def create_directory_if_not_exists(directory):
     if not directory.exists():

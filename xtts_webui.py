@@ -3,7 +3,7 @@
 import numpy as np
 import soundfile as sf
 
-from scripts.modeldownloader import get_folder_names,get_folder_names_advanced
+from scripts.modeldownloader import get_folder_names,get_folder_names_advanced,install_deepspeed_based_on_python_version
 from scripts.tts_funcs import TTSWrapper
 from scripts.funcs import save_audio_to_wav,resample_audio,move_and_rename_file
 
@@ -26,8 +26,12 @@ SPEAKER_FOLDER = os.getenv('SPEAKER', 'speakers')
 BASE_URL = os.getenv('BASE_URL', '127.0.0.1:8020')
 MODEL_SOURCE = os.getenv("MODEL_SOURCE", "local")
 LOWVRAM_MODE = os.getenv("LOWVRAM_MODE") == 'true'
+USE_DEEPSPEED = os.getenv("DEEPSPEED") == 'true'
 MODEL_VERSION = os.getenv("MODEL_VERSION","v2.0.2")
 WHISPER_VERSION = os.getenv("WHISPER_VERSION","none")
+
+if USE_DEEPSPEED:
+  install_deepspeed_based_on_python_version()
 
 supported_languages = {
     "ar":"Arabic",
@@ -159,7 +163,7 @@ def save_speaker(speaker_wav_save_name,speaker_path_text,ref_speaker_list):
     return None,"","",speaker_wav_save_name,gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list)
 
 
-def generate_audio(text,languages,speaker_value_text,speaker_path_text,temperature,length_penalty,repetition_penalty,top_k,top_p,speed,sentence_split):
+def generate_audio(text,languages,speaker_value_text,speaker_path_text,additional_text,temperature,length_penalty,repetition_penalty,top_k,top_p,speed,sentence_split):
 
     ref_speaker_wav = ""
 
@@ -179,10 +183,15 @@ def generate_audio(text,languages,speaker_value_text,speaker_path_text,temperatu
         "sentence_split": sentence_split,
     }
 
-    output_filename = f"output_{speaker_value_text}_{uuid.uuid4()}.wav"
-
-
-    output_file = XTTS.process_tts_to_file(text,lang_code,ref_speaker_wav,options,output_filename)
+    # Check if the file already exists, if yes, add a number to the filename
+    count = 1
+    output_file_path = f"{additional_text}_({count})_{speaker_value_text}.wav"
+    while os.path.exists(os.path.join('output', output_file_path)):
+        count += 1
+        output_file_path = f"{additional_text}_({count})_{speaker_value_text}.wav"
+    
+    # Perform TTS and save to the generated filename
+    output_file = XTTS.process_tts_to_file(text, lang_code, ref_speaker_wav, options, output_file_path)
     return gr.make_waveform(audio=output_file),output_file
     
 with gr.Blocks(css=css) as demo:
@@ -191,7 +200,7 @@ with gr.Blocks(css=css) as demo:
         models_list = get_folder_names_advanced(this_dir / "models")
         model = gr.Dropdown(
                     label="Select XTTS model version",
-                    value="v2.0.2",
+                    value=MODEL_VERSION,
                     choices=models_list,
                     elem_classes="model-choose__checkbox"
                 )
@@ -307,10 +316,20 @@ with gr.Blocks(css=css) as demo:
             with gr.Column():
                 video_gr = gr.Video(label="Waveform Visual",interactive=False)
                 audio_gr = gr.Audio(label="Synthesised Audio",interactive=False, autoplay=False)
-                generate_btn = gr.Button(value="Generate",size="lg")
+                generate_btn = gr.Button(value="Generate",size="lg",elem_classes="generate-btn")
 
-                generate_btn.click(fn=generate_audio, inputs=[text,languages,speaker_value_text,speaker_path_text,temperature,length_penalty,repetition_penalty,top_k,top_p,speed,sentence_split],outputs=[video_gr,audio_gr])
+                with gr.Accordion(label="Output settings",open=True):
+                  additional_text_input = gr.Textbox(label="File Name Value", value="output")
+                #   WIP
+                #   output_format = gr.Radio(["mp3","wav"],value="wav", label="Output Format")
+                #   improve_output_quality = gr.Checkbox(label="Improve output quality",value=False)
+
+                generate_btn.click(
+                    fn=generate_audio,
+                    inputs=[text, languages, speaker_value_text, speaker_path_text, additional_text_input, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, sentence_split],
+                    outputs=[video_gr, audio_gr]
+                )
 
 
-if __name__ == "__main__":
-    demo.launch()   
+# if __name__ == "__main__":
+    # demo.launch()   

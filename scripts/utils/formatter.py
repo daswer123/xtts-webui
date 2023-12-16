@@ -107,7 +107,7 @@ def format_audio_list(audio_files, target_language="en", whisper_model = "large-
         wav = wav.squeeze()
         audio_total_size += (wav.size(-1) / sr)
 
-        segments, _ = asr_model.transcribe(audio_path, word_timestamps=True, language=target_language)
+        segments, _ = asr_model.transcribe(audio_path,vad_filter=True, word_timestamps=True, language=target_language)
         segments = list(segments)
         i = 0
         sentence = ""
