@@ -10,6 +10,9 @@ pydub
 ffmpeg-python
 soundfile
 
+cutlet
+fugashi[unidic-lite]
+
 loguru
 faster_whisper==0.10.0
 tts>=0.22.0
