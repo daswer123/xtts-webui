@@ -1,6 +1,6 @@
 @echo off
 
 call venv/scripts/activate
-python app.py --deepspeed
+python app.py
 
 pause
