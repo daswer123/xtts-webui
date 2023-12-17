@@ -8,6 +8,7 @@ from TTS.config.shared_configs import BaseDatasetConfig
 from TTS.tts.datasets import load_tts_samples
 from TTS.tts.layers.xtts.trainer.gpt_trainer import GPTArgs, GPTTrainer, GPTTrainerConfig, XttsAudioConfig
 from TTS.utils.manage import ModelManager
+import shutil
 
 
 def train_gpt(custom_model,version, language, num_epochs, batch_size, grad_acumm, train_csv, eval_csv, output_path, max_audio_length=255995):
@@ -65,11 +66,35 @@ def train_gpt(custom_model,version, language, num_epochs, batch_size, grad_acumm
     TOKENIZER_FILE_LINK = f"https://coqui.gateway.scarf.sh/hf-coqui/XTTS-v2/{version}/vocab.json"
     XTTS_CHECKPOINT_LINK = f"https://coqui.gateway.scarf.sh/hf-coqui/XTTS-v2/{version}/model.pth"
     XTTS_CONFIG_LINK = f"https://coqui.gateway.scarf.sh/hf-coqui/XTTS-v2/{version}/config.json"
+    XTTS_SPEAKER_LINK = f"https://coqui.gateway.scarf.sh/hf-coqui/XTTS-v2/main/speakers_xtts.pth"
 
     # XTTS transfer learning parameters: You we need to provide the paths of XTTS model checkpoint that you want to do the fine tuning.
     TOKENIZER_FILE = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(TOKENIZER_FILE_LINK))  # vocab.json file
     XTTS_CHECKPOINT = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(XTTS_CHECKPOINT_LINK))  # model.pth file
     XTTS_CONFIG_FILE = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(XTTS_CONFIG_LINK))  # config.json file
+    XTTS_SPEAKER_FILE = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(XTTS_SPEAKER_LINK))  # speakers_xtts.pth file
+
+    # Transfer this files to ready folder
+    READY_MODEL_PATH = os.path.join(output_path,"ready")
+    if not os.path.exists(READY_MODEL_PATH):
+        os.makedirs(READY_MODEL_PATH)
+
+    NEW_TOKENIZER_FILE = os.path.join(READY_MODEL_PATH, "vocab.json")
+    # NEW_XTTS_CHECKPOINT = os.path.join(READY_MODEL_PATH, "model.pth")
+    NEW_XTTS_CONFIG_FILE = os.path.join(READY_MODEL_PATH, "config.json")
+    NEW_XTTS_SPEAKER_FILE = os.path.join(READY_MODEL_PATH, "speakers_xtts.pth")
+
+    shutil.copy(TOKENIZER_FILE, NEW_TOKENIZER_FILE)
+    # shutil.copy(XTTS_CHECKPOINT, os.path.join(READY_MODEL_PATH, "model.pth"))
+    shutil.copy(XTTS_CONFIG_FILE, NEW_XTTS_CONFIG_FILE)
+    shutil.copy(XTTS_SPEAKER_FILE, NEW_XTTS_SPEAKER_FILE)
+
+# Use from ready folder
+    TOKENIZER_FILE = NEW_TOKENIZER_FILE # vocab.json file
+    # XTTS_CHECKPOINT = NEW_XTTS_CHECKPOINT  # model.pth file
+    XTTS_CONFIG_FILE = NEW_XTTS_CONFIG_FILE  # config.json file
+    XTTS_SPEAKER_FILE = NEW_XTTS_SPEAKER_FILE  # speakers_xtts.pth file
+
 
     if custom_model != "":
         if os.path.exists(custom_model) and custom_model.endswith('.pth'):
@@ -82,7 +107,7 @@ def train_gpt(custom_model,version, language, num_epochs, batch_size, grad_acumm
     if not os.path.isfile(TOKENIZER_FILE) or not os.path.isfile(XTTS_CHECKPOINT):
         print(f" > Downloading XTTS v{version} files!")
         ModelManager._download_model_files(
-            [TOKENIZER_FILE_LINK, XTTS_CHECKPOINT_LINK, XTTS_CONFIG_LINK], CHECKPOINTS_OUT_PATH, progress_bar=True
+            [TOKENIZER_FILE_LINK, XTTS_CHECKPOINT_LINK, XTTS_CONFIG_LINK,XTTS_SPEAKER_LINK], CHECKPOINTS_OUT_PATH, progress_bar=True
         )
 
     # init args and config
@@ -179,4 +204,4 @@ def train_gpt(custom_model,version, language, num_epochs, batch_size, grad_acumm
     del model, trainer, train_samples, eval_samples
     gc.collect()
 
-    return XTTS_CONFIG_FILE, XTTS_CHECKPOINT, TOKENIZER_FILE, trainer_out_path, speaker_ref
+    return XTTS_SPEAKER_FILE,XTTS_CONFIG_FILE, XTTS_CHECKPOINT, TOKENIZER_FILE, trainer_out_path, speaker_ref

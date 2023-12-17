@@ -162,6 +162,7 @@ cython_debug/
 venv
 deepspeed
 models
+finetune_models
 output
 temp
 speakers/*.wav

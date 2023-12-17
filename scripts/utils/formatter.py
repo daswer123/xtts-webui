@@ -53,6 +53,23 @@ def format_audio_list(audio_files, target_language="en", whisper_model = "large-
     # make sure that ooutput file exists
     os.makedirs(out_path, exist_ok=True)
 
+    # Write the target language to lang.txt in the output directory
+    lang_file_path = os.path.join(out_path, "lang.txt")
+    
+    # Check if lang.txt already exists and contains a different language
+    current_language = None
+    if os.path.exists(lang_file_path):
+        with open(lang_file_path, 'r', encoding='utf-8') as existing_lang_file:
+            current_language = existing_lang_file.read().strip()
+    
+    if current_language != target_language:
+        # Only update lang.txt if target language is different from current language
+        with open(lang_file_path, 'w', encoding='utf-8') as lang_file:
+            lang_file.write(target_language + '\n')
+        print("Warning, existing language does not match target language. Updated lang.txt with target language.")
+    else:
+        print("Existing language matches target language")
+
     # Loading Whisper
     device = "cuda" if torch.cuda.is_available() else "cpu" 
 
