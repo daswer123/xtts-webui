@@ -74,6 +74,13 @@ def train_gpt(custom_model,version, language, num_epochs, batch_size, grad_acumm
     XTTS_CONFIG_FILE = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(XTTS_CONFIG_LINK))  # config.json file
     XTTS_SPEAKER_FILE = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(XTTS_SPEAKER_LINK))  # speakers_xtts.pth file
 
+    # download XTTS v2.0 files if needed
+    if not os.path.isfile(TOKENIZER_FILE) or not os.path.isfile(XTTS_CHECKPOINT):
+        print(f" > Downloading XTTS v{version} files!")
+        ModelManager._download_model_files(
+            [TOKENIZER_FILE_LINK, XTTS_CHECKPOINT_LINK, XTTS_CONFIG_LINK,XTTS_SPEAKER_LINK], CHECKPOINTS_OUT_PATH, progress_bar=True
+        )
+
     # Transfer this files to ready folder
     READY_MODEL_PATH = os.path.join(output_path,"ready")
     if not os.path.exists(READY_MODEL_PATH):
@@ -102,13 +109,6 @@ def train_gpt(custom_model,version, language, num_epochs, batch_size, grad_acumm
             print(f" > Loading custom model: {XTTS_CHECKPOINT}")
         else:
             print(" > Error: The specified custom model is not a valid .pth file path.")
-
-    # download XTTS v2.0 files if needed
-    if not os.path.isfile(TOKENIZER_FILE) or not os.path.isfile(XTTS_CHECKPOINT):
-        print(f" > Downloading XTTS v{version} files!")
-        ModelManager._download_model_files(
-            [TOKENIZER_FILE_LINK, XTTS_CHECKPOINT_LINK, XTTS_CONFIG_LINK,XTTS_SPEAKER_LINK], CHECKPOINTS_OUT_PATH, progress_bar=True
-        )
 
     # init args and config
     model_args = GPTArgs(
