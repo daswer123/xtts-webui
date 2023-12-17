@@ -28,8 +28,8 @@ def install_deepspeed_based_on_python_version():
         logger.info("Installing deepspeed package...")
 
         # Define your package links here
-        py310 = "https://github.com/daswer123/xtts-webui/releases/download/deepspeed/deepspeed-0.11.2+cuda121-cp310-cp310-win_amd64.whl"
-        py311 = "https://github.com/daswer123/xtts-webui/releases/download/deepspeed/deepspeed-0.11.2+cuda121-cp311-cp311-win_amd64.whl"
+        py310 = "https://github.com/daswer123/xtts-webui/releases/download/deepspeed/deepspeed-0.11.2+cuda118-cp310-cp310-win_amd64.whl"
+        py311 = "https://github.com/daswer123/xtts-webui/releases/download/deepspeed/deepspeed-0.11.2+cuda118-cp311-cp311-win_amd64.whl"
 
         # Install appropriate packages based on Python version
         if python_version.major == 3 and python_version.minor == 10:
