@@ -190,23 +190,46 @@ def switch_waveform(enable_waveform,video_gr):
         return  gr.Video(label="Waveform Visual",interactive=False,visible=False)
 
 def generate_audio(
+    # Resemble enhance Settings
+    enhance_resemble_chunk_seconds,
+    enhance_resemble_chunk_overlap,
+    enhance_resemble_solver,
+    enhance_resemble_num_funcs,
+    enhance_resemble_temperature,
+    enhance_resemble_denoise,
+    # Batch
     batch_generation,
     batch_generation_path,
+    # Features
     language_auto_detect,
     enable_waveform,
     improve_output_audio,
     improve_output_resemble,
+    #  Default settings
     output_type,
     text,
     languages,
+    # Help variables
     speaker_value_text,
-    speaker_path_text,additional_text,
+    speaker_path_text,
+    additional_text,
+    # TTS settings
     temperature,length_penalty,
     repetition_penalty,
     top_k,
     top_p,
     speed,
     sentence_split):
+
+    resemble_enhance_settings = {
+        "chunk_seconds": enhance_resemble_chunk_seconds,
+        "chunks_overlap": enhance_resemble_chunk_overlap,
+        "solver": enhance_resemble_solver,
+        "nfe": enhance_resemble_num_funcs,
+        "tau": enhance_resemble_temperature,
+        "denoising": enhance_resemble_denoise,
+        "use_enhance": improve_output_resemble
+    }
 
     ref_speaker_wav = ""
 
@@ -251,7 +274,7 @@ def generate_audio(
                    output_file = improve_and_convert_audio(output_file,output_type)
 
                 if improve_output_resemble:
-                    output_file = resemble_enchance_audio(output_file,False,True,output_type=output_type)
+                    output_file = resemble_enchance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
 
         if enable_waveform:
             return gr.make_waveform(audio=output_file),output_file
@@ -272,7 +295,7 @@ def generate_audio(
         output_file = improve_and_convert_audio(output_file,output_type)
 
     if improve_output_resemble:
-        output_file = resemble_enchance_audio(output_file,False,True,output_type=output_type)
+        output_file = resemble_enchance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
 
     if enable_waveform:
         return gr.make_waveform(audio=output_file),output_file
@@ -416,8 +439,15 @@ with gr.Blocks(css=css) as demo:
                   with gr.Column():
                     with gr.Row():
                       enable_waveform = gr.Checkbox(label="Enable Waveform",value=False)
-                      improve_output_audio = gr.Checkbox(label="Improve output quality",value=False)
+                      improve_output_audio = gr.Checkbox(label="Improve output quality (Reduces noise and makes audio slightly better)",value=False)
                       improve_output_resemble = gr.Checkbox(label="Resemble enhancement (Uses extra 4GB VRAM)",value=False)
+                    with gr.Accordion(label="Resemble enhancement Settings",open=False):
+                        enhance_resemble_chunk_seconds = gr.Slider(minimum=2, maximum=40, value=8, step=1, label="Chunk seconds (more secods more VRAM usage and faster inference speed)")
+                        enhance_resemble_chunk_overlap = gr.Slider(minimum=0.1, maximum=2, value=1, step=0.2, label="Overlap seconds")
+                        enhance_resemble_solver = gr.Dropdown(label="CFM ODE Solver",choices=["Midpoint", "RK4", "Euler"], value="Midpoint")
+                        enhance_resemble_num_funcs = gr.Slider(minimum=1, maximum=128, value=64, step=1, label="CFM Number of Function Evaluations")
+                        enhance_resemble_temperature = gr.Slider(minimum=0, maximum=1, value=0.5, step=0.01, label="CFM Prior Temperature")
+                        enhance_resemble_denoise = gr.Checkbox(value=True, label="Denoise Before Enhancement")
                     with gr.Row():
                       output_type = gr.Radio(["mp3","wav"],value="wav", label="Output Type")
                   additional_text_input = gr.Textbox(label="File Name Value", value="output")
@@ -428,18 +458,30 @@ with gr.Blocks(css=css) as demo:
                 generate_btn.click(
                     fn=generate_audio,
                     inputs=[
+                        # Resemble enhance Settings
+                        enhance_resemble_chunk_seconds,
+                        enhance_resemble_chunk_overlap,
+                        enhance_resemble_solver,
+                        enhance_resemble_num_funcs,
+                        enhance_resemble_temperature,
+                        enhance_resemble_denoise,
+                        # Batch
                         batch_generation,
                         batch_generation_path,
+                        # Features
                         language_auto_detect,
                         enable_waveform,
                         improve_output_audio,
                         improve_output_resemble,
+                        #  Default settings
                         output_type,
                         text,
                         languages,
+                        # Help variables
                         speaker_value_text,
                         speaker_path_text,
                         additional_text_input,
+                        # TTS settings
                         temperature,
                         length_penalty,
                         repetition_penalty,

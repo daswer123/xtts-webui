@@ -168,7 +168,6 @@ def clear_gpu_cash():
         torch.cuda.empty_cache()
 
 def resemble_enchance_audio(audio_path,
-        use_denoise,
         use_enhance,
         solver='Midpoint',
         nfe=64,
@@ -180,17 +179,17 @@ def resemble_enchance_audio(audio_path,
     if audio_path is None:
         return None, None
 
-    sr = 44000  # Предполагаемая частота дискретизации или загрузите её из файла
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     dwav, orig_sr = torchaudio.load(audio_path)
     dwav = dwav.mean(dim=0)
 
     wav1 = wav2 = dwav.to(device)
-
-    if use_denoise:
-       wav1, new_sr = denoise(dwav.cpu(), orig_sr, device)
-       wav1 = wav1.cpu().numpy()
+    
+# Only denoise, temp off
+    # if False:
+    #    wav1, new_sr = denoise(dwav.cpu(), orig_sr, device)
+    #    wav1 = wav1.cpu().numpy()
 
     if use_enhance:
        lambd = 0.9 if denoising else 0.1
@@ -203,17 +202,17 @@ def resemble_enchance_audio(audio_path,
 
        wav2 = wav2.cpu().numpy()
 
-    result_wav1_tuple=result_wav2_tuple=None
+    # result_wav1_tuple = None
+    result_wav2_tuple=None
 
-    # Если была произведена обработка аудиофайла для первого случая
-    if use_denoise:
-       result_wav1_tuple=(new_sr,wav1)
+# Only denoise, temp off
+    # if False:
+    #    result_wav1_tuple=(new_sr,wav1)
 
-    # Если была произведена обработка аудиофайла для второго случая
     if use_enhance:
        result_waw_2_tuple=(new_sr,wav2)
 
-    # Сохранение обработанного файла
+    # Saving the processed file
     # output_file_name = os.path.splitext(audio_path)[0] + '_improved.wav'
     # output_file_path = save_audio_to_wav(new_sr, wav2, Path(audio_path).parent, max_duration=None)
     # output_file_path = save_audio_to_wav(new_sr, wav1, Path(audio_path).parent, max_duration=None)
