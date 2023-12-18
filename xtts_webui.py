@@ -9,6 +9,7 @@ from scripts.funcs import save_audio_to_wav,resample_audio,move_and_rename_file
 
 import os
 import gradio as gr
+import langid
 from pathlib import Path
 from loguru import logger
 
@@ -64,6 +65,21 @@ XTTS = TTSWrapper(OUTPUT_FOLDER,SPEAKER_FOLDER,LOWVRAM_MODE,MODEL_SOURCE,MODEL_V
 logger.info(f"Start loading model {MODEL_VERSION}")
 this_dir = Path(__file__).parent.resolve()
 XTTS.load_model(this_dir) 
+
+def predict_lang(text,selected_lang):
+    language_predicted = langid.classify(text)[0].strip()  # strip need as there is space at end!
+
+    # tts expects chinese as zh-cn
+    if language_predicted == "zh":
+            # we use zh-cn
+            language_predicted = "zh-cn"
+    
+    # Check if language in supported langs
+    if language_predicted not in supported_languages:
+        language_predicted = selected_lang
+        logger.warning(f"Language {language_predicted} not supported, using {supported_languages[selected_lang]}")
+
+    return language_predicted
 
 def reload_model(model):
     XTTS.unload_model()
@@ -162,8 +178,27 @@ def save_speaker(speaker_wav_save_name,speaker_path_text,ref_speaker_list):
     # OUTPUT ref_speaker,speaker_wav_save_name,,speaker_path_text,speaker_value_text,ref_speaker_list
     return None,"","",speaker_wav_save_name,gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list)
 
+def switch_waveform(enable_waveform,video_gr):
+    if enable_waveform:
+        return gr.Video(label="Waveform Visual",visible=True,interactive=False)
+    else:
+        return  gr.Video(label="Waveform Visual",interactive=False,visible=False)
 
-def generate_audio(text,languages,speaker_value_text,speaker_path_text,additional_text,temperature,length_penalty,repetition_penalty,top_k,top_p,speed,sentence_split):
+def generate_audio(
+    batch_generation,
+    batch_generation_path,
+    language_auto_detect,
+    enable_waveform,
+    text,
+    languages,
+    speaker_value_text,
+    speaker_path_text,additional_text,
+    temperature,length_penalty,
+    repetition_penalty,
+    top_k,
+    top_p,
+    speed,
+    sentence_split):
 
     ref_speaker_wav = ""
 
@@ -173,6 +208,10 @@ def generate_audio(text,languages,speaker_value_text,speaker_path_text,additiona
         ref_speaker_wav = speaker_value_text 
 
     lang_code = reversed_supported_languages[languages]
+
+    if language_auto_detect:
+        lang_code = predict_lang(text,lang_code)
+
     options = {
         "temperature": temperature,
         "length_penalty": length_penalty,
@@ -182,6 +221,28 @@ def generate_audio(text,languages,speaker_value_text,speaker_path_text,additiona
         "speed": speed,
         "sentence_split": sentence_split,
     }
+    # Find all .txt files in the filder and write this to batch_generation
+    if batch_generation_path and Path(batch_generation_path).exists():
+        batch_generation = [f for f in Path(batch_generation_path).glob('*.txt')]
+        
+    if batch_generation:
+        for file_path in batch_generation:
+            with open(file_path,encoding="utf-8",mode="r") as f:
+                text = f.read()
+
+                if language_auto_detect:
+                    lang_code = predict_lang(text,lang_code)
+
+                filename = os.path.basename(file_path)
+                filename = filename.split(".")[0]
+
+                output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.wav"
+                output_file = XTTS.process_tts_to_file(text, lang_code, ref_speaker_wav, options, output_file_path)
+
+        if enable_waveform:
+            return gr.make_waveform(audio=output_file),output_file
+        else:
+            return None,output_file
 
     # Check if the file already exists, if yes, add a number to the filename
     count = 1
@@ -192,7 +253,11 @@ def generate_audio(text,languages,speaker_value_text,speaker_path_text,additiona
     
     # Perform TTS and save to the generated filename
     output_file = XTTS.process_tts_to_file(text, lang_code, ref_speaker_wav, options, output_file_path)
-    return gr.make_waveform(audio=output_file),output_file
+
+    if enable_waveform:
+        return gr.make_waveform(audio=output_file),output_file
+    else:
+        return None,output_file
     
 with gr.Blocks(css=css) as demo:
     gr.Markdown(value="# XTTS-webui by [daswer123](https://github.com/daswer123)")
@@ -205,7 +270,7 @@ with gr.Blocks(css=css) as demo:
                     elem_classes="model-choose__checkbox"
                 )
         refresh_model_btn = gr.Button(value="Update",elem_classes="model-choose__btn")
-
+        
         model.change(fn=reload_model, inputs=[model], outputs=[model])
         refresh_model_btn.click(fn=reload_list, inputs=[model],outputs=[model])
 
@@ -213,18 +278,22 @@ with gr.Blocks(css=css) as demo:
         # with gr.Column():
         with gr.Row():
             with gr.Column():
-                text = gr.TextArea(label="Input Textt",placeholder="Input Text Here...")
-                languages = gr.Dropdown(label="Language",choices=reversed_supported_languages_list,value="English")
+                with gr.Tab("Text"):
+                  text = gr.TextArea(label="Input Textt",placeholder="Input Text Here...")
+                with gr.Tab("Batch"):
+                  batch_generation = gr.Files(label="Upload .txt files",file_types=["text"]) 
+                  batch_generation_path = gr.Textbox(label="Path to folder with .txt files, Has priority over all ",value="") 
 
-                infer_type = gr.Radio(["api", "local"],value="local", label="Infer type", info="Affects how the voice generation will be played back")
-                with gr.Accordion("Advanced settings (Works only in local infer type)", open=False) as acr:
-                        speed = gr.Slider(
+                language_auto_detect = gr.Checkbox(label="Enable language auto detect",info="If your language is not supported or the text is less than 20 characters, this function will not work")
+                languages = gr.Dropdown(label="Language",choices=reversed_supported_languages_list,value="English")
+                speed = gr.Slider(
                                 label="speed",
                                 minimum=0.1,
                                 maximum=2,
                                 step=0.05,
                                 value=1,
                             )
+                with gr.Accordion("Advanced settings", open=False) as acr:
                         temperature = gr.Slider(
                             label="temperature",
                             minimum=0.01,
@@ -264,6 +333,9 @@ with gr.Blocks(css=css) as demo:
                             label="Enable text splitting",
                             value=True,
                         )
+
+                        infer_type = gr.Radio(["api", "local"],value="local", label="Type of Processing",
+                        info="Defines how the text will be processed,local gives you more options. Api does not allow you to use advanced settings")
                 
                 speakers_list = XTTS.get_speakers()
                 # speakers_list = ["Popa"]
@@ -314,11 +386,12 @@ with gr.Blocks(css=css) as demo:
                 save_speaker_btn.click(fn=save_speaker,inputs=[speaker_wav_save_name,speaker_path_text,ref_speaker_list],outputs=[ref_speaker,speaker_wav_save_name,speaker_path_text,speaker_value_text,ref_speaker_list])
 
             with gr.Column():
-                video_gr = gr.Video(label="Waveform Visual",interactive=False)
+                video_gr = gr.Video(label="Waveform Visual",visible=False,interactive=False)
                 audio_gr = gr.Audio(label="Synthesised Audio",interactive=False, autoplay=False)
                 generate_btn = gr.Button(value="Generate",size="lg",elem_classes="generate-btn")
 
                 with gr.Accordion(label="Output settings",open=True):
+                  enable_waveform = gr.Checkbox(label="Enable Waveform",value=False)
                   additional_text_input = gr.Textbox(label="File Name Value", value="output")
                 #   WIP
                 #   output_format = gr.Radio(["mp3","wav"],value="wav", label="Output Format")
@@ -326,8 +399,32 @@ with gr.Blocks(css=css) as demo:
 
                 generate_btn.click(
                     fn=generate_audio,
-                    inputs=[text, languages, speaker_value_text, speaker_path_text, additional_text_input, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, sentence_split],
+                    inputs=[
+                        batch_generation,
+                        batch_generation_path,
+                        language_auto_detect,
+                        enable_waveform,
+                        text,
+                        languages,
+                        speaker_value_text,
+                        speaker_path_text,
+                        additional_text_input,
+                        temperature,
+                        length_penalty,
+                        repetition_penalty,
+                        top_k,
+                        top_p,
+                        speed,
+                        sentence_split
+                        ],
                     outputs=[video_gr, audio_gr]
+                )
+
+
+                enable_waveform.change(
+                    fn=switch_waveform,
+                    inputs=[enable_waveform,video_gr],
+                    outputs=[video_gr]
                 )
 
 

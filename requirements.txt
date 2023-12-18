@@ -5,6 +5,8 @@ torch==2.1.0
 
 numpy==1.22.0
 
+langid
+
 pedalboard
 pydub
 ffmpeg-python

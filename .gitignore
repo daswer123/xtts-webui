@@ -166,3 +166,4 @@ finetune_models
 output
 temp
 speakers/*.wav
+test_batch
