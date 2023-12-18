@@ -167,3 +167,4 @@ output
 temp
 speakers/*.wav
 test_batch
+scripts/resemble_enhance/model_repo/

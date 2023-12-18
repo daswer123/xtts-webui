@@ -5,13 +5,14 @@ import soundfile as sf
 
 from scripts.modeldownloader import get_folder_names,get_folder_names_advanced,install_deepspeed_based_on_python_version
 from scripts.tts_funcs import TTSWrapper
-from scripts.funcs import save_audio_to_wav,resample_audio,move_and_rename_file,improve_and_convert_audio,improve_ref_audio
+from scripts.funcs import save_audio_to_wav,resample_audio,move_and_rename_file,improve_and_convert_audio,improve_ref_audio,resemble_enchance_audio
 
 import os
 import gradio as gr
 import langid
 from pathlib import Path
 from loguru import logger
+
 
 import uuid
 
@@ -194,6 +195,7 @@ def generate_audio(
     language_auto_detect,
     enable_waveform,
     improve_output_audio,
+    improve_output_resemble,
     output_type,
     text,
     languages,
@@ -265,6 +267,9 @@ def generate_audio(
 
     if improve_output_audio:
         output_file = improve_and_convert_audio(output_file,output_type)
+
+    if improve_output_resemble:
+        output_file = resemble_enchance_audio(output_file,False,True,output_type=output_type)
 
     if enable_waveform:
         return gr.make_waveform(audio=output_file),output_file
@@ -409,6 +414,7 @@ with gr.Blocks(css=css) as demo:
                     with gr.Row():
                       enable_waveform = gr.Checkbox(label="Enable Waveform",value=False)
                       improve_output_audio = gr.Checkbox(label="Improve output quality",value=False)
+                      improve_output_resemble = gr.Checkbox(label="Resemble enhancement (Uses extra 4GB VRAM)",value=False)
                     with gr.Row():
                       output_type = gr.Radio(["mp3","wav"],value="wav", label="Output Type")
                   additional_text_input = gr.Textbox(label="File Name Value", value="output")
@@ -424,6 +430,7 @@ with gr.Blocks(css=css) as demo:
                         language_auto_detect,
                         enable_waveform,
                         improve_output_audio,
+                        improve_output_resemble,
                         output_type,
                         text,
                         languages,
