@@ -177,6 +177,7 @@ def download_model(this_dir,model_version):
              print(f"[XTTS] Downloading {filename}...")
              download_file(url, destination)
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 #    this_dir = Path(__file__).parent.resolve()
 #    main_downloader(this_dir)
+    install_deepspeed_based_on_python_version()

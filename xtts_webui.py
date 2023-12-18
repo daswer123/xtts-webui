@@ -250,6 +250,9 @@ def generate_audio(
                 if improve_output_audio:
                    output_file = improve_and_convert_audio(output_file,output_type)
 
+                if improve_output_resemble:
+                    output_file = resemble_enchance_audio(output_file,False,True,output_type=output_type)
+
         if enable_waveform:
             return gr.make_waveform(audio=output_file),output_file
         else:
