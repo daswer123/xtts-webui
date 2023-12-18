@@ -4,7 +4,8 @@
 XTTS-WebUI offers two interfaces designed to enhance your experience with XTTS. One interface serves as a user-friendly approach to interact with XTTS, while the other is an enhanced version of the web interface intended for fine-tuning. This project simplifies interaction with XTTS through two files and provides a feature-rich web interface for optimal utilization.
 
 ## 1 - webui 
-![image](https://github.com/daswer123/xtts-webui/assets/22278673/9849e558-a7a6-471f-89f2-32acc74ebb38)
+![image](https://github.com/daswer123/xtts-webui/assets/22278673/c0549b7d-5689-4166-8f6e-1c3975e5efc3)
+
 
 ## 2 - finetune webui
 ![image](https://github.com/daswer123/xtts-webui/assets/22278673/f0d7768e-77e4-4087-acb2-175eeddc9d2c)
