@@ -5,7 +5,7 @@ import soundfile as sf
 
 from scripts.modeldownloader import get_folder_names,get_folder_names_advanced,install_deepspeed_based_on_python_version
 from scripts.tts_funcs import TTSWrapper
-from scripts.funcs import save_audio_to_wav,resample_audio,move_and_rename_file
+from scripts.funcs import save_audio_to_wav,resample_audio,move_and_rename_file,improve_and_convert_audio,improve_ref_audio
 
 import os
 import gradio as gr
@@ -122,13 +122,17 @@ def clear_current_speaker_audio(ref_speaker_audio,speaker_path_text,ref_speaker_
 
     return "",speaker_value,gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list)
 
-def change_current_speaker_audio(auto_cut,ref_speaker_audio,speaker_path_text,ref_speaker_list,speaker_value_text,use_resample):
+def change_current_speaker_audio(improve_reference_audio,auto_cut,ref_speaker_audio,speaker_path_text,ref_speaker_list,speaker_value_text,use_resample):
 #  Get audio, save it to tempo and resample it.
    output_path = ""
    rate, y = ref_speaker_audio
    output_path = save_audio_to_wav(rate, y,this_dir,auto_cut)
+
    if use_resample:
-     output_path = resample_audio(output_path,this_dir)  
+     output_path = resample_audio(output_path,this_dir)
+
+   if improve_reference_audio:
+     output_path =  improve_ref_audio(output_path,this_dir)
 
 #  Assign the invisible variables the values we will use for generation
    XTTS.speaker_wav = output_path
@@ -189,6 +193,8 @@ def generate_audio(
     batch_generation_path,
     language_auto_detect,
     enable_waveform,
+    improve_output_audio,
+    output_type,
     text,
     languages,
     speaker_value_text,
@@ -236,8 +242,11 @@ def generate_audio(
                 filename = os.path.basename(file_path)
                 filename = filename.split(".")[0]
 
-                output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.wav"
+                output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.{output_type}"
                 output_file = XTTS.process_tts_to_file(text, lang_code, ref_speaker_wav, options, output_file_path)
+
+                if improve_output_audio:
+                   output_file = improve_and_convert_audio(output_file,output_type)
 
         if enable_waveform:
             return gr.make_waveform(audio=output_file),output_file
@@ -246,13 +255,16 @@ def generate_audio(
 
     # Check if the file already exists, if yes, add a number to the filename
     count = 1
-    output_file_path = f"{additional_text}_({count})_{speaker_value_text}.wav"
+    output_file_path = f"{additional_text}_({count})_{speaker_value_text}.{output_type}"
     while os.path.exists(os.path.join('output', output_file_path)):
         count += 1
-        output_file_path = f"{additional_text}_({count})_{speaker_value_text}.wav"
+        output_file_path = f"{additional_text}_({count})_{speaker_value_text}.{output_type}"
     
     # Perform TTS and save to the generated filename
     output_file = XTTS.process_tts_to_file(text, lang_code, ref_speaker_wav, options, output_file_path)
+
+    if improve_output_audio:
+        output_file = improve_and_convert_audio(output_file,output_type)
 
     if enable_waveform:
         return gr.make_waveform(audio=output_file),output_file
@@ -356,17 +368,19 @@ with gr.Blocks(css=css) as demo:
                   ref_speaker_list = gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list)
                   update_ref_speaker_list_btn = gr.Button(value="Update",elem_classes="speaker-update__btn")
 
-                ref_speaker = gr.Audio(label="Reference Speaker (mp3, wav, flac)")
+                ref_speaker = gr.Audio(label="Reference Speaker (mp3, wav, flac)",editable=False)
 
-                with gr.Accordion(label="Reference Speaker settings",open=True):
+                with gr.Accordion(label="Reference Speaker settings.",open=True):
+                  gr.Markdown(value="Take a look at how to create good samples [here](https://github.com/daswer123/xtts-api-server?tab=readme-ov-file#note-on-creating-samples-for-quality-voice-cloning)")
                   with gr.Row():
-                     use_resample = gr.Checkbox(label="Resample reference audio to 24000Hz")
+                     use_resample = gr.Checkbox(label="Resample reference audio to 22050Hz",value=True)
+                     improve_reference_audio = gr.Checkbox(label="Clean up reference voice", value=True)
                   auto_cut = gr.Slider(
                             label="Automatically trim audio up to x seconds, 0 without trimming ",
                             minimum=0,
                             maximum=30,
                             step=1,
-                            value=0,
+                            value=12,
                         )
                   gr.Markdown(value="You can save the downloaded recording or microphone recording to a shared list, you need to set a name and click save")
                   speaker_wav_save_name = gr.Textbox(label="Speaker save name",value="new_speaker_name")
@@ -377,8 +391,8 @@ with gr.Blocks(css=css) as demo:
                 ref_speaker_list.change(fn=change_current_speaker, inputs=[ref_speaker_list,speaker_value_text],outputs=[ref_speaker_list,speaker_value_text])
                 update_ref_speaker_list_btn.click(fn=update_speakers_list, inputs=[ref_speaker_list,speaker_value_text,speaker_path_text],outputs=[ref_speaker_list,speaker_value_text])
 
-                ref_speaker.stop_recording(fn=change_current_speaker_audio, inputs=[auto_cut,ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,use_resample],outputs=[ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list])
-                ref_speaker.upload(fn=change_current_speaker_audio, inputs=[auto_cut,ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,use_resample],outputs=[ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list])
+                ref_speaker.stop_recording(fn=change_current_speaker_audio, inputs=[improve_reference_audio,auto_cut,ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,use_resample],outputs=[ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list])
+                ref_speaker.upload(fn=change_current_speaker_audio, inputs=[improve_reference_audio,auto_cut,ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,use_resample],outputs=[ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list])
                 ref_speaker.clear(fn=clear_current_speaker_audio,inputs=[ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list],outputs=[speaker_path_text,speaker_value_text,ref_speaker_list])
                 # ref_speaker.change(fn=change_current_speaker_audio, inputs=[auto_cut,ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,use_resample],outputs=[speaker_wav_modifyed,speaker_path_text,speaker_value_text,ref_speaker_list])
 
@@ -391,11 +405,16 @@ with gr.Blocks(css=css) as demo:
                 generate_btn = gr.Button(value="Generate",size="lg",elem_classes="generate-btn")
 
                 with gr.Accordion(label="Output settings",open=True):
-                  enable_waveform = gr.Checkbox(label="Enable Waveform",value=False)
+                  with gr.Column():
+                    with gr.Row():
+                      enable_waveform = gr.Checkbox(label="Enable Waveform",value=False)
+                      improve_output_audio = gr.Checkbox(label="Improve output quality",value=False)
+                    with gr.Row():
+                      output_type = gr.Radio(["mp3","wav"],value="wav", label="Output Type")
                   additional_text_input = gr.Textbox(label="File Name Value", value="output")
                 #   WIP
                 #   output_format = gr.Radio(["mp3","wav"],value="wav", label="Output Format")
-                #   improve_output_quality = gr.Checkbox(label="Improve output quality",value=False)
+                #   )
 
                 generate_btn.click(
                     fn=generate_audio,
@@ -404,6 +423,8 @@ with gr.Blocks(css=css) as demo:
                         batch_generation_path,
                         language_auto_detect,
                         enable_waveform,
+                        improve_output_audio,
+                        output_type,
                         text,
                         languages,
                         speaker_value_text,

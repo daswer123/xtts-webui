@@ -1,4 +1,4 @@
-gradio==4.9.1
+gradio==4.10.0
 
 torch==2.1.0
 torch==2.1.0
@@ -7,6 +7,7 @@ numpy==1.22.0
 
 langid
 
+noisereduce
 pedalboard
 pydub
 ffmpeg-python
