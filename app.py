@@ -13,7 +13,7 @@ parser.add_argument("-ms", "--model-source", default="local", choices=["api","lo
 parser.add_argument("-v", "--version", default="v2.0.2", type=str, help="You can specify which version of xtts to use,This version will be used everywhere in local, api and apiManual.")
 parser.add_argument("--lowvram", action='store_true', help="Enable low vram mode which switches the model to RAM when not actively processing.")
 parser.add_argument("--deepspeed", action='store_true', help="Enable deepspeed acceleration, works on windows on python 3.10 and 3.11.")
-parser.add_argument("--share", action='store_true', help="Enable deepspeed acceleration, works on windows on python 3.10 and 3.11.")
+parser.add_argument("--share", action='store_true', help="Allows the interface to be used outside the local computer.")
 
 args = parser.parse_args()
 
