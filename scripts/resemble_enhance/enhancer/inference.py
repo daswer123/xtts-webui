@@ -7,9 +7,15 @@ from ..inference import inference
 from .download import download
 from .train import Enhancer, HParams
 
+import platform
 import pathlib
-temp = pathlib.PosixPath
-pathlib.PosixPath = pathlib.WindowsPath
+
+# Check if the current system is Windows
+if platform.system() == 'Windows':
+    # Make changes specific to Windows
+    temp = pathlib.PosixPath
+    pathlib.PosixPath = pathlib.WindowsPath
+
 
 logger = logging.getLogger(__name__)
 

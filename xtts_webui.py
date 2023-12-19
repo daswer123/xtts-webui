@@ -442,7 +442,7 @@ with gr.Blocks(css=css) as demo:
                       improve_output_audio = gr.Checkbox(label="Improve output quality (Reduces noise and makes audio slightly better)",value=False)
                       improve_output_resemble = gr.Checkbox(label="Resemble enhancement (Uses extra 4GB VRAM)",value=False)
                     with gr.Accordion(label="Resemble enhancement Settings",open=False):
-                        enhance_resemble_chunk_seconds = gr.Slider(minimum=2, maximum=40, value=8, step=1, label="Chunk seconds (more secods more VRAM usage and faster inference speed)")
+                        enhance_resemble_chunk_seconds = gr.Slider(minimum=2, maximum=40, value=10, step=1, label="Chunk seconds (more secods more VRAM usage and faster inference speed)")
                         enhance_resemble_chunk_overlap = gr.Slider(minimum=0.1, maximum=2, value=1, step=0.2, label="Overlap seconds")
                         enhance_resemble_solver = gr.Dropdown(label="CFM ODE Solver",choices=["Midpoint", "RK4", "Euler"], value="Midpoint")
                         enhance_resemble_num_funcs = gr.Slider(minimum=1, maximum=128, value=64, step=1, label="CFM Number of Function Evaluations")
