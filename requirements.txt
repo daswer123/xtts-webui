@@ -1,7 +1,7 @@
 gradio==4.10.0
 
-torch==2.1.0
-torch==2.1.0
+torch==2.1.1
+torchaudio==2.1.1
 
 numpy==1.22.0
 
@@ -19,3 +19,8 @@ fugashi[unidic-lite]
 loguru
 faster_whisper==0.10.0
 tts>=0.22.0
+
+
+omegaconf==2.3.0
+resampy==0.4.2
+tabulate==0.8.10
