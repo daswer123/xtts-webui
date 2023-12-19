@@ -154,3 +154,86 @@ def improve_and_convert_audio(audio_path, type_audio):
     os.unlink(temp_file_path)
 
     return output_path
+
+# RESEMBLE ENHANCE
+from scripts.resemble_enhance.enhancer.inference import denoise, enhance
+import torch
+import torchaudio
+import gc
+
+def clear_gpu_cash():
+    # del model
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+def resemble_enchance_audio(audio_path,
+        use_enhance,
+        solver='Midpoint',
+        nfe=64,
+        tau=0.5,
+        chunk_seconds=10,
+        chunks_overlap=1,
+        denoising=False,
+        output_type = "wav"):
+    if audio_path is None:
+        return None, None
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    dwav, orig_sr = torchaudio.load(audio_path)
+    dwav = dwav.mean(dim=0)
+
+    wav1 = wav2 = dwav.to(device)
+    
+# Only denoise, temp off
+    # if False:
+    #    wav1, new_sr = denoise(dwav.cpu(), orig_sr, device)
+    #    wav1 = wav1.cpu().numpy()
+
+    if use_enhance:
+       lambd = 0.9 if denoising else 0.1
+       solver = solver.lower()
+       nfe = int(nfe)
+
+       wav2, new_sr = enhance(dwav=dwav.cpu(), sr=orig_sr, device=device,
+                              nfe=nfe, chunk_seconds=chunk_seconds,
+                              chunks_overlap=chunks_overlap,solver=solver,lambd=lambd,tau=tau)
+
+       wav2 = wav2.cpu().numpy()
+
+    # result_wav1_tuple = None
+    result_wav2_tuple=None
+
+# Only denoise, temp off
+    # if False:
+    #    result_wav1_tuple=(new_sr,wav1)
+
+    if use_enhance:
+       result_waw_2_tuple=(new_sr,wav2)
+
+    # Saving the processed file
+    # output_file_name = os.path.splitext(audio_path)[0] + '_improved.wav'
+    # output_file_path = save_audio_to_wav(new_sr, wav2, Path(audio_path).parent, max_duration=None)
+    # output_file_path = save_audio_to_wav(new_sr, wav1, Path(audio_path).parent, max_duration=None)
+
+    rate = new_sr
+    y = wav2
+
+    audio_data = np.asarray(y, dtype=np.float32)
+    out_folder = Path(audio_path).parent
+
+    # os.makedirs(out_folder, exist_ok=True)
+
+    wav_name = f"{os.path.basename(audio_path).split('.')[0]}_enhance.{output_type}"
+
+    original_wav_path = str(out_folder / wav_name)  
+
+     # Save the audio data to a file without changing the sampling rate.
+    wavfile.write(original_wav_path, rate, audio_data)
+
+    print(original_wav_path)
+
+    clear_gpu_cash()
+
+    return original_wav_path
