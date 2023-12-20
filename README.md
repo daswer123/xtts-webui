@@ -24,6 +24,8 @@ If you don't know where to start for xtts-finetune-webui, watch this [video](htt
 
 You can try this webui using [google colab](https://colab.research.google.com/drive/1MrzAYgANm6u79rCCQQqBSoelYGiJ1qYL)
 
+**Note that you must have the following things installed: Python 3.10.x or Pyhton 3.11, CUDA 11.8 , Microsoft Builder Tools 2019 with c++ package, ffmpeg**
+
 1. Make sure you have `CUDA` installed
 2. `https://github.com/daswer123/xtts-webui`
 3. `cd xtts-webui`
