@@ -22,6 +22,8 @@ If you don't know where to start for xtts-finetune-webui, watch this [video](htt
 
 ## Install
 
+You can try this webui using [google colab](https://colab.research.google.com/drive/1MrzAYgANm6u79rCCQQqBSoelYGiJ1qYL)
+
 1. Make sure you have `CUDA` installed
 2. `https://github.com/daswer123/xtts-webui`
 3. `cd xtts-webui`
