@@ -19,14 +19,32 @@ import tempfile
 
 
 def save_audio_to_wav(rate, y, this_dir, max_duration=None):
-    audio_data = np.asarray(y, dtype=np.int16)
-    temp_folder = this_dir / 'temp'
+    # Determine the bit rate of the source audio.
+    bit_depth = y.dtype.itemsize * 8
+
+    # Convert to 16-bit data if necessary.
+    if not (bit_depth == 16):
+        if bit_depth == 32:
+            audio_data = np.asarray(y / np.max(np.abs(y)) * 32767, dtype=np.int16)
+        elif bit_depth == 24:
+            audio_data = np.asarray((y / (2**8)) // (2**(bit_depth - 16)), dtype=np.int16)
+        else: # For other types of bitness we apply the general normalization method.
+            max_val = float(np.iinfo(np.int16).max)
+            min_val = float(np.iinfo(np.int16).min)
+            audio_data = np.asarray(((y - y.min()) / (y.max() - y.min())) * (max_val - min_val) + min_val, dtype=np.int16)
+    else:
+        # If the data is already in int16 format, use it directly.
+        audio_data = np.asarray(y, dtype=np.int16)
+
+    temp_folder = Path(this_dir) / 'temp'
+
+    # print(rate,y)
 
     os.makedirs(temp_folder, exist_ok=True)
 
     wav_name = f'speaker_ref_{uuid.uuid4()}.wav'
 
-    original_wav_path = str(temp_folder / wav_name)  
+    original_wav_path = str(temp_folder / wav_name)
 
      # Save the audio data to a file without changing the sampling rate.
     wavfile.write(original_wav_path, rate, audio_data)
@@ -35,10 +53,10 @@ def save_audio_to_wav(rate, y, this_dir, max_duration=None):
          output_wav_path = str(temp_folder / f'cut_{wav_name}')
          (
              ffmpeg.input(original_wav_path)
-             .output(output_wav_path, to=max_duration)
-             .run(overwrite_output=True,quiet=True)
+             .output(output_wav_path, t=max_duration)
+             .run(overwrite_output=True, quiet=True)
          )
-         os.remove(original_wav_path)  
+         os.remove(original_wav_path)
          return output_wav_path
 
     return original_wav_path
