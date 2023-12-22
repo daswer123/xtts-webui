@@ -32,5 +32,5 @@ install_deepspeed_based_on_python_version()
 
 from xtts_webui import demo   
 
-demo.launch(share=args.share)   
+demo.launch(share=args.share, host=args.host, port=args.port)   
     
