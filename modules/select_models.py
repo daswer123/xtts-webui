@@ -1,7 +1,6 @@
 import gradio as gr
 from scripts.modeldownloader import get_folder_names_advanced
 
-
 from xtts_webui import *
 
 def reload_model(model):

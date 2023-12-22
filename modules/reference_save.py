@@ -1,17 +1,7 @@
-import gradio as gr
-
 import os
+
 import gradio as gr
-import langid
 from pathlib import Path
-from loguru import logger
-
-import numpy as np
-import soundfile as sf
-
-import shutil
-import uuid
-
 from scripts.funcs import move_and_rename_file,str_to_list
 
 from xtts_webui import *

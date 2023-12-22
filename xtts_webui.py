@@ -1,19 +1,12 @@
 
 
-import numpy as np
-import soundfile as sf
-
 from scripts.modeldownloader import get_folder_names_advanced,install_deepspeed_based_on_python_version
 from scripts.tts_funcs import TTSWrapper
 
 import os
 import gradio as gr
-import langid
 from pathlib import Path
 from loguru import logger
-
-import shutil
-import uuid
 
 # Read css
 css = os.path.join(os.path.dirname(__file__), "style.css")
