@@ -201,7 +201,7 @@ with gr.Blocks(css=css) as demo:
                       output_type = gr.Radio(["mp3","wav"],value="wav", label="Output Type")
                   additional_text_input = gr.Textbox(label="File Name Value", value="output")
 
-                # LOAD MODULES
+                # LOAD FUNCTIONS AND HANDLERS
                 import modules
 
 if __name__ == "__main__":
