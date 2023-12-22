@@ -240,12 +240,12 @@ def create_multiple_reference(ref_speakers, use_resample=False, improve_referenc
     ref_dir = Path(f'temp/reference_speaker_{uuid.uuid4()}')
     ref_dir.mkdir(parents=True, exist_ok=True)
 
-    # Обработка и перемещение новых файлов.
+    # Processing and moving new files.
     processed_files = []
     for index, speaker_file in enumerate(ref_speakers):
         current_file = Path(speaker_file)
 
-        original_filename = current_file.stem  # Сохраняем оригинальное имя файла без расширения
+        original_filename = current_file.stem  # Save the original file name without extension
 
         if auto_cut > 0:
             current_file = cut_audio(current_file, duration=auto_cut)
@@ -253,21 +253,21 @@ def create_multiple_reference(ref_speakers, use_resample=False, improve_referenc
         if improve_reference_resemble:
             current_file = Path(resemble_enchance_audio(current_file,True))
 
-        # Применяем resampling если задан флаг use_resample.
+        # Apply resampling if the use_resample flag is set.
         if use_resample:
             current_file = Path(resample_audio(current_file, this_dir=ref_dir))
 
-        # Улучшаем аудио если задан флаг improve_reference_audio.
+        # Improve audio if the improve_reference_audio flag is set.
         if improve_reference_audio:
             current_file = Path(improve_ref_audio(current_file, this_dir=ref_dir))
 
-        # Первый файл будет называться preview.wav
+        # The first file will be called preview.wav
         # new_location_name = "preview.wav" if index == 0 else f"{original_filename}.wav"
         new_location_name = f"{original_filename}.wav"
         new_location = ref_dir / new_location_name
         processed_files.append(new_location)
         try:
-             # Перемещаем подготовленный файл в целевую директорию.
+             # Move the prepared file to the target directory.
              shutil.move(str(current_file), str(new_location))
              print(f'Processed and moved {current_file} to {new_location}')
         except Exception as e:
@@ -587,9 +587,6 @@ with gr.Blocks(css=css) as demo:
                     with gr.Row():
                       output_type = gr.Radio(["mp3","wav"],value="wav", label="Output Type")
                   additional_text_input = gr.Textbox(label="File Name Value", value="output")
-                #   WIP
-                #   output_format = gr.Radio(["mp3","wav"],value="wav", label="Output Format")
-                #   )
 
                 generate_btn.click(
                     fn=generate_audio,
