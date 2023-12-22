@@ -336,7 +336,7 @@ class TTSWrapper:
             elif os.path.isfile(wav_file):
                 speaker_wav = wav_file
             else:
-                raise ValueError(f"Speaker {speaker_name_or_path} not found.")
+                return None
 
         return speaker_wav
 
