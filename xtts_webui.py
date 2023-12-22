@@ -638,5 +638,5 @@ with gr.Blocks(css=css) as demo:
                 )
 
 
-# if __name__ == "__main__":
-    # demo.launch()   
+if __name__ == "__main__":
+    demo.launch(inbrowser=True,share=True)   
