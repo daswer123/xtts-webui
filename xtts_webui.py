@@ -5,7 +5,7 @@ import soundfile as sf
 
 from scripts.modeldownloader import get_folder_names,get_folder_names_advanced,install_deepspeed_based_on_python_version
 from scripts.tts_funcs import TTSWrapper
-from scripts.funcs import save_audio_to_wav,resample_audio,move_and_rename_file,improve_and_convert_audio,improve_ref_audio,resemble_enchance_audio
+from scripts.funcs import save_audio_to_wav,resample_audio,move_and_rename_file,improve_and_convert_audio,improve_ref_audio,resemble_enchance_audio,cut_audio,str_to_list
 
 import os
 import gradio as gr
@@ -13,6 +13,7 @@ import langid
 from pathlib import Path
 from loguru import logger
 
+import shutil
 
 import uuid
 
@@ -104,14 +105,20 @@ def change_language(languages):
     return languages
 
 
-def change_current_speaker(ref_speaker_list,speaker_value_text):
+def change_current_speaker(ref_speaker_list,speaker_value_text,show_ref_speaker_from_list):
     XTTS.speaker_wav = ref_speaker_list
-
     speaker_value_text = ref_speaker_list
 
-    return ref_speaker_list,speaker_value_text
+    if show_ref_speaker_from_list:
+        speaker_path = XTTS.get_speaker_sample(ref_speaker_list)
+        print(speaker_path)
+        if speaker_path == None:
+            return ref_speaker_list,speaker_value_text,gr.Audio(visible=False,value=None)
+        return ref_speaker_list,speaker_value_text,gr.Audio(label="Speaker Example", value=speaker_path, visible=True)
 
-def clear_current_speaker_audio(ref_speaker_audio,speaker_path_text,ref_speaker_list,speaker_value_text):
+    return ref_speaker_list,speaker_value_text,None
+
+def clear_current_speaker_audio(ref_speaker_audio,speaker_path_text,ref_speaker_list,speaker_value_text,speaker_ref_wavs):
     speakers_list = XTTS.get_speakers()
     speaker_value = ""
     if not speakers_list:
@@ -121,14 +128,20 @@ def clear_current_speaker_audio(ref_speaker_audio,speaker_path_text,ref_speaker_
         speaker_value = speakers_list[0]
         speaker_value_text = speaker_value
 
-    return "",speaker_value,gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list)
+    if speaker_ref_wavs:
+        speakers_list.append("multi_reference")
+        speaker_value = "multi_reference"
 
-def change_current_speaker_audio(improve_reference_audio,auto_cut,ref_speaker_audio,speaker_path_text,ref_speaker_list,speaker_value_text,use_resample):
+    return "",speaker_value,gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list), gr.Button(visible=False)
+
+def change_current_speaker_audio(improve_reference_resemble,improve_reference_audio,auto_cut,ref_speaker_audio,speaker_path_text,ref_speaker_list,speaker_value_text,use_resample,speaker_ref_wavs):
 #  Get audio, save it to tempo and resample it.
    output_path = ""
    rate, y = ref_speaker_audio
    output_path = save_audio_to_wav(rate, y,this_dir,auto_cut)
 
+   if improve_reference_resemble:
+     output_path = resemble_enchance_audio(output_path,True)
    if use_resample:
      output_path = resample_audio(output_path,this_dir)
 
@@ -146,7 +159,10 @@ def change_current_speaker_audio(improve_reference_audio,auto_cut,ref_speaker_au
 
    speakers_list.append(speaker_value_text)
 
-   return output_path,speaker_path_text, "reference", gr.Dropdown(label="Reference Speaker from folder 'speakers'",value="reference",choices=speakers_list)
+   if speaker_ref_wavs:
+        speakers_list.append("multi_reference")
+
+   return output_path,speaker_path_text, "reference", gr.Dropdown(label="Reference Speaker from folder 'speakers'",value="reference",choices=speakers_list),gr.Button(value="Save a single sample for the speaker",visible=True)
 
 def reload_list(model):
     models_list = get_folder_names_advanced(this_dir / "models")
@@ -157,7 +173,7 @@ def reload_list(model):
                     elem_classes="model-choose__checkbox"
                 ) 
 
-def update_speakers_list(speakers_list,speaker_value_text,speaker_path_text):
+def update_speakers_list(speakers_list,speaker_value_text,speaker_path_text,speaker_ref_wavs):
     speakers_list = XTTS.get_speakers()
     speaker_value = ""
     if not speakers_list:
@@ -169,25 +185,121 @@ def update_speakers_list(speakers_list,speaker_value_text,speaker_path_text):
 
     if speaker_path_text:
         speakers_list.append("reference")
+    
+    if speaker_ref_wavs:
+        speakers_list.append("multi_reference")
 
     return gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list),speaker_value_text
 
+def save_speaker(speaker_wav_save_name,speaker_path_text,ref_speaker_list,speaker_ref_wavs):
+    move_and_rename_file(speaker_path_text, XTTS.speaker_folder,speaker_wav_save_name)
 
-def save_speaker(speaker_wav_save_name,speaker_path_text,ref_speaker_list):
     speakers_list = XTTS.get_speakers()
     speaker_value = speaker_wav_save_name
     speaker_value_text = speaker_wav_save_name
-    speakers_list.append(speaker_wav_save_name)
-    move_and_rename_file(speaker_path_text, XTTS.speaker_folder,speaker_wav_save_name)
-    # INPUT ref_speaker,speaker_wav_save_name,speaker_path_text,ref_speaker_list
-    # OUTPUT ref_speaker,speaker_wav_save_name,,speaker_path_text,speaker_value_text,ref_speaker_list
-    return None,"","",speaker_wav_save_name,gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list)
+
+    if speaker_ref_wavs:
+        speakers_list.append("multi_reference")
+
+    return None,"","",speaker_wav_save_name,gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list,allow_custom_value=True),gr.Button(visible=False)
+
+def save_speaker_multiple(speaker_wav_save_name,ref_speaker_list,ref_speakers,speaker_ref_wavs,speaker_path_text):
+    new_ref_speaker_list = str_to_list(speaker_ref_wavs)
+    speaker_dir = Path(XTTS.speaker_folder) / speaker_wav_save_name
+
+    for file in new_ref_speaker_list:
+        print(file)
+        file = Path(file)
+        move_and_rename_file(file, speaker_dir,os.path.basename(file))
+
+    speakers_list = XTTS.get_speakers()
+    speaker_value = speaker_wav_save_name
+    speaker_value_text = speaker_wav_save_name
+
+    if speaker_path_text:
+        speakers_list.append("reference")
+
+    return "",speaker_value,None,"",gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list,allow_custom_value=True), gr.Button(visible=False)
 
 def switch_waveform(enable_waveform,video_gr):
     if enable_waveform:
         return gr.Video(label="Waveform Visual",visible=True,interactive=False)
     else:
         return  gr.Video(label="Waveform Visual",interactive=False,visible=False)
+
+def switch_speaker_example_visibility(ref_speaker_example,show_ref_speaker_from_list,ref_speaker_list):
+    if show_ref_speaker_from_list:
+        speaker_path = XTTS.get_speaker_sample(ref_speaker_list)
+        if speaker_path == None:
+            return gr.Audio(visible=False,value=None)
+        return gr.Audio(label="Speaker Example", value=speaker_path, visible=True)
+    else:
+        return gr.Audio(label="Speaker Example", visible=False,value=None)
+
+def create_multiple_reference(ref_speakers, use_resample=False, improve_reference_audio=False, auto_cut=0,improve_reference_resemble=False,speaker_value_text=""):
+    ref_dir = Path(f'temp/reference_speaker_{uuid.uuid4()}')
+    ref_dir.mkdir(parents=True, exist_ok=True)
+
+    # Обработка и перемещение новых файлов.
+    processed_files = []
+    for index, speaker_file in enumerate(ref_speakers):
+        current_file = Path(speaker_file)
+
+        original_filename = current_file.stem  # Сохраняем оригинальное имя файла без расширения
+
+        if auto_cut > 0:
+            current_file = cut_audio(current_file, duration=auto_cut)
+
+        if improve_reference_resemble:
+            current_file = Path(resemble_enchance_audio(current_file,True))
+
+        # Применяем resampling если задан флаг use_resample.
+        if use_resample:
+            current_file = Path(resample_audio(current_file, this_dir=ref_dir))
+
+        # Улучшаем аудио если задан флаг improve_reference_audio.
+        if improve_reference_audio:
+            current_file = Path(improve_ref_audio(current_file, this_dir=ref_dir))
+
+        # Первый файл будет называться preview.wav
+        # new_location_name = "preview.wav" if index == 0 else f"{original_filename}.wav"
+        new_location_name = f"{original_filename}.wav"
+        new_location = ref_dir / new_location_name
+        processed_files.append(new_location)
+        try:
+             # Перемещаем подготовленный файл в целевую директорию.
+             shutil.move(str(current_file), str(new_location))
+             print(f'Processed and moved {current_file} to {new_location}')
+        except Exception as e:
+             print(f'Failed to process or move {current_file}. Reason: {e}')
+    print(f'Processed {len(processed_files)} files.')
+    processed_files = [str(path) for path in processed_files]
+
+    # Add ref to list and select it 
+    speakers_list = XTTS.get_speakers()
+    speaker_value = "multi_reference"
+    speakers_list.append("multi_reference")
+
+    if speaker_value_text:
+        speakers_list.append("reference")
+
+    return processed_files, processed_files,speaker_value, gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list),gr.Button(value="Save multiple samples for the speaker",visible=True)
+    
+def clear_multiple_reference(ref_speaker):
+    speakers_list = XTTS.get_speakers()
+    speaker_value = ""
+    if not speakers_list:
+        speakers_list = ["None"]
+        speaker_value = "None"
+    else:
+        speaker_value = speakers_list[0]
+        speaker_value_text = speaker_value
+
+    if ref_speaker:
+        speakers_list.append("reference")
+        speaker_value = "reference"
+
+    return None, "",speaker_value, gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list),gr.Button(visible=False)
 
 def generate_audio(
     # Resemble enhance Settings
@@ -200,6 +312,7 @@ def generate_audio(
     # Batch
     batch_generation,
     batch_generation_path,
+    ref_speakers,
     # Features
     language_auto_detect,
     enable_waveform,
@@ -233,11 +346,19 @@ def generate_audio(
 
     ref_speaker_wav = ""
 
-    if speaker_path_text and speaker_value_text == "reference":
-        ref_speaker_wav = speaker_path_text 
-    else:
-        ref_speaker_wav = speaker_value_text 
+    print("Using ready reference")
+    ref_speaker_wav = speaker_value_text
 
+    if speaker_path_text and speaker_value_text == "reference":
+        print("Using folder reference")
+        ref_speaker_wav = speaker_path_text
+
+    if ref_speakers and speaker_value_text == "multi_reference":
+        print("Using multiple reference")
+        ref_speakers_list = str_to_list(ref_speakers)
+        ref_speaker_wav = Path(ref_speakers_list[0]).parent.absolute()
+        ref_speaker_wav = str(ref_speaker_wav)
+      
     lang_code = reversed_supported_languages[languages]
 
     if language_auto_detect:
@@ -394,42 +515,57 @@ with gr.Blocks(css=css) as demo:
                 speaker_value_text = gr.Textbox(label="Reference Speaker Name",value=speaker_value,visible=False)
                 speaker_path_text = gr.Textbox(label="Reference Speaker Path",value="",visible=False)
                 speaker_wav_modifyed = gr.Checkbox("Reference Audio",visible=False, value = False )
+                speaker_ref_wavs = gr.Text(visible=False)
 
                 with gr.Row():
                   ref_speaker_list = gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list)
+                  show_ref_speaker_from_list = gr.Checkbox(value=False,label="Show example",info="This option will allow you to listen to your reference sample")
                   update_ref_speaker_list_btn = gr.Button(value="Update",elem_classes="speaker-update__btn")
+                ref_speaker_example = gr.Audio(label="speaker example", sources="upload",visible=False,interactive=False)
 
-                ref_speaker = gr.Audio(label="Reference Speaker (mp3, wav, flac)",editable=False)
+                with gr.Tab(label="Single"):
+                  ref_speaker = gr.Audio(label="Reference Speaker (mp3, wav, flac)",editable=False)
+                with gr.Tab(label="Multiple"):
+                  ref_speakers = gr.Files(label="Reference Speakers (mp3, wav, flac)",file_types=["audio"])
 
                 with gr.Accordion(label="Reference Speaker settings.",open=True):
+                  gr.Markdown(value="**Note: the settings only work when you enable them and upload files when they are enabled**")
                   gr.Markdown(value="Take a look at how to create good samples [here](https://github.com/daswer123/xtts-api-server?tab=readme-ov-file#note-on-creating-samples-for-quality-voice-cloning)")
                   with gr.Row():
-                     use_resample = gr.Checkbox(label="Resample reference audio to 22050Hz",value=True)
-                     improve_reference_audio = gr.Checkbox(label="Clean up reference voice", value=True)
+                     use_resample = gr.Checkbox(label="Resample reference audio to 22050Hz",info="This is for better processing",value=True)
+                     improve_reference_audio = gr.Checkbox(label="Clean up reference audio",info="Trim silence, use lowpass and highpass filters", value=False)
+                     improve_reference_resemble = gr.Checkbox(label="Resemble enhancement (Uses extra 4GB VRAM)",info="You can find the settings next to the settings for the result",value=False)
                   auto_cut = gr.Slider(
                             label="Automatically trim audio up to x seconds, 0 without trimming ",
                             minimum=0,
                             maximum=30,
                             step=1,
-                            value=12,
+                            value=0,
                         )
                   gr.Markdown(value="You can save the downloaded recording or microphone recording to a shared list, you need to set a name and click save")
                   speaker_wav_save_name = gr.Textbox(label="Speaker save name",value="new_speaker_name")
-                  save_speaker_btn = gr.Button(value="Save Speaker")
+                  save_speaker_btn = gr.Button(value="Save a single sample for the speaker",visible=False)
+                  save_multiple_speaker_btn = gr.Button(value="Save multiple samples for the speaker",visible=False)
 
                 infer_type.input(fn=change_infer_type, inputs=[infer_type],outputs=[infer_type])
 
-                ref_speaker_list.change(fn=change_current_speaker, inputs=[ref_speaker_list,speaker_value_text],outputs=[ref_speaker_list,speaker_value_text])
-                update_ref_speaker_list_btn.click(fn=update_speakers_list, inputs=[ref_speaker_list,speaker_value_text,speaker_path_text],outputs=[ref_speaker_list,speaker_value_text])
+                ref_speaker_list.change(fn=change_current_speaker, inputs=[ref_speaker_list,speaker_value_text,show_ref_speaker_from_list],outputs=[ref_speaker_list,speaker_value_text,ref_speaker_example])
+                update_ref_speaker_list_btn.click(fn=update_speakers_list, inputs=[ref_speaker_list,speaker_value_text,speaker_path_text,speaker_ref_wavs],outputs=[ref_speaker_list,speaker_value_text])
+                show_ref_speaker_from_list.change(fn=switch_speaker_example_visibility,inputs=[ref_speaker_example,show_ref_speaker_from_list,ref_speaker_list],outputs=[ref_speaker_example])
 
-                ref_speaker.stop_recording(fn=change_current_speaker_audio, inputs=[improve_reference_audio,auto_cut,ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,use_resample],outputs=[ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list])
-                ref_speaker.upload(fn=change_current_speaker_audio, inputs=[improve_reference_audio,auto_cut,ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,use_resample],outputs=[ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list])
-                ref_speaker.clear(fn=clear_current_speaker_audio,inputs=[ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list],outputs=[speaker_path_text,speaker_value_text,ref_speaker_list])
+                ref_speaker.stop_recording(fn=change_current_speaker_audio, inputs=[improve_reference_resemble,improve_reference_audio,auto_cut,ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,use_resample,speaker_ref_wavs],outputs=[ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,save_speaker_btn])
+                ref_speaker.upload(fn=change_current_speaker_audio, inputs=[improve_reference_resemble,improve_reference_audio,auto_cut,ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,use_resample,speaker_ref_wavs],outputs=[ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,save_speaker_btn])
+                ref_speaker.clear(fn=clear_current_speaker_audio,inputs=[ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,speaker_ref_wavs],outputs=[speaker_path_text,speaker_value_text,ref_speaker_list,save_speaker_btn])
                 # ref_speaker.change(fn=change_current_speaker_audio, inputs=[auto_cut,ref_speaker,speaker_path_text,speaker_value_text,ref_speaker_list,use_resample],outputs=[speaker_wav_modifyed,speaker_path_text,speaker_value_text,ref_speaker_list])
 
-                languages.change(fn=change_language, inputs=[languages], outputs=[languages])
-                save_speaker_btn.click(fn=save_speaker,inputs=[speaker_wav_save_name,speaker_path_text,ref_speaker_list],outputs=[ref_speaker,speaker_wav_save_name,speaker_path_text,speaker_value_text,ref_speaker_list])
+                ref_speakers.upload(fn=create_multiple_reference,inputs=[ref_speakers,use_resample,improve_reference_audio,auto_cut,improve_reference_resemble,speaker_value_text],outputs=[ref_speakers,speaker_ref_wavs,speaker_value_text,ref_speaker_list,save_multiple_speaker_btn])
+                ref_speakers.clear(fn=clear_multiple_reference,inputs=[ref_speaker],outputs=[ref_speakers,speaker_ref_wavs,speaker_value_text,ref_speaker_list,save_multiple_speaker_btn])
 
+                languages.change(fn=change_language, inputs=[languages], outputs=[languages])
+                
+                save_speaker_btn.click(fn=save_speaker,inputs=[speaker_wav_save_name,speaker_path_text,ref_speaker_list,speaker_ref_wavs],outputs=[ref_speaker,speaker_wav_save_name,speaker_path_text,speaker_value_text,ref_speaker_list,save_speaker_btn])
+                save_multiple_speaker_btn.click(fn=save_speaker_multiple,inputs=[speaker_wav_save_name,ref_speaker_list,ref_speakers,speaker_ref_wavs,speaker_path_text],outputs=[speaker_wav_save_name,speaker_value_text,ref_speakers,speaker_ref_wavs,ref_speaker_list])
+            
             with gr.Column():
                 video_gr = gr.Video(label="Waveform Visual",visible=False,interactive=False)
                 audio_gr = gr.Audio(label="Synthesised Audio",interactive=False, autoplay=False)
@@ -442,7 +578,7 @@ with gr.Blocks(css=css) as demo:
                       improve_output_audio = gr.Checkbox(label="Improve output quality (Reduces noise and makes audio slightly better)",value=False)
                       improve_output_resemble = gr.Checkbox(label="Resemble enhancement (Uses extra 4GB VRAM)",value=False)
                     with gr.Accordion(label="Resemble enhancement Settings",open=False):
-                        enhance_resemble_chunk_seconds = gr.Slider(minimum=2, maximum=40, value=10, step=1, label="Chunk seconds (more secods more VRAM usage and faster inference speed)")
+                        enhance_resemble_chunk_seconds = gr.Slider(minimum=2, maximum=40, value=8, step=1, label="Chunk seconds (more secods more VRAM usage and faster inference speed)")
                         enhance_resemble_chunk_overlap = gr.Slider(minimum=0.1, maximum=2, value=1, step=0.2, label="Overlap seconds")
                         enhance_resemble_solver = gr.Dropdown(label="CFM ODE Solver (Midpoint is recommended)",choices=["Midpoint", "RK4", "Euler"], value="Midpoint")
                         enhance_resemble_num_funcs = gr.Slider(minimum=1, maximum=128, value=64, step=1, label="CFM Number of Function Evaluations (higher values in general yield better quality but may be slower)")
@@ -468,6 +604,7 @@ with gr.Blocks(css=css) as demo:
                         # Batch
                         batch_generation,
                         batch_generation_path,
+                        speaker_ref_wavs,
                         # Features
                         language_auto_detect,
                         enable_waveform,

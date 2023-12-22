@@ -137,8 +137,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--port",
         type=int,
-        help="Port to run the gradio demo. Default: 5003",
-        default=5003,
+        help="Port to run the gradio demo. Default: 8011",
+        default=8011,
     )
     parser.add_argument(
         "--out_path",
@@ -664,5 +664,6 @@ if __name__ == "__main__":
         share=False,
         debug=False,
         server_port=args.port,
-        server_name="localhost"
+        server_name="localhost",
+        inbrowser=True
     )

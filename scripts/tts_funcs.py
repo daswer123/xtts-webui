@@ -149,6 +149,36 @@ class TTSWrapper:
                 os.makedirs(absolute_path)
                 print(f"Folder in the path {absolute_path} has been created")
 
+    # SPEAKER FUNCS
+    def get_or_create_latents(self, speaker_name, speaker_wav):
+        # is_temp_reference_speaker = reference_speaker
+        if speaker_name not in self.latents_cache:
+            logger.info(f"creating latents for {speaker_name}: {speaker_wav}")
+            gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(speaker_wav)
+            self.latents_cache[speaker_name] = (gpt_cond_latent, speaker_embedding)
+        return self.latents_cache[speaker_name]
+
+    def create_latents_for_all(self):
+        speakers_list = self._get_speakers()
+
+        for speaker in speakers_list:
+            self.get_or_create_latents(speaker['speaker_name'],speaker['speaker_wav'])
+
+        logger.info(f"Latents created for all {len(speakers_list)} speakers.")
+
+    # DIRICTORIES FUNCS
+    def create_directories(self):
+        directories = [self.output_folder, self.speaker_folder]
+
+        for sanctuary in directories:
+            # List of folders to be checked for existence
+            absolute_path = os.path.abspath(os.path.normpath(sanctuary))
+
+            if not os.path.exists(absolute_path):
+                # If the folder does not exist, create it
+                os.makedirs(absolute_path)
+                logger.info(f"Folder in the path {absolute_path} has been created")
+
     def set_speaker_folder(self, folder):
         if os.path.exists(folder) and os.path.isdir(folder):
             self.speaker_folder = folder
@@ -165,37 +195,78 @@ class TTSWrapper:
         else:
             raise ValueError("Provided path is not a valid directory")
 
-    def list_speakers(self):
-        speakers_list = [f for f in os.listdir(self.speaker_folder) if f.endswith('.wav')]
-        return speakers_list
+    # GET FUNCS
+    def get_wav_files(self, directory):
+        """ Finds all the wav files in a directory. """
+        wav_files = [f for f in os.listdir(directory) if f.endswith('.wav')]
+        return wav_files
+
+    def _get_speakers(self):
+        """
+        Gets info on all the speakers.
+
+        Returns a list of {speaker_name,speaker_wav,preview} dicts
+        """
+        speakers = []
+        for f in os.listdir(self.speaker_folder):
+            full_path = os.path.join(self.speaker_folder,f)
+            if os.path.isdir(full_path):
+                # multi-sample voice
+                subdir_files = self.get_wav_files(full_path) 
+                if len(subdir_files) == 0:
+                    # no wav files in directory
+                    continue
+
+                speaker_name = f
+                speaker_wav = [os.path.join(self.speaker_folder,f,s) for s in subdir_files]
+                # use the first file found as the preview
+                preview = os.path.join(f,subdir_files[0])
+                speakers.append({
+                        'speaker_name': speaker_name,
+                        'speaker_wav': speaker_wav,
+                        'preview': preview
+                        })
+
+            elif f.endswith('.wav'):
+                speaker_name = os.path.splitext(f)[0]
+                speaker_wav = full_path 
+                preview = f
+                speakers.append({
+                        'speaker_name': speaker_name,
+                        'speaker_wav': speaker_wav,
+                        'preview': preview
+                        })
+        return speakers
 
     def get_speakers(self):
-        # Use os.path.splitext to split off the extension and take only the name
-        speakers_list = [os.path.splitext(f)[0] for f in os.listdir(self.speaker_folder) if f.endswith('.wav')]
-        return speakers_list
+        """ Gets available speakers """
+        speakers = [ s['speaker_name'] for s in self._get_speakers() ] 
+        return speakers
+
     # Special format for SillyTavern
     def get_speakers_special(self):
-        speakers_list = []
         BASE_URL = os.getenv('BASE_URL', '127.0.0.1:8020')
         TUNNEL_URL = os.getenv('TUNNEL_URL', '')
 
-        preview_url = "" 
-        for file in os.listdir(self.speaker_folder):
-            
-            if TUNNEL_URL == "":
-                preview_url = f"{BASE_URL}/sample/{file}"
-            else:
-                preview_url = f"{TUNNEL_URL}/sample/{file}"
+        speakers_special = []
 
-            if file.endswith('.wav'):
-                speaker_name = os.path.splitext(file)[0]
-                speaker = {
-                    'name': speaker_name,
-                    'voice_id': speaker_name,
+        speakers = self._get_speakers()
+
+        for speaker in speakers:
+            if TUNNEL_URL == "":
+                preview_url = f"{BASE_URL}/sample/{speaker['preview']}"
+            else:
+                preview_url = f"{TUNNEL_URL}/sample/{speaker['preview']}"
+
+            speaker_special = {
+                    'name': speaker['speaker_name'],
+                    'voice_id': speaker['speaker_name'],
                     'preview_url': preview_url
-                }
-                speakers_list.append(speaker)
-        return speakers_list
+            }
+            speakers_special.append(speaker_special)
+
+        return speakers_special
+
     
     def list_languages(self):
         return reversed_supported_languages
@@ -207,13 +278,12 @@ class TTSWrapper:
         text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
         return text
 
-    def local_generation(self,text,speaker_wav,language,options,output_file):
+    def local_generation(self,text,ref_speaker_wav,speaker_wav,language,options,output_file):
         # Log time
         generate_start_time = time.time()  # Record the start time of loading the model
 
-        gpt_cond_latent, speaker_embedding = self.get_or_create_latents(speaker_wav)
-
-
+        gpt_cond_latent, speaker_embedding = self.get_or_create_latents(ref_speaker_wav,speaker_wav)
+        
         out = self.model.inference(
             text,
             language,
@@ -244,23 +314,38 @@ class TTSWrapper:
                 speed=options["speed"],
         )
     
-    def get_speaker_path(self,speaker_name_or_path):
-        # Check if the speaker path is a .wav file or just the name
+    def get_speaker_path(self, speaker_name_or_path):
+        """ Gets the speaker_wav(s) for a given speaker name. """
         if speaker_name_or_path.endswith('.wav'):
-                if os.path.isabs(speaker_name_or_path):
-                    # If it's an absolute path for the speaker file
-                    speaker_wav = speaker_name_or_path
-                else:
-                    # It's just a filename; append it to the speakers folder
-                    speaker_wav = os.path.join(self.speaker_folder, speaker_name_or_path)
+            # it's a file name
+            if os.path.isabs(speaker_name_or_path):
+                # absolute path; nothing to do
+                speaker_wav = speaker_name_or_path
+            else:
+                # make it a full path
+                speaker_wav = os.path.join(self.speaker_folder, speaker_name_or_path)
         else:
-                # Look for the corresponding .wav in our list of speakers
-                speakers_list = self.list_speakers()
-                if f"{speaker_name_or_path}.wav" in speakers_list:
-                    speaker_wav = os.path.join(self.speaker_folder, f"{speaker_name_or_path}.wav")
-                else:
-                    raise ValueError(f"Speaker {speaker_name_or_path} not found.")
+            # it's a speaker name
+            full_path = os.path.join(self.speaker_folder, speaker_name_or_path) 
+            wav_file = f"{full_path}.wav"
+            if os.path.isdir(full_path):
+                # multi-sample speaker
+                speaker_wav = [ os.path.join(full_path,wav) for wav in self.get_wav_files(full_path) ]
+                if len(speaker_wav) == 0:
+                    raise ValueError(f"no wav files found in {full_path}")
+            elif os.path.isfile(wav_file):
+                speaker_wav = wav_file
+            else:
+                raise ValueError(f"Speaker {speaker_name_or_path} not found.")
+
         return speaker_wav
+
+    def get_speaker_sample(self, speaker_name_or_path):
+        speaker_wavs = self.get_speaker_path(speaker_name_or_path)
+        # Check for list and len > 1
+        if isinstance(speaker_wavs, list) and len(speaker_wavs) > 1:
+            return speaker_wavs[0]
+        return speaker_wavs
 
 
     def process_tts_to_file(self, text, language,ref_speaker_wav, options, file_name_or_path="out.wav"):
@@ -282,7 +367,7 @@ class TTSWrapper:
 
             # Define generation if model via api or locally
             if self.model_source == "local":
-                self.local_generation(clear_text,speaker_wav,language,options,output_file)
+                self.local_generation(clear_text,ref_speaker_wav,speaker_wav,language,options,output_file)
             else:
                 self.api_generation(clear_text,speaker_wav,language,options,output_file)
             

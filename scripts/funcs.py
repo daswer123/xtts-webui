@@ -173,6 +173,27 @@ def improve_and_convert_audio(audio_path, type_audio):
 
     return output_path
 
+def cut_audio(input_wav_path, duration):
+    output_wav_path = input_wav_path.with_name(f"{input_wav_path.stem}_cut{input_wav_path.suffix}")
+    try:
+        (
+            ffmpeg
+            .input(str(input_wav_path))
+            .output(str(output_wav_path),t=duration)
+            .run(overwrite_output=True)
+        )
+    except ffmpeg.Error as e:  # Catching specific ffmpeg Error here.
+        # Check if stderr or stdout have been captured before trying to decode.
+        stderr = e.stderr.decode('utf8') if e.stderr else "No stderr"
+        stdout = e.stdout.decode('utf8') if e.stdout else "No stdout"
+
+        print(f"stdout: {stdout}")
+        print(f"stderr: {stderr}")  # More detailed error information will be printed/logged here.
+
+        raise  # Re-raise exception after logging details
+
+    return output_wav_path
+
 # RESEMBLE ENHANCE
 from scripts.resemble_enhance.enhancer.inference import denoise, enhance
 import torch
@@ -190,7 +211,7 @@ def resemble_enchance_audio(audio_path,
         solver='Midpoint',
         nfe=64,
         tau=0.5,
-        chunk_seconds=10,
+        chunk_seconds=8,
         chunks_overlap=1,
         denoising=False,
         output_type = "wav"):
@@ -255,3 +276,6 @@ def resemble_enchance_audio(audio_path,
     clear_gpu_cash()
 
     return original_wav_path
+
+def str_to_list(str):
+    return str.replace("[","").replace("]","").replace("'","").replace(" ","").split(",")

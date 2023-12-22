@@ -165,7 +165,7 @@ models
 finetune_models
 output
 temp
-speakers/*.wav
+speakers/**/*
 test_batch
 scripts/resemble_enhance/model_repo/
 ffmpeg
