@@ -1,7 +1,5 @@
 # XTTS-WebUI
 
-## Resemble speech integration branch
-
 ## About the Project
 XTTS-WebUI offers two interfaces designed to enhance your experience with XTTS. One interface serves as a user-friendly approach to interact with XTTS, while the other is an enhanced version of the web interface intended for fine-tuning. This project simplifies interaction with XTTS through two files and provides a feature-rich web interface for optimal utilization.
 
