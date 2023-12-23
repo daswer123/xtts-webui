@@ -16,3 +16,7 @@ omegaconf==2.3.0
 resampy==0.4.2
 tabulate==0.8.10
 requests
+faiss-cpu
+pyworld
+torchcrepe
+praat-parselmouth>=0.4.2

@@ -110,7 +110,7 @@ crepe_hop_length = int(sys.argv[14])
 f0_minimum = int(sys.argv[15])
 f0_maximum = int(sys.argv[16])
 autotune_enable = str(sys.argv[17])
-rmvpe_onxx = "rvc_models/rmvpe.onnx"
+rmvpe_onxx = "rvc/base_models/rmvpe.onnx"
 print(sys.argv)
 config=Config(device,is_half)
 now_dir=os.getcwd()
@@ -127,17 +127,17 @@ from fairseq import checkpoint_utils
 from scipy.io import wavfile
 import rmvpe
 
-if(autotune_enable == "false"):
-    autotune_enable = False
-else:
-    autotune_enable = True 
+# if(autotune_enable == False):
+#     autotune_enable = False
+# else:
+#     autotune_enable = True 
 
 print("Autotune" , autotune_enable)
 
 hubert_model=None
 def load_hubert():
     global hubert_model
-    models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(["rvc_models/hubert_base.pt"],suffix="",)
+    models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(["rvc/base_model/hubert_base.pt"],suffix="",)
     hubert_model = models[0]
     hubert_model = hubert_model.to(device)
     if(is_half):hubert_model = hubert_model.half()
@@ -186,7 +186,7 @@ def get_vc(model_path):
     # return {"visible": True,"maximum": n_spk, "__type__": "update"}
 
 
-get_vc(model_path)
-wav_opt=vc_single(0,input_path,f0up_key,None,f0method,index_path,index_rate)
+get_vc(index_path)
+wav_opt=vc_single(0,input_path,f0up_key,None,f0method,model_path,index_rate)
 wavfile.write(opt_path, tgt_sr, wav_opt)
 

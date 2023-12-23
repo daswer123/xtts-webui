@@ -242,7 +242,7 @@ class VC(object):
 
 
     def get_rmvpe(self, x, *args, **kwargs):
-        self.model_rmvpe = rmvpe.RMVPE("rvc_models/rmvpe.pt", is_half=self.is_half, device=self.device, onnx=self.onnx)
+        self.model_rmvpe = rmvpe.RMVPE("rvc/base_model/rmvpe.pt", is_half=self.is_half, device=self.device, onnx=self.onnx)
         f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
         if "privateuseone" in str(self.device):
                 del self.model_rmvpe.model
@@ -251,7 +251,7 @@ class VC(object):
         return f0
 
     def get_pitch_dependant_rmvpe(self, x, f0_min=1, f0_max=40000, *args, **kwargs):
-        self.model_rmvpe = rmvpe.RMVPE("rvc_models/rmvpe.pt", is_half=self.is_half, device=self.device, onnx=self.onnx)
+        self.model_rmvpe = rmvpe.RMVPE("rvc/base_model/rmvpe.pt", is_half=self.is_half, device=self.device, onnx=self.onnx)
         # print("\n\n\n","Start",self.model_rmvpe)
         return self.model_rmvpe.infer_from_audio_with_pitch(x, thred=0.03, f0_min=f0_min, f0_max=f0_max)
 
