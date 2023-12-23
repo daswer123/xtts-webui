@@ -70,6 +70,9 @@ def select_rvc_model(rvc_settings_model_name):
 def update_rvc_model(rvc_settings_model_name):
   rvc_models = []
   rvc_models_full = get_rvc_models(this_dir)
+  if len(rvc_models_full) == 0:
+    return gr.Dropdown(label="RVC Model name",info="Create a folder with your model name in the rvc folder and put .pth and .index there , .index optional",choices=[],value=""),"",""
+  
   for rvc_model in rvc_models_full:
     rvc_models.append(rvc_model["model_name"])
   
@@ -201,19 +204,23 @@ with gr.Blocks(css=css) as demo:
 
                 # Get RVC models
                 rvc_models = []
+                current_rvc_model = ""
                 rvc_models_full = get_rvc_models(this_dir)
-                current_rvc_model = rvc_models_full[0]["model_name"]
-                for rvc_model in rvc_models_full:
-                  rvc_models.append(rvc_model["model_name"])
+                if len(rvc_models_full) > 1:
+                  current_rvc_model = rvc_models_full[0]["model_name"]
+                  for rvc_model in rvc_models_full:
+                    rvc_models.append(rvc_model["model_name"])
                 print(rvc_models)
+
+
 
                 with gr.Accordion(label="Output settings",open=True):
                   with gr.Column():
                     with gr.Row():
-                      enable_waveform = gr.Checkbox(label="Enable Waveform",value=False)
-                      improve_output_audio = gr.Checkbox(label="Improve output quality (Reduces noise and makes audio slightly better)",value=False)
-                      improve_output_resemble = gr.Checkbox(label="Resemble enhancement (Uses extra 4GB VRAM)",value=False)
-                      improve_output_rvc = gr.Checkbox(label="Use RVC to improve result",value=False)
+                      enable_waveform = gr.Checkbox(label="Enable Waveform",info="Create video based on audio in the form of a waveform",value=False)
+                      improve_output_audio = gr.Checkbox(label="Improve output quality",info="Reduces noise and makes audio slightly better",value=False)
+                      improve_output_resemble = gr.Checkbox(label="Resemble enhancement",info="Uses Resemble enhance to improve sound quality through neural networking. Uses extra 4GB VRAM",value=False)
+                      improve_output_rvc = gr.Checkbox(label="Use RVC to improve result",info="Uses RVC to convert the output to the RVC model voice, make sure you have a model folder with the pth file inside the rvc folder",value=False)
                     with gr.Accordion(label="Resemble enhancement Settings",open=False):
                         enhance_resemble_chunk_seconds = gr.Slider(minimum=2, maximum=40, value=8, step=1, label="Chunk seconds (more secods more VRAM usage and faster inference speed)")
                         enhance_resemble_chunk_overlap = gr.Slider(minimum=0.1, maximum=2, value=1, step=0.2, label="Overlap seconds")
@@ -221,12 +228,12 @@ with gr.Blocks(css=css) as demo:
                         enhance_resemble_num_funcs = gr.Slider(minimum=1, maximum=128, value=64, step=1, label="CFM Number of Function Evaluations (higher values in general yield better quality but may be slower)")
                         enhance_resemble_temperature = gr.Slider(minimum=0, maximum=1, value=0.5, step=0.01, label="CFM Prior Temperature (higher values can improve quality but can reduce stability)")
                         enhance_resemble_denoise = gr.Checkbox(value=True, label="Denoise Before Enhancement (tick if your audio contains heavy background noise)")
-                    with gr.Accordion(label="RVC settings"):
+                    with gr.Accordion(label="RVC settings", open=False):
                       # RVC variables 
                       rvc_settings_model_path = gr.Textbox(label="RVC Model",value="",visible=True,interactive=False)
                       rvc_settings_index_path = gr.Textbox(label="Index file",value="",visible=True,interactive=False)
                       with gr.Row():
-                        rvc_settings_model_name = gr.Dropdown(label="RVC Model name",info="Create a folder with your model name in the rvc folder and put .pth and .index there , .index optional",choices=rvc_models,value=rvc_models[0])
+                        rvc_settings_model_name = gr.Dropdown(label="RVC Model name",info="Create a folder with your model name in the rvc folder and put .pth and .index there , .index optional",choices=rvc_models,value=current_rvc_model)
                         rvc_settings_update_btn = gr.Button(value="Update",elem_classes="rvc_update-btn",visible=True)
                       rvc_settings_pitch = gr.Slider(minimum=-24, maximum=24, value=0, step=1, label="Pitch")
                       rvc_settings_index_rate = gr.Slider(minimum=0, maximum=1, value=0.8, step=0.01, label="Index rate")

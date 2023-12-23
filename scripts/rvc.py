@@ -34,7 +34,9 @@ def find_rvc_model_by_name(this_dir,model_name):
     models = get_rvc_models(this_dir)
     for model in models:
         if model['model_name'] == model_name:
-            return model["model_path"] , model["index_path"]
+            # Check model_index key if it's exists 
+            model_index = model.get('index_path', None)
+            return model["model_path"] , model_index
     return None
 
 
