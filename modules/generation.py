@@ -5,7 +5,7 @@ import langid
 import gradio as gr
 from pathlib import Path
 from scripts.funcs import improve_and_convert_audio,resemble_enchance_audio,str_to_list
-from scripts.rvc import infer_rvc
+from scripts.rvc import infer_rvc,download_rvc_models
 
 import uuid
 
@@ -86,6 +86,8 @@ def generate_audio(
         "use_enhance": improve_output_resemble
     }
 
+    download_rvc_models()
+
     ref_speaker_wav = ""
 
     print("Using ready reference")
@@ -135,6 +137,20 @@ def generate_audio(
 
                 if improve_output_audio:
                    output_file = improve_and_convert_audio(output_file,output_type)
+
+                if improve_output_rvc and rvc_settings_model_path:
+                            temp_dir = this_dir / "output"
+                            result = temp_dir / f"{speaker_value_text}_{rvc_settings_model_name}_{count}.{output_type}"
+                            infer_rvc(rvc_settings_pitch,
+                                rvc_settings_index_rate,
+                                rvc_settings_protect_voiceless,
+                                rvc_settings_method,
+                                rvc_settings_model_path,
+                                rvc_settings_index_path,
+                                output_file,
+                                result,
+                                )
+                output_file = result.absolute()
 
                 if improve_output_resemble:
                     output_file = resemble_enchance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
