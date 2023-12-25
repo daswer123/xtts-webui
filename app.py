@@ -33,6 +33,8 @@ os.environ["RVC_ENABLED"] = str(args.rvc).lower()
 
 # Install RVC
 if args.rvc:
+    # Create rvc folder 
+    os.makedirs("rvc", exist_ok=True)
     if( not os.path.exists("venv/rvc_venv")):
         logger.info("Installing RVC libraries...")
         subprocess.run(["python", "scripts/install_rvc_venv.py"])
