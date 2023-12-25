@@ -5,6 +5,9 @@ import langid
 import gradio as gr
 from pathlib import Path
 from scripts.funcs import improve_and_convert_audio,resemble_enchance_audio,str_to_list
+from scripts.rvc import infer_rvc,download_rvc_models
+
+import uuid
 
 from xtts_webui import *
 
@@ -39,6 +42,14 @@ def generate_audio(
     enhance_resemble_num_funcs,
     enhance_resemble_temperature,
     enhance_resemble_denoise,
+    # RVC settings
+    rvc_settings_model_path,
+    rvc_settings_index_path,
+    rvc_settings_model_name,
+    rvc_settings_pitch,
+    rvc_settings_index_rate,
+    rvc_settings_protect_voiceless,
+    rvc_settings_method,
     # Batch
     batch_generation,
     batch_generation_path,
@@ -48,6 +59,7 @@ def generate_audio(
     enable_waveform,
     improve_output_audio,
     improve_output_resemble,
+    improve_output_rvc,
     #  Default settings
     output_type,
     text,
@@ -73,6 +85,8 @@ def generate_audio(
         "denoising": enhance_resemble_denoise,
         "use_enhance": improve_output_resemble
     }
+
+    download_rvc_models()
 
     ref_speaker_wav = ""
 
@@ -124,6 +138,20 @@ def generate_audio(
                 if improve_output_audio:
                    output_file = improve_and_convert_audio(output_file,output_type)
 
+                if improve_output_rvc and rvc_settings_model_path:
+                            temp_dir = this_dir / "output"
+                            result = temp_dir / f"{speaker_value_text}_{rvc_settings_model_name}_{count}.{output_type}"
+                            infer_rvc(rvc_settings_pitch,
+                                rvc_settings_index_rate,
+                                rvc_settings_protect_voiceless,
+                                rvc_settings_method,
+                                rvc_settings_model_path,
+                                rvc_settings_index_path,
+                                output_file,
+                                result,
+                                )
+                output_file = result.absolute()
+
                 if improve_output_resemble:
                     output_file = resemble_enchance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
 
@@ -144,6 +172,20 @@ def generate_audio(
 
     if improve_output_audio:
         output_file = improve_and_convert_audio(output_file,output_type)
+
+    if improve_output_rvc and rvc_settings_model_path:
+        temp_dir = this_dir / "output"
+        result = temp_dir / f"{speaker_value_text}_{rvc_settings_model_name}_{count}.{output_type}"
+        infer_rvc(rvc_settings_pitch,
+                                rvc_settings_index_rate,
+                                rvc_settings_protect_voiceless,
+                                rvc_settings_method,
+                                rvc_settings_model_path,
+                                rvc_settings_index_path,
+                                output_file,
+                                result,
+                                )
+        output_file = result.absolute()
 
     if improve_output_resemble:
         output_file = resemble_enchance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
@@ -166,6 +208,14 @@ generate_btn.click(
                         enhance_resemble_num_funcs,
                         enhance_resemble_temperature,
                         enhance_resemble_denoise,
+                        # RVC settings
+                        rvc_settings_model_path,
+                        rvc_settings_index_path,
+                        rvc_settings_model_name,
+                        rvc_settings_pitch,
+                        rvc_settings_index_rate,
+                        rvc_settings_protect_voiceless,
+                        rvc_settings_method,
                         # Batch
                         batch_generation,
                         batch_generation_path,
@@ -175,6 +225,7 @@ generate_btn.click(
                         enable_waveform,
                         improve_output_audio,
                         improve_output_resemble,
+                        improve_output_rvc,
                         #  Default settings
                         output_type,
                         text,

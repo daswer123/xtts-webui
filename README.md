@@ -39,6 +39,12 @@ You can try this webui using [google colab](https://colab.research.google.com/dr
 3. If you want start finetune webui, start `start_xtts_finetune_webui.bat` 
 4. Go to the local address, you can see it in console
 
+### TTS -> RVC
+
+Module for RVC, you can enable the RVC module to postprocess the received audio for this you need to add the --rvc flag if you are running in the console or write it to the startup file
+
+In order for the model to work in RVC settings you need to select a model that you must first upload to the rvc folder, the model and index file must be together, the index file is optional, each model must be in a separate folder.
+
 ## Differences between xtts-finetune webui and the [official webui](https://github.com/coqui-ai/TTS/pull/3296)
 
 ### Data processing
