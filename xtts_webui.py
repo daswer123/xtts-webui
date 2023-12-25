@@ -210,7 +210,7 @@ with gr.Blocks(css=css) as demo:
                       rvc_settings_model_path = gr.Textbox(label="RVC Model",value="",visible=True,interactive=False)
                       rvc_settings_index_path = gr.Textbox(label="Index file",value="",visible=True,interactive=False)
                       with gr.Row():
-                        rvc_settings_model_name = gr.Dropdown(label="RVC Model name",info="Create a folder with your model name in the rvc folder and put .pth and .index there , .index optional",choices=rvc_models,value=current_rvc_model)
+                        rvc_settings_model_name = gr.Dropdown(label="RVC Model name",info="Create a folder with your model name in the rvc folder and put .pth and .index there , .index optional",choices=rvc_models)
                         rvc_settings_update_btn = gr.Button(value="Update",elem_classes="rvc_update-btn",visible=True)
                       rvc_settings_pitch = gr.Slider(minimum=-24, maximum=24, value=0, step=1, label="Pitch")
                       rvc_settings_index_rate = gr.Slider(minimum=0, maximum=1, value=0.8, step=0.01, label="Index rate")
