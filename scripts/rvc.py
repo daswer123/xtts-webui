@@ -59,7 +59,6 @@ def get_rvc_models(this_dir):
     return models
 
 def find_rvc_model_by_name(this_dir,model_name):
-    print(model_name)
     models = get_rvc_models(this_dir)
     for model in models:
         if model['model_name'] == model_name:

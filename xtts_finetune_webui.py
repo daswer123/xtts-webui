@@ -292,8 +292,8 @@ if __name__ == "__main__":
             )
             batch_size = gr.Slider(
                 label="Batch size:",
-                minimum=2,
-                maximum=512,
+                minimum=1,
+                maximum=16,
                 step=1,
                 value=args.batch_size,
             )

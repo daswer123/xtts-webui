@@ -110,6 +110,9 @@ def train_gpt(custom_model,version, language, num_epochs, batch_size, grad_acumm
         else:
             print(" > Error: The specified custom model is not a valid .pth file path.")
 
+    num_workers = 8
+    if language == "ja":
+        num_workers = 0
     # init args and config
     model_args = GPTArgs(
         max_conditioning_length=132300,  # 6 secs
@@ -145,7 +148,7 @@ def train_gpt(custom_model,version, language, num_epochs, batch_size, grad_acumm
         batch_size=BATCH_SIZE,
         batch_group_size=48,
         eval_batch_size=BATCH_SIZE,
-        num_loader_workers=8,
+        num_loader_workers=num_workers,
         eval_split_max_size=256,
         print_step=50,
         plot_step=100,

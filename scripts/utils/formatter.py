@@ -7,11 +7,14 @@ from glob import glob
 
 from tqdm import tqdm
 
+# from TTS.tts.layers.xtts.tokenizer import multilingual_cleaners
+# Add support for JA train
+from scripts.utils.tokenizer import multilingual_cleaners
+
 import torch
 import torchaudio
 # torch.set_num_threads(1)
 
-from TTS.tts.layers.xtts.tokenizer import multilingual_cleaners
 
 torch.set_num_threads(16)
 import os
@@ -126,6 +129,7 @@ def format_audio_list(audio_files, target_language="en", whisper_model = "large-
 
         segments, _ = asr_model.transcribe(audio_path,vad_filter=True, word_timestamps=True, language=target_language)
         segments = list(segments)
+        # print(segments)
         i = 0
         sentence = ""
         sentence_start = None
@@ -153,8 +157,8 @@ def format_audio_list(audio_files, target_language="en", whisper_model = "large-
                 first_word = False
             else:
                 sentence += word.word
-
-            if word.word[-1] in ["!", ".", "?"]:
+            
+            if word.word[-1] in ["！", "。", "？"]:
                 sentence = sentence[1:]
                 # Expand number and abbreviations plus normalization
                 sentence = multilingual_cleaners(sentence, target_language)
