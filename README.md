@@ -18,26 +18,84 @@ XTTS-WebUI offers two interfaces designed to enhance your experience with XTTS. 
 
 If you don't know where to start for xtts-finetune-webui, watch this [video](https://www.youtube.com/watch?v=8tpDiiouGxc)
 
-## Install
+## Installation
 
-You can try this webui using [google colab](https://colab.research.google.com/drive/1MrzAYgANm6u79rCCQQqBSoelYGiJ1qYL)
+Use this web UI through [Google Colab](https://colab.research.google.com/drive/1MrzAYgANm6u79rCCQQqBSoelYGiJ1qYL)
 
-**Note that you must have the following things installed: Python 3.10.x or Pyhton 3.11, CUDA 11.8 , Microsoft Builder Tools 2019 with c++ package, ffmpeg**
+**Please ensure you have Python 3.10.x or Python 3.11, CUDA 11.8 , Microsoft Builder Tools 2019 with c++ package, and ffmpeg installed**
 
-1. Make sure you have `CUDA` installed
-2. `https://github.com/daswer123/xtts-webui`
-3. `cd xtts-webui`
-4. `python -m venv venv`
-5. `venv\scripts\activate` or `source venv\scripts\activate` if you use linux
-6. `pip install torch==2.1.1+cu118 torchaudio==2.1.1+cu118 --index-url https://download.pytorch.org/whl/cu118`
-7. `pip install -r requirements.txt`
+### 1 Method, through scripts
 
-### If you're using Windows
+#### Windows
+To get started:
+- Run 'install.bat' file
+- To start the web UI, run 'start_xtts_webui.bat'
+- If you want to start fine tuning web UI, run 'start_xtts_finetune_webui.bat'
+- Open your preferred browser and go to local address displayed in console.
+#### Linux
+To get started:
+- Run 'install.sh' file
+- To start the web UI, run 'start_xtts_webui.sh'
+- If you want to start fine tuning web UI, run 'start_xtts_finetune_webui.sh'
+- Open your preferred browser and go to local address displayed in console.
 
-1. First start `install.bat`
-2. To start the webui, start `start_xtts_webui.bat` for webui
-3. If you want start finetune webui, start `start_xtts_finetune_webui.bat` 
-4. Go to the local address, you can see it in console
+### 2 Method, Manual
+Follow these steps for installation:
+1. Ensure that `CUDA` is installed
+2. Clone the repository: `git clone https://github.com/daswer123/xtts-webui`
+3. Navigate into the directory: `cd xtts-webui`
+4. Create a virtual environment: `python -m venv venv`
+5. Activate the virtual environment:
+   - On Windows use : `venv\scripts\activate`
+   - On linux use    : `source venv\bin\activate`
+
+6. Install PyTorch and torchaudio with pip command :
+
+   `pip install torch==2.1.1+cu118 torchaudio==2.1.1+cu118 --index-url https://download.pytorch.org/whl/cu118`
+
+7. Install all dependencies from requirements.txt :
+
+    `pip install -r requirements.txt`
+
+## Running The Application
+
+To launch the interface please follow these steps:
+
+#### Starting XTTS WebUI :
+Activate your virtual environment:
+```bash
+venv/scripts/activate
+```
+or if you're on Linux,
+```bash
+source venv/bin/activate
+```
+Then start the webui for xtts by running this command:
+```bash
+python app.py
+```
+
+Here are some runtime arguments that can be used when starting the application:
+
+| Argument | Default Value | Description |
+| --- | --- | --- |
+| -hs, --host | 127.0.0.1 | The host to bind to |
+| -p, --port  | 8010       | The port number to listen on |
+| -d, --device   | cuda    | Which device to use (cpu or cuda) |
+| -sf,--speaker_folder  | speakers/   | Directory containing TTS samples|
+|-o,--output  	|"output/"		|Output directory|
+|-ms,--model-source  	|"local"			|Define the model source: 'api' for latest version from repository, api inference or 'local' for using local inference and model v2.0.2|
+|-v,-version  			|"v2.0.2"				|You can specify which version of xtts to use. You can specify the name of the custom model for this purpose put the folder in models and specify the name of the folder in this flag|
+|--lowvram   		||Enable low vram mode which switches the model to RAM when not actively processing|
+|--deepspeed   		||Enable deepspeed acceleration. Works on windows on python 3.10 and 3.11|
+|--share   		 ||Allows sharing of interface outside local computer|
+|--rvc     	 ||Enable RVC post-processing, all models should locate in rvc folder|
+
+#### Starting XTTS Finetune WebUI:
+If you want start finetuning process use following command :
+```bash
+python xtts_finetune_webui.py
+```
 
 ### TTS -> RVC
 
