@@ -178,15 +178,18 @@ with gr.Blocks(css=css) as demo:
                 audio_gr = gr.Audio(label="Synthesised Audio",interactive=False, autoplay=False)
                 generate_btn = gr.Button(value="Generate",size="lg",elem_classes="generate-btn")
 
-                # Get RVC models
                 rvc_models = []
                 current_rvc_model = ""
-                rvc_models_full = get_rvc_models(this_dir)
-                if len(rvc_models_full) > 1:
-                  current_rvc_model = rvc_models_full[0]["model_name"]
-                  for rvc_model in rvc_models_full:
-                    rvc_models.append(rvc_model["model_name"])
-                print(rvc_models)
+                if RVC_ENABLE:
+                    # Get RVC models
+                    rvc_models = []
+                    current_rvc_model = ""
+                    rvc_models_full = get_rvc_models(this_dir)
+                    if len(rvc_models_full) > 1:
+                      current_rvc_model = rvc_models_full[0]["model_name"]
+                      for rvc_model in rvc_models_full:
+                        rvc_models.append(rvc_model["model_name"])
+                    print(rvc_models)
 
                 with gr.Accordion(label="Output settings",open=True):
                   with gr.Column():
