@@ -41,14 +41,14 @@ def get_rvc_models(this_dir):
 
     models = []
 
-    # Проходим по всем папкам внутри rvc, кроме base_models
+    # Go through all folders inside rvc except base_models
     for model_dir in rvc_models_base.iterdir():
         if model_dir.is_dir() and model_dir != exclude_dir:
             pth_files = list(model_dir.glob('*.pth'))
             index_files = list(model_dir.glob('*.index'))
             model_name = model_dir.name
 
-            # Если есть .pth файлы, добавляем информацию о моделях в список
+            # If there are .pth files, add model information to the list
             if pth_files:
                 model_info = {'model_name': model_name}
                 model_info['model_path'] = str(pth_files[0].absolute())
@@ -84,33 +84,29 @@ def infer_rvc(pitch,index_rate,protect_voiceless,method,index_path,model_path,in
 
     index_path = str(index_path)
     model_path = str(model_path)
-
-    print("INPUT")
-    print(pitch,index_rate,protect_voiceless,method,index_path,model_path,input_path,opt_path)
-    print("OUTPUT")
-    print(str(pitch), input_path, index_path, f0method, opt_path, model_path, str(index_rate), device, 
-           str(is_half), str(filter_radius), str(resample_sr), str(rms_mix_rate), str(protect), str(crepe_hop_length), 
-           str(f0_minimum), str(f0_maximum), str(autotune_enable))
-
-    print("DONE")
-    cmd = [
-        'venv/scripts/python', 'scripts/rvc/test_infer.py',
-        str(pitch), input_path, index_path,
-        f0method, opt_path,
-        model_path,
-        str(index_rate),
-        device,
-        str(is_half).lower(),  # Convert boolean to lowercase string ('true'/'false')
-        str(filter_radius),
-        str(resample_sr),
-        str(rms_mix_rate),
-        str(protect).lower(),  # Convert boolean to lowercase string ('true'/'false')
-        str(crepe_hop_length),
-        str(f0_minimum),
-        str(f0_maximum),
-        str(autotune_enable).lower()  # Convert boolean to lowercase string ('true'/'false')
-    ]
-    subprocess.run(cmd)
+    try:
+        cmd = [
+            'venv/rvc_venv/scripts/python', 'scripts/rvc/test_infer.py',
+            str(pitch), input_path,model_path,
+            f0method, opt_path,
+            index_path,
+            str(index_rate),
+            device,
+            str(is_half).lower(),  # Convert boolean to lowercase string ('true'/'false')
+            str(filter_radius),
+            str(resample_sr),
+            str(rms_mix_rate),
+            str(protect).lower(),  # Convert boolean to lowercase string ('true'/'false')
+            str(crepe_hop_length),
+            str(f0_minimum),
+            str(f0_maximum),
+            str(autotune_enable).lower()  # Convert boolean to lowercase string ('true'/'false')
+        ]
+        subprocess.run(cmd)
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
+    
 
 from tqdm import tqdm
 

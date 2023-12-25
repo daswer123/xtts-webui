@@ -186,7 +186,7 @@ def get_vc(model_path):
     # return {"visible": True,"maximum": n_spk, "__type__": "update"}
 
 
-get_vc(index_path)
-wav_opt=vc_single(0,input_path,f0up_key,None,f0method,model_path,index_rate)
+get_vc(model_path)
+wav_opt=vc_single(0,input_path,f0up_key,None,f0method,index_path,index_rate)
 wavfile.write(opt_path, tgt_sr, wav_opt)
 

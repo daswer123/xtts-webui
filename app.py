@@ -1,6 +1,8 @@
 from scripts.modeldownloader import install_deepspeed_based_on_python_version
 from argparse import ArgumentParser
+from loguru import logger
 import os
+import subprocess
 
 parser = ArgumentParser(description="Run the Uvicorn server.")
 parser.add_argument("-hs", "--host", default="127.0.0.1", help="Host to bind")
@@ -14,6 +16,7 @@ parser.add_argument("-v", "--version", default="v2.0.2", type=str, help="You can
 parser.add_argument("--lowvram", action='store_true', help="Enable low vram mode which switches the model to RAM when not actively processing.")
 parser.add_argument("--deepspeed", action='store_true', help="Enable deepspeed acceleration, works on windows on python 3.10 and 3.11.")
 parser.add_argument("--share", action='store_true', help="Allows the interface to be used outside the local computer.")
+parser.add_argument("--rvc",action='store_true', help="Choose extensions what you add to main webui [-e rvc]")
 
 args = parser.parse_args()
 
@@ -26,6 +29,16 @@ os.environ["LOWVRAM_MODE"] = str(args.lowvram).lower() # Set lowvram mode
 os.environ["DEEPSPEED"] = str(args.deepspeed).lower() # Enable Streaming mode
 os.environ["MODEL_VERSION"] = args.version # Specify version of XTTS model
 
+os.environ["RVC_ENABLED"] = str(args.rvc).lower()
+
+# Install RVC
+if args.rvc:
+    if( not os.path.exists("venv/rvc_venv")):
+        logger.info("Installing RVC libraries...")
+        subprocess.run(["python", "scripts/install_rvc_venv.py"])
+        logger.info("RVC installation is complete")
+    else:
+        logger.info("RVC libraries are already installed")
 
 # Check deepspeed
 install_deepspeed_based_on_python_version()
