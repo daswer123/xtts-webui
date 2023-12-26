@@ -1,5 +1,5 @@
 from scripts.modeldownloader import install_deepspeed_based_on_python_version
-from scripts.rvc import download_rvc_models
+from scripts.rvc_scripts import download_rvc_models
 from argparse import ArgumentParser
 from loguru import logger
 import os
