@@ -2,7 +2,7 @@
 
 from scripts.modeldownloader import get_folder_names_advanced
 from scripts.tts_funcs import TTSWrapper
-from scripts.rvc import get_rvc_models,find_rvc_model_by_name
+from scripts.rvc_scripts import get_rvc_models,find_rvc_model_by_name
 
 import os
 import gradio as gr

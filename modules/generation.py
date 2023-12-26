@@ -5,7 +5,7 @@ import langid
 import gradio as gr
 from pathlib import Path
 from scripts.funcs import improve_and_convert_audio,resemble_enchance_audio,str_to_list
-from scripts.rvc import infer_rvc,download_rvc_models
+from scripts.rvc_scripts import infer_rvc,download_rvc_models
 
 import uuid
 

@@ -1,7 +1,7 @@
 import gradio as gr
 from xtts_webui import *
 
-from scripts.rvc import find_rvc_model_by_name,get_rvc_models
+from scripts.rvc_scripts import find_rvc_model_by_name,get_rvc_models
 
 def select_rvc_model(rvc_settings_model_name):
   mode_path,index_path = find_rvc_model_by_name(this_dir,rvc_settings_model_name)
