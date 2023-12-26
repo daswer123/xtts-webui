@@ -115,17 +115,18 @@ print(sys.argv)
 config=Config(device,is_half)
 now_dir=os.getcwd()
 sys.path.append(now_dir)
-from vc_infer_pipeline import VC
-from infer_pack.models import (
+import scripts.rvc.rmvpe
+from scripts.rvc.vc_infer_pipeline import VC
+from scripts.rvc.infer_pack.models import (
     SynthesizerTrnMs256NSFsid,
     SynthesizerTrnMs256NSFsid_nono,
     SynthesizerTrnMs768NSFsid,
     SynthesizerTrnMs768NSFsid_nono,
 )
-from my_utils import load_audio
+from scripts.rvc.my_utils import load_audio
 from fairseq import checkpoint_utils
 from scipy.io import wavfile
-import rmvpe
+
 
 # if(autotune_enable == False):
 #     autotune_enable = False

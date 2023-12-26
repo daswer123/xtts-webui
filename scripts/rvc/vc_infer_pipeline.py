@@ -18,7 +18,7 @@ import random
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 
-from LazyImport import lazyload
+from scripts.rvc.LazyImport import lazyload
 
 torchcrepe = lazyload("torchcrepe")  # Fork Feature. Crepe algo for training and preprocess
 torch = lazyload("torch")
