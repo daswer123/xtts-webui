@@ -158,7 +158,7 @@ def format_audio_list(audio_files, target_language="en", whisper_model = "large-
             else:
                 sentence += word.word
             
-            if word.word[-1] in ["！", "。", "？"]:
+            if word.word[-1] in ["!", "。",".", "?"]:
                 sentence = sentence[1:]
                 # Expand number and abbreviations plus normalization
                 sentence = multilingual_cleaners(sentence, target_language)
