@@ -2,6 +2,7 @@
 __pycache__/
 
 venv
+*.pyc
 deepspeed
 models
 finetune_models

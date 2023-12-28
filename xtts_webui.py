@@ -228,6 +228,6 @@ with gr.Blocks(css=css) as demo:
 
                 # LOAD FUNCTIONS AND HANDLERS
                 import modules
-
 if __name__ == "__main__":
+    demo.queue()
     demo.launch(inbrowser=True,share=True)   
