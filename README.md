@@ -18,6 +18,12 @@ XTTS-WebUI offers two interfaces designed to enhance your experience with XTTS. 
 
 If you don't know where to start for xtts-finetune-webui, watch this [video](https://www.youtube.com/watch?v=8tpDiiouGxc)
 
+## TODO
+- [ ] Add a status bar with progress and error information
+- [ ] Add the ability to customize speakers when batch processing
+- [ ] Integrate training into the standard interface
+- [ ] Add API
+
 ## Installation
 
 Use this web UI through [Google Colab](https://colab.research.google.com/drive/1MrzAYgANm6u79rCCQQqBSoelYGiJ1qYL)
