@@ -6,34 +6,6 @@ from tqdm import tqdm
 from pathlib import Path
 import requests
 
-def download_rvc_models():
-    folder = './rvc/base_model'
-    
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    
-    files = {
-        "hubert_base.pt": "https://huggingface.co/Daswer123/RVC_Base/resolve/main/hubert_base.pt",
-        "rmvpe.pt": "https://huggingface.co/Daswer123/RVC_Base/resolve/main/rmvpe.pt"
-    }
-    
-    for filename, url in files.items():
-        file_path = os.path.join(folder, filename)
-    
-        if not os.path.exists(file_path):
-            print(f'File {filename} not found, start loading...')
-    
-            response = requests.get(url)
-    
-            if response.status_code == 200:
-                with open(file_path, 'wb') as f:
-                    f.write(response.content)
-                print(f'File {filename} successfully loaded.')
-            else:
-                print(f'f {filename}.')
-        else:
-            print(f'File {filename} already exists.')
-
 def get_rvc_models(this_dir):
     rvc_models_base = this_dir / "rvc"
     # exclude the base_models folder from scanning
@@ -85,63 +57,23 @@ def infer_rvc(pitch,index_rate,protect_voiceless,method,index_path,model_path,in
     model_path = str(model_path)
     try:
         cmd = [
-            'venv/rvc_venv/scripts/python', 'scripts/rvc/test_infer.py',
-            str(pitch), input_path,model_path,
-            f0method, opt_path,
-            index_path,
-            str(index_rate),
-            device,
-            str(is_half).lower(),  # Convert boolean to lowercase string ('true'/'false')
-            str(filter_radius),
-            str(resample_sr),
-            str(rms_mix_rate),
-            str(protect).lower(),  # Convert boolean to lowercase string ('true'/'false')
-            str(crepe_hop_length),
-            str(f0_minimum),
-            str(f0_maximum),
-            str(autotune_enable).lower()  # Convert boolean to lowercase string ('true'/'false')
+            'venv/rvc_venv/scripts/python', '-m', 'rvc_python',
+            '--input', input_path,
+            '--model', index_path,
+            '--pitch', str(pitch),
+            '--method', f0method,
+            '--output', opt_path,
+            '--index', model_path,
+            '--index_rate', str(index_rate),
+            '--device', device,
+            '--filter_radius', str(filter_radius),
+            '--resample_sr', str(resample_sr),
+            '--rms_mix_rate', str(rms_mix_rate),
+            '--protect', str(protect).lower()
         ]
+
         subprocess.run(cmd)
     except Exception as e:
         print(f"Error: {e}")
         return False
     
-
-from tqdm import tqdm
-
-def infer_files(input_dir,config_path):
-    # Загрузка конфигурации
-    with open(config_path, 'r') as f:
-        config = json.load(f)
-
-    # Получение списка всех файлов в input_dir
-    files = glob.glob(os.path.join(input_dir, '*'))
-
-    # Проверка существования директории output и создание ее, если необходимо
-    output_dir = os.path.join(input_dir, '../output')
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Обработка каждого файла
-    for file in tqdm(files, desc="Processing files"):
-        file_name = os.path.splitext(os.path.basename(file))[0]
-        for character, character_config in config.items():
-            if character in file_name:
-                model_path = character_config['model_path']
-                model_index = character_config['model_index']
-                f0up_key = character_config['pitch']
-                opt_path = os.path.join(output_dir, f'{file_name}.mp3')
-
-                infer_rvc(f0up_key, file, model_index, model_path, opt_path)
-                break  # Если мы нашли соответствующего персонажа, прерываем цикл
-
-
-# def infer_rvc(f0up_key: int, input_path: str, index_path: str, f0method: str, opt_path: str, model_path: str, index_rate: float, 
-#                device: str, is_half: bool, filter_radius: int, resample_sr: int, rms_mix_rate: float, protect: float, 
-#                crepe_hop_length: int, f0_minimum: int, f0_maximum: int, autotune_enable: bool):
-#     cmd = ['venv/scripts/python', 'libs/rvc/test_infer.py', 
-#            str(f0up_key), input_path, index_path, f0method, opt_path, model_path, str(index_rate), device, 
-#            str(is_half), str(filter_radius), str(resample_sr), str(rms_mix_rate), str(protect), str(crepe_hop_length), 
-#            str(f0_minimum), str(f0_maximum), str(autotune_enable)]
-#     subprocess.run(cmd)
-
-# Example main(0, input.wav, model.index, model.pth, output.wav)
