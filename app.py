@@ -1,5 +1,4 @@
 from scripts.modeldownloader import install_deepspeed_based_on_python_version
-from scripts.rvc_scripts import download_rvc_models
 from argparse import ArgumentParser
 from loguru import logger
 import os
@@ -36,7 +35,6 @@ os.environ["RVC_ENABLED"] = str(args.rvc).lower()
 if args.rvc:
     # Create rvc folder 
     os.makedirs("rvc", exist_ok=True)
-    download_rvc_models()
     if( not os.path.exists("venv/rvc_venv")):
         logger.info("Installing RVC libraries...")
         subprocess.run(["python", "scripts/install_rvc_venv.py"])

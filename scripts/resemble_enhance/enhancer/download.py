@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def run_command(command, msg=None, env={}):
     try:
-        subprocess.run(command, check=True, env={**os.environ, **env})
+        subprocess.run(command, check=True,shell=True, env={**os.environ, **env})
     except subprocess.CalledProcessError as e:
         if msg is not None:
             raise RuntimeError(msg) from e

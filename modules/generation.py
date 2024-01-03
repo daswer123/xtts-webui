@@ -5,7 +5,7 @@ import langid
 import gradio as gr
 from pathlib import Path
 from scripts.funcs import improve_and_convert_audio,resemble_enchance_audio,str_to_list
-from scripts.rvc_scripts import infer_rvc,download_rvc_models
+from scripts.rvc_scripts import infer_rvc
 
 import uuid
 
@@ -85,8 +85,6 @@ def generate_audio(
         "denoising": enhance_resemble_denoise,
         "use_enhance": improve_output_resemble
     }
-
-    download_rvc_models()
 
     ref_speaker_wav = ""
 
