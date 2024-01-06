@@ -136,7 +136,7 @@ def generate_audio(
                 if improve_output_audio:
                    output_file = improve_and_convert_audio(output_file,output_type)
 
-                if improve_output_rvc and rvc_settings_model_path:
+                if improve_output_rvc == "RVC" and rvc_settings_model_path:
                             temp_dir = this_dir / "output"
                             result = temp_dir / f"{speaker_value_text}_{rvc_settings_model_name}_{count}.{output_type}"
                             infer_rvc(rvc_settings_pitch,
@@ -171,7 +171,7 @@ def generate_audio(
     if improve_output_audio:
         output_file = improve_and_convert_audio(output_file,output_type)
 
-    if improve_output_rvc and rvc_settings_model_path:
+    if improve_output_rvc == "RVC" and rvc_settings_model_path:
         temp_dir = this_dir / "output"
         result = temp_dir / f"{speaker_value_text}_{rvc_settings_model_name}_{count}.{output_type}"
         infer_rvc(rvc_settings_pitch,

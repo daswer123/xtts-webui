@@ -13,3 +13,5 @@ test_batch
 scripts/resemble_enhance/model_repo/
 ffmpeg
 rvc
+processed
+test

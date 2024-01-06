@@ -36,11 +36,11 @@ if args.rvc:
     # Create rvc folder 
     os.makedirs("rvc", exist_ok=True)
     if( not os.path.exists("venv/rvc_venv")):
-        logger.info("Installing RVC libraries...")
+        logger.info("Installing RVC and OpenVoice libraries...")
         subprocess.run(["python", "scripts/install_rvc_venv.py"])
-        logger.info("RVC installation is complete")
-    else:
-        logger.info("RVC libraries are already installed")
+        logger.info("RVC and OpenVoice installation is complete")
+    # else:
+        # logger.info("RVC libraries are already installed")
 
 # Check deepspeed
 install_deepspeed_based_on_python_version()

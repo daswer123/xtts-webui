@@ -2,7 +2,7 @@
 
 from scripts.modeldownloader import get_folder_names_advanced
 from scripts.tts_funcs import TTSWrapper
-from scripts.rvc_scripts import get_rvc_models,find_rvc_model_by_name
+from scripts.voice2voice import get_rvc_models,find_rvc_model_by_name
 
 import os
 import gradio as gr
@@ -197,7 +197,8 @@ with gr.Blocks(css=css) as demo:
                       enable_waveform = gr.Checkbox(label="Enable Waveform",info="Create video based on audio in the form of a waveform",value=False)
                       improve_output_audio = gr.Checkbox(label="Improve output quality",info="Reduces noise and makes audio slightly better",value=False)
                       improve_output_resemble = gr.Checkbox(label="Resemble enhancement",info="Uses Resemble enhance to improve sound quality through neural networking. Uses extra 4GB VRAM",value=False)
-                      improve_output_rvc = gr.Checkbox(label="Use RVC to improve result",visible=RVC_ENABLE,info="Uses RVC to convert the output to the RVC model voice, make sure you have a model folder with the pth file inside the rvc folder",value=False)
+                    with gr.Row():
+                      improve_output_rvc = gr.Radio(label="Choose RVC or OpenVoice to improve result",visible=RVC_ENABLE,info="Uses RVC to convert the output to the RVC model voice, make sure you have a model folder with the pth file inside the rvc folder",choices=["RVC","OpenVoice","None"],value="None")
                     with gr.Accordion(label="Resemble enhancement Settings",open=False):
                         enhance_resemble_chunk_seconds = gr.Slider(minimum=2, maximum=40, value=8, step=1, label="Chunk seconds (more secods more VRAM usage and faster inference speed)")
                         enhance_resemble_chunk_overlap = gr.Slider(minimum=0.1, maximum=2, value=1, step=0.2, label="Overlap seconds")
@@ -205,6 +206,12 @@ with gr.Blocks(css=css) as demo:
                         enhance_resemble_num_funcs = gr.Slider(minimum=1, maximum=128, value=64, step=1, label="CFM Number of Function Evaluations (higher values in general yield better quality but may be slower)")
                         enhance_resemble_temperature = gr.Slider(minimum=0, maximum=1, value=0.5, step=0.01, label="CFM Prior Temperature (higher values can improve quality but can reduce stability)")
                         enhance_resemble_denoise = gr.Checkbox(value=True, label="Denoise Before Enhancement (tick if your audio contains heavy background noise)")
+                    
+                    with gr.Accordion(label="OpenVoice settings",visible=RVC_ENABLE, open=False):
+                      gr.Markdown("**Download directly or use from the speaker's library**")
+                      opvoice_ref = gr.Audio(label="OpenVoice Reference",interactive=True)
+                      opvoice_sample_list = gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list)
+
                     with gr.Accordion(label="RVC settings",visible=RVC_ENABLE, open=False):
                       # RVC variables 
                       rvc_settings_model_path = gr.Textbox(label="RVC Model",value="",visible=True,interactive=False)
