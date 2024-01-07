@@ -7,7 +7,7 @@ from pathlib import Path
 import requests
 
 def get_rvc_models(this_dir):
-    rvc_models_base = this_dir / "rvc"
+    rvc_models_base = this_dir / "voice2voice" / "rvc"
     # exclude the base_models folder from scanning
     exclude_dir = rvc_models_base / "base_models"
 

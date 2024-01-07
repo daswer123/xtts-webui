@@ -1,5 +1,3 @@
-
-
 from scripts.modeldownloader import get_folder_names_advanced
 from scripts.tts_funcs import TTSWrapper
 from scripts.voice2voice import get_rvc_models,find_rvc_model_by_name
@@ -56,7 +54,7 @@ XTTS = TTSWrapper(OUTPUT_FOLDER,SPEAKER_FOLDER,LOWVRAM_MODE,MODEL_SOURCE,MODEL_V
 # LOAD MODEL
 logger.info(f"Start loading model {MODEL_VERSION}")
 this_dir = Path(__file__).parent.resolve()
-XTTS.load_model(this_dir) 
+# XTTS.load_model(this_dir) 
 
 with gr.Blocks(css=css) as demo:
     gr.Markdown(value="# XTTS-webui by [daswer123](https://github.com/daswer123)")
@@ -174,6 +172,7 @@ with gr.Blocks(css=css) as demo:
                   save_multiple_speaker_btn = gr.Button(value="Save multiple samples for the speaker",visible=False)
             
             with gr.Column():
+                status_bar = gr.Label(label="Status bar",value="Enter text, select language and reference speaker, and click Generate")
                 video_gr = gr.Video(label="Waveform Visual",visible=False,interactive=False)
                 audio_gr = gr.Audio(label="Synthesised Audio",interactive=False, autoplay=False)
                 generate_btn = gr.Button(value="Generate",size="lg",elem_classes="generate-btn")
@@ -210,7 +209,8 @@ with gr.Blocks(css=css) as demo:
                     with gr.Accordion(label="OpenVoice settings",visible=RVC_ENABLE, open=False):
                       gr.Markdown("**Download directly or use from the speaker's library**")
                       opvoice_ref = gr.Audio(label="OpenVoice Reference",interactive=True)
-                      opvoice_sample_list = gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=speaker_value,choices=speakers_list)
+                      opvoice_ref_list = gr.Dropdown(label="Reference Speaker",value="None",choices=["None"])
+                      opvoice_show_speakers = gr.Checkbox(value=False,label="Show results from the speakers folder")
 
                     with gr.Accordion(label="RVC settings",visible=RVC_ENABLE, open=False):
                       # RVC variables 
@@ -232,9 +232,24 @@ with gr.Blocks(css=css) as demo:
                 speaker_path_text = gr.Textbox(label="Reference Speaker Path",value="",visible=False)
                 speaker_wav_modifyed = gr.Checkbox("Reference Audio",visible=False, value = False )
                 speaker_ref_wavs = gr.Text(visible=False)                
+    
+    with gr.Tab("Voice2Voice"):
+      with gr.Tab("RVC"):
+        gr.Markdown("WIP")
+      with gr.Tab("OpenVoice"):
+        gr.Markdown("WIP")
+      with gr.Tab("Translate"):
+        gr.Markdown("WIP")
 
-                # LOAD FUNCTIONS AND HANDLERS
-                import modules
+    with gr.Tab("Train"):
+      gr.Markdown("WIP")
+    
+    with gr.Tab("Instuments"):
+      with gr.Tab("Resemble Enhance"):
+        gr.Markdown("WIP")
+    
+    # LOAD FUNCTIONS AND HANDLERS
+    import modules
 if __name__ == "__main__":
     demo.queue()
     demo.launch(inbrowser=True,share=True)   
