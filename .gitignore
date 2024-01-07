@@ -18,3 +18,4 @@ voice2voice/rvc/**/*.pth
 voice2voice/rvc/**/*.index
 voice2voice/openVoice/*.wav
 voice2voice/openVoice/*.mp3
+scripts/resemble_enhance/model_repo.zip

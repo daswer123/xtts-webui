@@ -39,6 +39,30 @@ def find_rvc_model_by_name(this_dir,model_name):
             return model["model_path"] , model_index
     return None
 
+def get_openvoice_refs(this_dir):
+    openvoice_models_base = this_dir / "voice2voice" / "openvoice"
+
+    # Define a list of audio file extensions you are interested in
+    audio_extensions = {".wav", ".mp3", ".flac", ".ogg", ".aac"}
+
+    audio_files = []
+
+    # Iterate through the openvoice_models_base directory recursively
+    for audio_file in openvoice_models_base.rglob('*'):
+        # Check if the file has one of the audio extensions
+        if audio_file.suffix in audio_extensions:
+            # Add the name of the file to the list
+            audio_files.append(audio_file.name)
+
+    return audio_files
+
+
+def find_openvoice_ref_by_name(this_dir, filename):
+    openvoice_models_base = this_dir / "voice2voice" / "openvoice"
+    models = get_openvoice_refs(this_dir)
+    for model in models:
+        if model == filename:
+            return openvoice_models_base / model
 
 def infer_rvc(pitch,index_rate,protect_voiceless,method,index_path,model_path,input_path,opt_path):
     f0method = method
@@ -77,3 +101,17 @@ def infer_rvc(pitch,index_rate,protect_voiceless,method,index_path,model_path,in
         print(f"Error: {e}")
         return False
     
+def infer_openvoice(input_path,ref_path, output_path):
+    try:
+        cmd = [
+            'venv/rvc_venv/scripts/python', '-m', 'openvoice_cli',"single",
+            '-i', input_path,
+            '-r', ref_path,
+            '-o', output_path,
+            "-d", "cuda:0"
+        ]
+
+        subprocess.run(cmd)
+    except Exception as e:
+        print(f"Error: {e}")
+        return False

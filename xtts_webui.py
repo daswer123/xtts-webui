@@ -1,6 +1,6 @@
 from scripts.modeldownloader import get_folder_names_advanced
 from scripts.tts_funcs import TTSWrapper
-from scripts.voice2voice import get_rvc_models,find_rvc_model_by_name
+from scripts.voice2voice import get_rvc_models,find_rvc_model_by_name,get_openvoice_refs
 
 import os
 import gradio as gr
@@ -54,7 +54,23 @@ XTTS = TTSWrapper(OUTPUT_FOLDER,SPEAKER_FOLDER,LOWVRAM_MODE,MODEL_SOURCE,MODEL_V
 # LOAD MODEL
 logger.info(f"Start loading model {MODEL_VERSION}")
 this_dir = Path(__file__).parent.resolve()
-# XTTS.load_model(this_dir) 
+XTTS.load_model(this_dir) 
+
+
+def update_openvoice_ref_list(opvoice_ref_list,opvoice_show_speakers):
+    open_voice_ref_list = get_openvoice_refs(this_dir)
+    if len(open_voice_ref_list) == 0:
+          open_voice_ref_list = ["None"]
+    new_list = open_voice_ref_list
+    if opvoice_show_speakers:
+        speaker_list = XTTS.get_speakers()
+        speaker_list.append("reference")
+        # We need modify and for each element "speaker/" prefix
+        for model in speaker_list:
+            new_list.append("speaker/" + str(model))
+
+    return gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=new_list[0],choices=new_list)
+
 
 with gr.Blocks(css=css) as demo:
     gr.Markdown(value="# XTTS-webui by [daswer123](https://github.com/daswer123)")
@@ -197,7 +213,7 @@ with gr.Blocks(css=css) as demo:
                       improve_output_audio = gr.Checkbox(label="Improve output quality",info="Reduces noise and makes audio slightly better",value=False)
                       improve_output_resemble = gr.Checkbox(label="Resemble enhancement",info="Uses Resemble enhance to improve sound quality through neural networking. Uses extra 4GB VRAM",value=False)
                     with gr.Row():
-                      improve_output_rvc = gr.Radio(label="Choose RVC or OpenVoice to improve result",visible=RVC_ENABLE,info="Uses RVC to convert the output to the RVC model voice, make sure you have a model folder with the pth file inside the rvc folder",choices=["RVC","OpenVoice","None"],value="None")
+                      improve_output_voice2voice = gr.Radio(label="Choose RVC or OpenVoice to improve result",visible=RVC_ENABLE,info="Uses RVC to convert the output to the RVC model voice, make sure you have a model folder with the pth file inside the rvc folder",choices=["RVC","OpenVoice","None"],value="None")
                     with gr.Accordion(label="Resemble enhancement Settings",open=False):
                         enhance_resemble_chunk_seconds = gr.Slider(minimum=2, maximum=40, value=8, step=1, label="Chunk seconds (more secods more VRAM usage and faster inference speed)")
                         enhance_resemble_chunk_overlap = gr.Slider(minimum=0.1, maximum=2, value=1, step=0.2, label="Overlap seconds")
@@ -207,10 +223,13 @@ with gr.Blocks(css=css) as demo:
                         enhance_resemble_denoise = gr.Checkbox(value=True, label="Denoise Before Enhancement (tick if your audio contains heavy background noise)")
                     
                     with gr.Accordion(label="OpenVoice settings",visible=RVC_ENABLE, open=False):
-                      gr.Markdown("**Download directly or use from the speaker's library**")
-                      opvoice_ref = gr.Audio(label="OpenVoice Reference",interactive=True)
-                      opvoice_ref_list = gr.Dropdown(label="Reference Speaker",value="None",choices=["None"])
-                      opvoice_show_speakers = gr.Checkbox(value=False,label="Show results from the speakers folder")
+                      open_voice_ref_list = get_openvoice_refs(this_dir)
+                      if len(open_voice_ref_list) == 0:
+                        open_voice_ref_list = ["None"]
+
+                      gr.Markdown("**Add samples to the voice2voice/openvoice audio files folder or select from the reference speaker list**")
+                      opvoice_ref_list = gr.Dropdown(label="Reference Speaker",value=open_voice_ref_list[0],choices=open_voice_ref_list)
+                      opvoice_show_speakers = gr.Checkbox(value=False,label="Show choises from the speakers folder")
 
                     with gr.Accordion(label="RVC settings",visible=RVC_ENABLE, open=False):
                       # RVC variables 
@@ -231,7 +250,9 @@ with gr.Blocks(css=css) as demo:
                 speaker_value_text = gr.Textbox(label="Reference Speaker Name",value=speaker_value,visible=False)
                 speaker_path_text = gr.Textbox(label="Reference Speaker Path",value="",visible=False)
                 speaker_wav_modifyed = gr.Checkbox("Reference Audio",visible=False, value = False )
-                speaker_ref_wavs = gr.Text(visible=False)                
+                speaker_ref_wavs = gr.Text(visible=False)
+
+                opvoice_show_speakers.change(fn=update_openvoice_ref_list, inputs=[opvoice_ref_list,opvoice_show_speakers], outputs=[opvoice_ref_list])                
     
     with gr.Tab("Voice2Voice"):
       with gr.Tab("RVC"):

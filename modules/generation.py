@@ -5,7 +5,7 @@ import langid
 import gradio as gr
 from pathlib import Path
 from scripts.funcs import improve_and_convert_audio,resemble_enchance_audio,str_to_list
-from scripts.voice2voice import infer_rvc
+from scripts.voice2voice import infer_rvc,infer_openvoice,find_openvoice_ref_by_name
 
 import uuid
 
@@ -50,6 +50,8 @@ def generate_audio(
     rvc_settings_index_rate,
     rvc_settings_protect_voiceless,
     rvc_settings_method,
+    # OpenVoice Setting
+    opvoice_ref_list,
     # Batch
     batch_generation,
     batch_generation_path,
@@ -59,7 +61,7 @@ def generate_audio(
     enable_waveform,
     improve_output_audio,
     improve_output_resemble,
-    improve_output_rvc,
+    improve_output_voice2voice,
     #  Default settings
     output_type,
     text,
@@ -136,7 +138,7 @@ def generate_audio(
                 if improve_output_audio:
                    output_file = improve_and_convert_audio(output_file,output_type)
 
-                if improve_output_rvc == "RVC" and rvc_settings_model_path:
+                if improve_output_voice2voice == "RVC" and rvc_settings_model_path:
                             temp_dir = this_dir / "output"
                             result = temp_dir / f"{speaker_value_text}_{rvc_settings_model_name}_{count}.{output_type}"
                             infer_rvc(rvc_settings_pitch,
@@ -171,7 +173,7 @@ def generate_audio(
     if improve_output_audio:
         output_file = improve_and_convert_audio(output_file,output_type)
 
-    if improve_output_rvc == "RVC" and rvc_settings_model_path:
+    if improve_output_voice2voice == "RVC" and rvc_settings_model_path:
         temp_dir = this_dir / "output"
         result = temp_dir / f"{speaker_value_text}_{rvc_settings_model_name}_{count}.{output_type}"
         infer_rvc(rvc_settings_pitch,
@@ -183,6 +185,37 @@ def generate_audio(
                                 output_file,
                                 result,
                                 )
+        output_file = result.absolute()
+
+    if improve_output_voice2voice == "OpenVoice" and opvoice_ref_list != "None":
+        temp_dir = this_dir / "output"
+        result = temp_dir / f"{speaker_value_text}_tuned_{count}.{output_type}"
+
+        # Initialize ref_path to None to ensure it has a value in all branches
+        ref_opvoice_path = None
+
+        # Check if starts with "speaker/"
+        if opvoice_ref_list.startswith("speaker/"):
+            speaker_wav = opvoice_ref_list.split("/")[-1]
+
+            if speaker_wav == "reference" and speaker_path_text:
+                ref_opvoice_path = speaker_path_text
+            else:
+                ref_opvoice_path = XTTS.get_speaker_path(speaker_wav)
+                if type(ref_opvoice_path) == list:
+                    ref_opvoice_path = ref_opvoice_path[0]
+        else:
+            ref_opvoice_path = find_openvoice_ref_by_name(this_dir, opvoice_ref_list)
+
+        # Ensure ref_path is not None before proceeding
+        if ref_opvoice_path is None:
+            raise ValueError("Reference path (ref_opvoice_path) could not be determined.")
+
+        print(ref_opvoice_path)
+
+        infer_openvoice(input_path=output_file, ref_path=ref_opvoice_path, output_path=result)
+
+        # Update the output_file with the absolute path to the result
         output_file = result.absolute()
 
     if improve_output_resemble:
@@ -214,6 +247,8 @@ generate_btn.click(
                         rvc_settings_index_rate,
                         rvc_settings_protect_voiceless,
                         rvc_settings_method,
+                        # OpenVoice Setting
+                        opvoice_ref_list,
                         # Batch
                         batch_generation,
                         batch_generation_path,
@@ -223,7 +258,7 @@ generate_btn.click(
                         enable_waveform,
                         improve_output_audio,
                         improve_output_resemble,
-                        improve_output_rvc,
+                        improve_output_voice2voice,
                         #  Default settings
                         output_type,
                         text,
