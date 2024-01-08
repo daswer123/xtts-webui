@@ -6,7 +6,7 @@ import platform
 # Create a virtual environment rvc_venv inside the venv folder
 subprocess.run([sys.executable, "-m", "venv", "venv/rvc_venv"])
 
-if sys.platform == "win32": # Если операционная система - Windows.
+if sys.platform == "win32":  # Если операционная система - Windows.
     activate_script = "venv\\rvc_venv\\Scripts\\activate"
     commands_after_activation = [
         f"{activate_script} && pip install rvc-python",

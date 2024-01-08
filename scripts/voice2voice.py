@@ -6,6 +6,7 @@ from tqdm import tqdm
 from pathlib import Path
 import requests
 
+
 def get_rvc_models(this_dir):
     rvc_models_base = this_dir / "voice2voice" / "rvc"
     # exclude the base_models folder from scanning
@@ -30,14 +31,16 @@ def get_rvc_models(this_dir):
 
     return models
 
-def find_rvc_model_by_name(this_dir,model_name):
+
+def find_rvc_model_by_name(this_dir, model_name):
     models = get_rvc_models(this_dir)
     for model in models:
         if model['model_name'] == model_name:
-            # Check model_index key if it's exists 
+            # Check model_index key if it's exists
             model_index = model.get('index_path', None)
-            return model["model_path"] , model_index
+            return model["model_path"], model_index
     return None
+
 
 def get_openvoice_refs(this_dir):
     openvoice_models_base = this_dir / "voice2voice" / "openvoice"
@@ -64,7 +67,8 @@ def find_openvoice_ref_by_name(this_dir, filename):
         if model == filename:
             return openvoice_models_base / model
 
-def infer_rvc(pitch,index_rate,protect_voiceless,method,index_path,model_path,input_path,opt_path):
+
+def infer_rvc(pitch, index_rate, protect_voiceless, method, index_path, model_path, input_path, opt_path):
     f0method = method
     device = "cuda:0"
     protect = protect_voiceless
@@ -93,11 +97,12 @@ def infer_rvc(pitch,index_rate,protect_voiceless,method,index_path,model_path,in
     except Exception as e:
         print(f"Error: {e}")
         return False
-    
-def infer_openvoice(input_path,ref_path, output_path):
+
+
+def infer_openvoice(input_path, ref_path, output_path):
     try:
         cmd = [
-            'venv/rvc_venv/scripts/python', '-m', 'openvoice_cli',"single",
+            'venv/rvc_venv/scripts/python', '-m', 'openvoice_cli', "single",
             '-i', input_path,
             '-r', ref_path,
             '-o', output_path,

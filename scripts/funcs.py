@@ -1,3 +1,7 @@
+import gc
+import torchaudio
+import torch
+from scripts.resemble_enhance.enhancer.inference import denoise, enhance
 from scipy.io import wavfile
 import numpy as np
 import os
@@ -26,13 +30,16 @@ def save_audio_to_wav(rate, y, this_dir, max_duration=None):
     # Convert to 16-bit data if necessary.
     if not (bit_depth == 16):
         if bit_depth == 32:
-            audio_data = np.asarray(y / np.max(np.abs(y)) * 32767, dtype=np.int16)
+            audio_data = np.asarray(
+                y / np.max(np.abs(y)) * 32767, dtype=np.int16)
         elif bit_depth == 24:
-            audio_data = np.asarray((y / (2**8)) // (2**(bit_depth - 16)), dtype=np.int16)
-        else: # For other types of bitness we apply the general normalization method.
+            audio_data = np.asarray(
+                (y / (2**8)) // (2**(bit_depth - 16)), dtype=np.int16)
+        else:  # For other types of bitness we apply the general normalization method.
             max_val = float(np.iinfo(np.int16).max)
             min_val = float(np.iinfo(np.int16).min)
-            audio_data = np.asarray(((y - y.min()) / (y.max() - y.min())) * (max_val - min_val) + min_val, dtype=np.int16)
+            audio_data = np.asarray(
+                ((y - y.min()) / (y.max() - y.min())) * (max_val - min_val) + min_val, dtype=np.int16)
     else:
         # If the data is already in int16 format, use it directly.
         audio_data = np.asarray(y, dtype=np.int16)
@@ -47,20 +54,21 @@ def save_audio_to_wav(rate, y, this_dir, max_duration=None):
 
     original_wav_path = str(temp_folder / wav_name)
 
-     # Save the audio data to a file without changing the sampling rate.
+    # Save the audio data to a file without changing the sampling rate.
     wavfile.write(original_wav_path, rate, audio_data)
 
     if max_duration is not None and max_duration != 0:
-         output_wav_path = str(temp_folder / f'cut_{wav_name}')
-         (
-             ffmpeg.input(original_wav_path)
-             .output(output_wav_path, t=max_duration)
-             .run(overwrite_output=True, quiet=True)
-         )
-         os.remove(original_wav_path)
-         return output_wav_path
+        output_wav_path = str(temp_folder / f'cut_{wav_name}')
+        (
+            ffmpeg.input(original_wav_path)
+            .output(output_wav_path, t=max_duration)
+            .run(overwrite_output=True, quiet=True)
+        )
+        os.remove(original_wav_path)
+        return output_wav_path
 
     return original_wav_path
+
 
 def resample_audio(input_wav_path, this_dir, target_rate=22050):
     temp_folder = Path(this_dir) / 'temp'
@@ -72,10 +80,11 @@ def resample_audio(input_wav_path, this_dir, target_rate=22050):
         ffmpeg
         .input(str(input_wav_path))
         .output(str(output_wav_path), ar=target_rate, acodec='pcm_s16le', ac=1)
-        .run(overwrite_output=True,quiet=True)
-     )
+        .run(overwrite_output=True, quiet=True)
+    )
 
     return str(output_wav_path)
+
 
 def improve_ref_audio(input_wav_path, this_dir):
     input_wav_path = Path(input_wav_path)
@@ -101,10 +110,11 @@ def improve_ref_audio(input_wav_path, this_dir):
         .filter_('silenceremove', start_periods=1, start_silence=0, start_threshold=0.02)
         .output(str(out_filename))
         .overwrite_output()
-        .run(quiet=True)  
+        .run(quiet=True)
     )
 
     return str(out_filename)
+
 
 def move_and_rename_file(file_path, target_folder_path, new_file_name):
     # Make sure that the new file name contains the correct .wav extension
@@ -134,14 +144,13 @@ def improve_and_convert_audio(audio_path, type_audio):
         Compressor(threshold_db=12, ratio=2.5),
         LowShelfFilter(cutoff_frequency_hz=400, gain_db=5),
         Gain(gain_db=0),
-        
+
     ])
 
     reduced_noise = noisereduce.reduce_noise(y=audio_data,
-                                                 sr=sample_rate,
-                                                 stationary=True,
-                                                 prop_decrease=0.75)
-
+                                             sr=sample_rate,
+                                             stationary=True,
+                                             prop_decrease=0.75)
 
     processed_audio = board(reduced_noise.astype('float32'), sample_rate)
 
@@ -149,7 +158,8 @@ def improve_and_convert_audio(audio_path, type_audio):
 
     # Create a temporary file for the processed audio
     with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
-        sf.write(temp_file.name, processed_audio.T if processed_audio.ndim > 1 else processed_audio , sample_rate)
+        sf.write(temp_file.name, processed_audio.T if processed_audio.ndim >
+                 1 else processed_audio, sample_rate)
         temp_file_path = temp_file.name
 
     # Defining an output file name with a new extension in the same folder
@@ -164,23 +174,25 @@ def improve_and_convert_audio(audio_path, type_audio):
         .run_async(pipe_stdout=True, pipe_stderr=True)
     )
 
-    out,err = stream.communicate()
+    out, err = stream.communicate()
 
     if stream.returncode != 0:
-             raise Exception(f"FFmpeg error:\n{err.decode()}")
+        raise Exception(f"FFmpeg error:\n{err.decode()}")
 
     # Deleting a temporary wav file after it has been used
     os.unlink(temp_file_path)
 
     return output_path
 
+
 def cut_audio(input_wav_path, duration):
-    output_wav_path = input_wav_path.with_name(f"{input_wav_path.stem}_cut{input_wav_path.suffix}")
+    output_wav_path = input_wav_path.with_name(
+        f"{input_wav_path.stem}_cut{input_wav_path.suffix}")
     try:
         (
             ffmpeg
             .input(str(input_wav_path))
-            .output(str(output_wav_path),t=duration)
+            .output(str(output_wav_path), t=duration)
             .run(overwrite_output=True)
         )
     except ffmpeg.Error as e:  # Catching specific ffmpeg Error here.
@@ -189,32 +201,33 @@ def cut_audio(input_wav_path, duration):
         stdout = e.stdout.decode('utf8') if e.stdout else "No stdout"
 
         print(f"stdout: {stdout}")
-        print(f"stderr: {stderr}")  # More detailed error information will be printed/logged here.
+        # More detailed error information will be printed/logged here.
+        print(f"stderr: {stderr}")
 
         raise  # Re-raise exception after logging details
 
     return output_wav_path
 
+
 # RESEMBLE ENHANCE
-from scripts.resemble_enhance.enhancer.inference import denoise, enhance
-import torch
-import torchaudio
-import gc
+
 
 def save_audio(out_folder, file_name, rate, audio_data):
     os.makedirs(out_folder, exist_ok=True)
     file_path = os.path.join(out_folder, file_name)
-  
+
     with open(file_path, 'wb') as f:
         wavfile.write(f, rate, audio_data)
 
     return file_path
+
 
 def clear_gpu_cache():
     # del model
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+
 
 def resemble_enhance_audio(audio_path,
                            use_enhance,
@@ -242,25 +255,27 @@ def resemble_enhance_audio(audio_path,
         wav1, new_sr_1 = denoise(dwav.cpu(), orig_sr, device)
         denoise_file_name = f"{Path(audio_path).stem}_denoise.{output_type}"
         out_folder = Path("./output") / output_folder
-        denoise_path = save_audio(out_folder, denoise_file_name, new_sr_1, wav1.numpy())
+        denoise_path = save_audio(
+            out_folder, denoise_file_name, new_sr_1, wav1.numpy())
 
     if use_enhance:
         lambd = 0.9 if denoising else 0.1
         solver = solver.lower()
         nfe = int(nfe)
-        
+
         wav2, new_sr_2 = enhance(dwav=dwav.cpu(), sr=orig_sr, device=device,
                                  nfe=nfe, chunk_seconds=chunk_seconds,
                                  chunks_overlap=chunks_overlap,
                                  solver=solver, lambd=lambd, tau=tau)
         enhance_file_name = f"{Path(audio_path).stem}_enhance.{output_type}"
         out_folder = Path("./output") / output_folder
-        enhance_path = save_audio(out_folder, enhance_file_name, new_sr_2, wav2.numpy())
+        enhance_path = save_audio(
+            out_folder, enhance_file_name, new_sr_2, wav2.numpy())
 
     clear_gpu_cache()
-    
+
     return [denoise_path, enhance_path]
 
 
 def str_to_list(str):
-    return str.replace("[","").replace("]","").replace("'","").replace(" ","").split(",")
+    return str.replace("[", "").replace("]", "").replace("'", "").replace(" ", "").split(",")

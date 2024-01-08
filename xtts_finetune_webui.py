@@ -15,7 +15,7 @@ import numpy as np
 import torch
 import torchaudio
 import traceback
-from scripts.utils.formatter import format_audio_list,find_latest_best_model
+from scripts.utils.formatter import format_audio_list, find_latest_best_model
 from scripts.utils.gpt_train import train_gpt
 
 from TTS.tts.configs.xtts_config import XttsConfig
@@ -25,21 +25,27 @@ from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 
 # Clear logs
-def remove_log_file(file_path):
-     log_file = Path(file_path)
 
-     if log_file.exists() and log_file.is_file():
-         log_file.unlink()
+
+def remove_log_file(file_path):
+    log_file = Path(file_path)
+
+    if log_file.exists() and log_file.is_file():
+        log_file.unlink()
 
 # remove_log_file(str(Path.cwd() / "log.out"))
+
 
 def clear_gpu_cache():
     # clear the GPU cache
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
+
 XTTS_MODEL = None
-def load_model(xtts_checkpoint, xtts_config, xtts_vocab,xtts_speaker):
+
+
+def load_model(xtts_checkpoint, xtts_config, xtts_vocab, xtts_speaker):
     global XTTS_MODEL
     clear_gpu_cache()
     if not xtts_checkpoint or not xtts_config or not xtts_vocab:
@@ -48,33 +54,34 @@ def load_model(xtts_checkpoint, xtts_config, xtts_vocab,xtts_speaker):
     config.load_json(xtts_config)
     XTTS_MODEL = Xtts.init_from_config(config)
     print("Loading XTTS model! ")
-    XTTS_MODEL.load_checkpoint(config, checkpoint_path=xtts_checkpoint, vocab_path=xtts_vocab,speaker_file_path=xtts_speaker, use_deepspeed=False)
+    XTTS_MODEL.load_checkpoint(config, checkpoint_path=xtts_checkpoint,
+                               vocab_path=xtts_vocab, speaker_file_path=xtts_speaker, use_deepspeed=False)
     if torch.cuda.is_available():
         XTTS_MODEL.cuda()
 
     print("Model Loaded!")
     return "Model Loaded!"
 
-def run_tts(lang, tts_text, speaker_audio_file, temperature, length_penalty,repetition_penalty,top_k,top_p,sentence_split,use_config):
+
+def run_tts(lang, tts_text, speaker_audio_file, temperature, length_penalty, repetition_penalty, top_k, top_p, sentence_split, use_config):
     if XTTS_MODEL is None or not speaker_audio_file:
         return "You need to run the previous step to load the model !!", None, None
 
+    gpt_cond_latent, speaker_embedding = XTTS_MODEL.get_conditioning_latents(
+        audio_path=speaker_audio_file, gpt_cond_len=XTTS_MODEL.config.gpt_cond_len, max_ref_length=XTTS_MODEL.config.max_ref_len, sound_norm_refs=XTTS_MODEL.config.sound_norm_refs)
 
-
-    gpt_cond_latent, speaker_embedding = XTTS_MODEL.get_conditioning_latents(audio_path=speaker_audio_file, gpt_cond_len=XTTS_MODEL.config.gpt_cond_len, max_ref_length=XTTS_MODEL.config.max_ref_len, sound_norm_refs=XTTS_MODEL.config.sound_norm_refs)
-    
     if use_config:
         out = XTTS_MODEL.inference(
             text=tts_text,
             language=lang,
             gpt_cond_latent=gpt_cond_latent,
             speaker_embedding=speaker_embedding,
-            temperature=XTTS_MODEL.config.temperature, # Add custom parameters here
+            temperature=XTTS_MODEL.config.temperature,  # Add custom parameters here
             length_penalty=XTTS_MODEL.config.length_penalty,
             repetition_penalty=XTTS_MODEL.config.repetition_penalty,
             top_k=XTTS_MODEL.config.top_k,
             top_p=XTTS_MODEL.config.top_p,
-            enable_text_splitting = True
+            enable_text_splitting=True
         )
     else:
         out = XTTS_MODEL.inference(
@@ -82,12 +89,12 @@ def run_tts(lang, tts_text, speaker_audio_file, temperature, length_penalty,repe
             language=lang,
             gpt_cond_latent=gpt_cond_latent,
             speaker_embedding=speaker_embedding,
-            temperature=temperature, # Add custom parameters here
+            temperature=temperature,  # Add custom parameters here
             length_penalty=length_penalty,
             repetition_penalty=float(repetition_penalty),
             top_k=top_k,
             top_p=top_p,
-            enable_text_splitting = sentence_split
+            enable_text_splitting=sentence_split
         )
 
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as fp:
@@ -98,31 +105,31 @@ def run_tts(lang, tts_text, speaker_audio_file, temperature, length_penalty,repe
     return "Speech generated !", out_path, speaker_audio_file
 
 
-def load_params_tts(out_path,version):
-    
+def load_params_tts(out_path, version):
+
     out_path = Path(out_path)
 
-    # base_model_path = Path.cwd() / "models" / version 
+    # base_model_path = Path.cwd() / "models" / version
 
     # if not base_model_path.exists():
     #     return "Base model not found !","","",""
 
-    ready_model_path = out_path / "ready" 
+    ready_model_path = out_path / "ready"
 
-    vocab_path =  ready_model_path / "vocab.json"
+    vocab_path = ready_model_path / "vocab.json"
     config_path = ready_model_path / "config.json"
-    speaker_path =  ready_model_path / "speakers_xtts.pth"
-    reference_path  = ready_model_path / "reference.wav"
+    speaker_path = ready_model_path / "speakers_xtts.pth"
+    reference_path = ready_model_path / "reference.wav"
 
     model_path = ready_model_path / "model.pth"
 
     if not model_path.exists():
         model_path = ready_model_path / "unoptimize_model.pth"
         if not model_path.exists():
-          return "Params for TTS not found", "", "", ""         
+            return "Params for TTS not found", "", "", ""
 
-    return "Params for TTS loaded", model_path, config_path, vocab_path,speaker_path, reference_path
-     
+    return "Params for TTS loaded", model_path, config_path, vocab_path, speaker_path, reference_path
+
 
 if __name__ == "__main__":
 
@@ -230,8 +237,8 @@ if __name__ == "__main__":
             # demo.load(read_logs, None, logs, every=1)
 
             prompt_compute_btn = gr.Button(value="Step 1 - Create dataset")
-        
-            def preprocess_dataset(audio_path, language, whisper_model, out_path,progress=gr.Progress(track_tqdm=True)):
+
+            def preprocess_dataset(audio_path, language, whisper_model, out_path, progress=gr.Progress(track_tqdm=True)):
                 clear_gpu_cache()
 
                 train_csv = ""
@@ -243,7 +250,8 @@ if __name__ == "__main__":
                     return "You should provide one or multiple audio files! If you provided it, probably the upload of the files is not finished yet!", "", ""
                 else:
                     try:
-                        train_meta, eval_meta, audio_total_size = format_audio_list(audio_path, whisper_model = whisper_model, target_language=language, out_path=out_path, gradio_progress=progress)
+                        train_meta, eval_meta, audio_total_size = format_audio_list(
+                            audio_path, whisper_model=whisper_model, target_language=language, out_path=out_path, gradio_progress=progress)
                     except:
                         traceback.print_exc()
                         error = traceback.format_exc()
@@ -283,7 +291,7 @@ if __name__ == "__main__":
                 label="(Optional) Custom model.pth file , leave blank if you want to use the base file.",
                 value="",
             )
-            num_epochs =  gr.Slider(
+            num_epochs = gr.Slider(
                 label="Number of epochs:",
                 minimum=1,
                 maximum=100,
@@ -320,16 +328,17 @@ if __name__ == "__main__":
                     "dataset",
                     "all"
                 ])
-            
+
             progress_train = gr.Label(
                 label="Progress:"
             )
 
             # demo.load(read_logs, None, logs_tts_train, every=1)
             train_btn = gr.Button(value="Step 2 - Run the training")
-            optimize_model_btn = gr.Button(value="Step 2.5 - Optimize the model")
-            
-            def train_model(custom_model,version,language, train_csv, eval_csv, num_epochs, batch_size, grad_acumm, output_path, max_audio_length):
+            optimize_model_btn = gr.Button(
+                value="Step 2.5 - Optimize the model")
+
+            def train_model(custom_model, version, language, train_csv, eval_csv, num_epochs, batch_size, grad_acumm, output_path, max_audio_length):
                 clear_gpu_cache()
 
                 run_dir = Path(output_path) / "run"
@@ -337,8 +346,8 @@ if __name__ == "__main__":
                 # # Remove train dir
                 if run_dir.exists():
                     os.remove(run_dir)
-                
-                # Check if the dataset language matches the language you specified 
+
+                # Check if the dataset language matches the language you specified
                 lang_file_path = Path(output_path) / "dataset" / "lang.txt"
 
                 # Check if lang.txt already exists and contains a different language
@@ -347,15 +356,17 @@ if __name__ == "__main__":
                     with open(lang_file_path, 'r', encoding='utf-8') as existing_lang_file:
                         current_language = existing_lang_file.read().strip()
                         if current_language != language:
-                            print("The language that was prepared for the dataset does not match the specified language. Change the language to the one specified in the dataset")
+                            print(
+                                "The language that was prepared for the dataset does not match the specified language. Change the language to the one specified in the dataset")
                             language = current_language
-                        
+
                 if not train_csv or not eval_csv:
                     return "You need to run the data processing step or manually set `Train CSV` and `Eval CSV` fields !", "", "", "", ""
                 try:
                     # convert seconds to waveform frames
                     max_audio_length = int(max_audio_length * 22050)
-                    speaker_xtts_path,config_path, original_xtts_checkpoint, vocab_file, exp_path, speaker_wav = train_gpt(custom_model,version,language, num_epochs, batch_size, grad_acumm, train_csv, eval_csv, output_path=output_path, max_audio_length=max_audio_length)
+                    speaker_xtts_path, config_path, original_xtts_checkpoint, vocab_file, exp_path, speaker_wav = train_gpt(
+                        custom_model, version, language, num_epochs, batch_size, grad_acumm, train_csv, eval_csv, output_path=output_path, max_audio_length=max_audio_length)
                 except:
                     traceback.print_exc()
                     error = traceback.format_exc()
@@ -364,15 +375,17 @@ if __name__ == "__main__":
                 # copy original files to avoid parameters changes issues
                 # os.system(f"cp {config_path} {exp_path}")
                 # os.system(f"cp {vocab_file} {exp_path}")
-                
+
                 ready_dir = Path(output_path) / "ready"
 
                 ft_xtts_checkpoint = os.path.join(exp_path, "best_model.pth")
 
-                shutil.copy(ft_xtts_checkpoint, ready_dir / "unoptimize_model.pth")
+                shutil.copy(ft_xtts_checkpoint, ready_dir /
+                            "unoptimize_model.pth")
                 # os.remove(ft_xtts_checkpoint)
 
-                ft_xtts_checkpoint = os.path.join(ready_dir, "unoptimize_model.pth")
+                ft_xtts_checkpoint = os.path.join(
+                    ready_dir, "unoptimize_model.pth")
 
                 # Reference
                 # Move reference audio to output folder and rename it
@@ -382,37 +395,41 @@ if __name__ == "__main__":
 
                 print("Model training done!")
                 # clear_gpu_cache()
-                return "Model training done!", config_path, vocab_file, ft_xtts_checkpoint,speaker_xtts_path, speaker_reference_new_path
+                return "Model training done!", config_path, vocab_file, ft_xtts_checkpoint, speaker_xtts_path, speaker_reference_new_path
 
             def optimize_model(out_path, clear_train_data):
                 # print(out_path)
-                out_path = Path(out_path)  # Ensure that out_path is a Path object.
-            
+                # Ensure that out_path is a Path object.
+                out_path = Path(out_path)
+
                 ready_dir = out_path / "ready"
                 run_dir = out_path / "run"
                 dataset_dir = out_path / "dataset"
-            
+
                 # Clear specified training data directories.
                 if clear_train_data in {"run", "all"} and run_dir.exists():
                     try:
                         shutil.rmtree(run_dir)
                     except PermissionError as e:
-                        print(f"An error occurred while deleting {run_dir}: {e}")
-            
+                        print(
+                            f"An error occurred while deleting {run_dir}: {e}")
+
                 if clear_train_data in {"dataset", "all"} and dataset_dir.exists():
                     try:
                         shutil.rmtree(dataset_dir)
                     except PermissionError as e:
-                        print(f"An error occurred while deleting {dataset_dir}: {e}")
-            
+                        print(
+                            f"An error occurred while deleting {dataset_dir}: {e}")
+
                 # Get full path to model
                 model_path = ready_dir / "unoptimize_model.pth"
 
                 if not model_path.is_file():
                     return "Unoptimized model not found in ready folder", ""
-            
+
                 # Load the checkpoint and remove unnecessary parts.
-                checkpoint = torch.load(model_path, map_location=torch.device("cpu"))
+                checkpoint = torch.load(
+                    model_path, map_location=torch.device("cpu"))
                 del checkpoint["optimizer"]
 
                 for key in list(checkpoint["model"].keys()):
@@ -422,20 +439,20 @@ if __name__ == "__main__":
                 # Make sure out_path is a Path object or convert it to Path
                 os.remove(model_path)
 
-                  # Save the optimized model.
-                optimized_model_file_name="model.pth"
-                optimized_model=ready_dir/optimized_model_file_name
-            
+                # Save the optimized model.
+                optimized_model_file_name = "model.pth"
+                optimized_model = ready_dir/optimized_model_file_name
+
                 torch.save(checkpoint, optimized_model)
-                ft_xtts_checkpoint=str(optimized_model)
+                ft_xtts_checkpoint = str(optimized_model)
 
                 clear_gpu_cache()
-        
+
                 return f"Model optimized and saved at {ft_xtts_checkpoint}!", ft_xtts_checkpoint
 
             def load_params(out_path):
                 path_output = Path(out_path)
-                
+
                 dataset_path = path_output / "dataset"
 
                 if not dataset_path.exists():
@@ -445,7 +462,7 @@ if __name__ == "__main__":
                 eval_csv = dataset_path / "metadata_eval.csv"
 
                 # Write the target language to lang.txt in the output directory
-                lang_file_path =  dataset_path / "lang.txt"
+                lang_file_path = dataset_path / "lang.txt"
 
                 # Check if lang.txt already exists and contains a different language
                 current_language = None
@@ -461,7 +478,8 @@ if __name__ == "__main__":
         with gr.Tab("3 - Inference"):
             with gr.Row():
                 with gr.Column() as col1:
-                    load_params_tts_btn = gr.Button(value="Load params for TTS from output folder")
+                    load_params_tts_btn = gr.Button(
+                        value="Load params for TTS from output folder")
                     xtts_checkpoint = gr.Textbox(
                         label="XTTS checkpoint path:",
                         value="",
@@ -482,7 +500,8 @@ if __name__ == "__main__":
                     progress_load = gr.Label(
                         label="Progress:"
                     )
-                    load_btn = gr.Button(value="Step 3 - Load Fine-tuned XTTS model")
+                    load_btn = gr.Button(
+                        value="Step 3 - Load Fine-tuned XTTS model")
 
                 with gr.Column() as col2:
                     speaker_reference_audio = gr.Textbox(
@@ -523,7 +542,7 @@ if __name__ == "__main__":
                             step=0.05,
                             value=0.75,
                         )
-                        length_penalty  = gr.Slider(
+                        length_penalty = gr.Slider(
                             label="length_penalty",
                             minimum=-10.0,
                             maximum=10.0,
@@ -596,7 +615,6 @@ if __name__ == "__main__":
                 ]
             )
 
-
             train_btn.click(
                 fn=train_model,
                 inputs=[
@@ -611,7 +629,8 @@ if __name__ == "__main__":
                     out_path,
                     max_audio_length,
                 ],
-                outputs=[progress_train, xtts_config, xtts_vocab, xtts_checkpoint,xtts_speaker, speaker_reference_audio],
+                outputs=[progress_train, xtts_config, xtts_vocab,
+                         xtts_checkpoint, xtts_speaker, speaker_reference_audio],
             )
 
             optimize_model_btn.click(
@@ -620,9 +639,9 @@ if __name__ == "__main__":
                     out_path,
                     clear_train_data
                 ],
-                outputs=[progress_train,xtts_checkpoint],
+                outputs=[progress_train, xtts_checkpoint],
             )
-            
+
             load_btn.click(
                 fn=load_model,
                 inputs=[
@@ -648,7 +667,7 @@ if __name__ == "__main__":
                     sentence_split,
                     use_config
                 ],
-                outputs=[progress_gen, tts_output_audio,reference_audio],
+                outputs=[progress_gen, tts_output_audio, reference_audio],
             )
 
             load_params_tts_btn.click(
@@ -656,8 +675,9 @@ if __name__ == "__main__":
                 inputs=[
                     out_path,
                     version
-                    ],
-                outputs=[progress_load,xtts_checkpoint,xtts_config,xtts_vocab,xtts_speaker,speaker_reference_audio],
+                ],
+                outputs=[progress_load, xtts_checkpoint, xtts_config,
+                         xtts_vocab, xtts_speaker, speaker_reference_audio],
             )
 
     demo.launch(
