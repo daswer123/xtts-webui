@@ -45,7 +45,7 @@ if args.rvc:
 # Check deepspeed
 install_deepspeed_based_on_python_version()
 
-from xtts_webui import demo   
-
-demo.launch(share=args.share,inbrowser=True,server_name=args.host,server_port=args.port)   
+if __name__ == "__main__":
+  from xtts_webui import demo 
+  demo.launch(share=args.share,inbrowser=True,server_name=args.host,server_port=args.port)   
     

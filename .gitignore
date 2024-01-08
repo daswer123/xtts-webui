@@ -6,6 +6,7 @@ venv
 deepspeed
 models
 finetune_models
+finetuned_models
 output
 temp
 speakers/**/*

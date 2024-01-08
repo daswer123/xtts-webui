@@ -231,7 +231,7 @@ if __name__ == "__main__":
 
             prompt_compute_btn = gr.Button(value="Step 1 - Create dataset")
         
-            def preprocess_dataset(audio_path, language, whisper_model, out_path,train_csv,eval_csv, progress=gr.Progress(track_tqdm=True)):
+            def preprocess_dataset(audio_path, language, whisper_model, out_path,progress=gr.Progress(track_tqdm=True)):
                 clear_gpu_cache()
 
                 train_csv = ""

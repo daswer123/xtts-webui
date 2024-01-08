@@ -10,6 +10,7 @@ from scripts.voice2voice import infer_rvc,infer_openvoice,find_openvoice_ref_by_
 import uuid
 
 from xtts_webui import *
+import shutil
 
 # HELP FUNCS
 def predict_lang(text,selected_lang):
@@ -76,7 +77,9 @@ def generate_audio(
     top_k,
     top_p,
     speed,
-    sentence_split):
+    sentence_split,
+    # STATUS
+    status_bar):
 
     resemble_enhance_settings = {
         "chunk_seconds": enhance_resemble_chunk_seconds,
@@ -117,18 +120,29 @@ def generate_audio(
         "speed": speed,
         "sentence_split": sentence_split,
     }
+
+    status_bar = gr.Progress(track_tqdm=True)
+
     # Find all .txt files in the filder and write this to batch_generation
     if batch_generation_path and Path(batch_generation_path).exists():
         batch_generation = [f for f in Path(batch_generation_path).glob('*.txt')]
         
     if batch_generation:
-        for file_path in batch_generation:
+        if status_bar is not None:
+            tqdm_object = status_bar.tqdm(batch_generation, desc="Generate...")
+        else:
+            tqdm_object = tqdm(batch_generation)
+
+        batch_dirname = f"output/batch_"+datetime.now().strftime("%Y%m%d_%H%M%S")
+        os.makedirs(batch_dirname, exist_ok=True)
+
+        for file_path in tqdm_object:
             with open(file_path,encoding="utf-8",mode="r") as f:
                 text = f.read()
 
                 if language_auto_detect:
                     lang_code = predict_lang(text,lang_code)
-
+                
                 filename = os.path.basename(file_path)
                 filename = filename.split(".")[0]
 
@@ -150,7 +164,7 @@ def generate_audio(
                                 output_file,
                                 result,
                                 )
-                output_file = result.absolute()
+                            output_file = result.absolute()
 
                 if improve_output_voice2voice == "OpenVoice" and opvoice_ref_list != "None":
                             temp_dir = this_dir / "output"
@@ -188,12 +202,17 @@ def generate_audio(
 
 
                 if improve_output_resemble:
-                    output_file = resemble_enhance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
+                    output_file = resemble_enhance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)[1]
+
+                new_output_file = os.path.join(batch_dirname ,os.path.basename(output_file_path))
+                shutil.move(output_file,new_output_file)
+                output_file = new_output_file
+
 
         if enable_waveform:
-            return gr.make_waveform(audio=output_file),output_file
+            return gr.make_waveform(audio=output_file),output_file, f"Done, generation saved in {batch_dirname}"
         else:
-            return None,output_file
+            return None,output_file, f"Done, generation saved in {batch_dirname}"
 
     # Check if the file already exists, if yes, add a number to the filename
     count = 1
@@ -257,12 +276,12 @@ def generate_audio(
           output_file = result.absolute()
 
     if improve_output_resemble:
-        output_file = resemble_enhance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
+        output_file = resemble_enhance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)[1]
 
     if enable_waveform:
-        return gr.make_waveform(audio=output_file),output_file
+        return gr.make_waveform(audio=output_file),output_file,"Done"
     else:
-        return None,output_file
+        return None,output_file, "Done"
 
 
 
@@ -312,9 +331,11 @@ generate_btn.click(
                         top_k,
                         top_p,
                         speed,
-                        sentence_split
+                        sentence_split,
+                        # STATUS
+                        status_bar
                         ],
-                    outputs=[video_gr, audio_gr]
+                    outputs=[video_gr, audio_gr,status_bar]
                 )
 
 
