@@ -69,8 +69,7 @@ def update_openvoice_ref_list(opvoice_ref_list,opvoice_show_speakers):
         for model in speaker_list:
             new_list.append("speaker/" + str(model))
 
-    return gr.Dropdown(label="Reference Speaker from folder 'speakers'",value=new_list[0],choices=new_list)
-
+    return gr.Dropdown(label="Reference sample from folder 'speakers' folder",value=new_list[0],choices=new_list)
 
 with gr.Blocks(css=css) as demo:
     gr.Markdown(value="# XTTS-webui by [daswer123](https://github.com/daswer123)")
@@ -228,20 +227,20 @@ with gr.Blocks(css=css) as demo:
                         open_voice_ref_list = ["None"]
 
                       gr.Markdown("**Add samples to the voice2voice/openvoice audio files folder or select from the reference speaker list**")
-                      opvoice_ref_list = gr.Dropdown(label="Reference Speaker",value=open_voice_ref_list[0],choices=open_voice_ref_list)
+                      opvoice_ref_list = gr.Dropdown(label="Reference sample",value=open_voice_ref_list[0],choices=open_voice_ref_list)
                       opvoice_show_speakers = gr.Checkbox(value=False,label="Show choises from the speakers folder")
 
                     with gr.Accordion(label="RVC settings",visible=RVC_ENABLE, open=False):
                       # RVC variables 
-                      rvc_settings_model_path = gr.Textbox(label="RVC Model",value="",visible=True,interactive=False)
-                      rvc_settings_index_path = gr.Textbox(label="Index file",value="",visible=True,interactive=False)
                       with gr.Row():
                         rvc_settings_model_name = gr.Dropdown(label="RVC Model name",info="Create a folder with your model name in the rvc folder and put .pth and .index there , .index optional",choices=rvc_models)
                         rvc_settings_update_btn = gr.Button(value="Update",elem_classes="rvc_update-btn",visible=True)
+                      rvc_settings_model_path = gr.Textbox(label="RVC Model",value="",visible=True,interactive=False)
+                      rvc_settings_index_path = gr.Textbox(label="Index file",value="",visible=True,interactive=False)
                       rvc_settings_pitch = gr.Slider(minimum=-24, maximum=24, value=0, step=1, label="Pitch")
-                      rvc_settings_index_rate = gr.Slider(minimum=0, maximum=1, value=0.8, step=0.01, label="Index rate")
+                      rvc_settings_index_rate = gr.Slider(minimum=0, maximum=1, value=0.75, step=0.01, label="Index rate")
                       rvc_settings_protect_voiceless = gr.Slider(minimum=0, maximum=0.5, value=0.33, step=0.01, label="Protect voiceless")
-                      rvc_settings_method = gr.Radio(["crepe", "mangio-crepe","rmvpe","harvest"],value="rmvpe", label="RVC Method")
+                      rvc_settings_method = gr.Radio(["crepe", "pm","rmvpe","harvest"],value="rmvpe", label="RVC Method")
                     with gr.Row():
                       output_type = gr.Radio(["mp3","wav"],value="wav", label="Output Type")
                   additional_text_input = gr.Textbox(label="File Name Value", value="output")

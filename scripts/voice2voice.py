@@ -67,10 +67,6 @@ def find_openvoice_ref_by_name(this_dir, filename):
 def infer_rvc(pitch,index_rate,protect_voiceless,method,index_path,model_path,input_path,opt_path):
     f0method = method
     device = "cuda:0"
-    is_half = True
-    filter_radius = 3
-    resample_sr = 0
-    rms_mix_rate = 1
     protect = protect_voiceless
     crepe_hop_length = 128
     f0_minimum = 50
@@ -90,9 +86,6 @@ def infer_rvc(pitch,index_rate,protect_voiceless,method,index_path,model_path,in
             '--index', model_path,
             '--index_rate', str(index_rate),
             '--device', device,
-            '--filter_radius', str(filter_radius),
-            '--resample_sr', str(resample_sr),
-            '--rms_mix_rate', str(rms_mix_rate),
             '--protect', str(protect).lower()
         ]
 

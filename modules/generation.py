@@ -152,6 +152,41 @@ def generate_audio(
                                 )
                 output_file = result.absolute()
 
+                if improve_output_voice2voice == "OpenVoice" and opvoice_ref_list != "None":
+                            temp_dir = this_dir / "output"
+                            result = temp_dir / f"{speaker_value_text}_tuned_{count}.{output_type}"
+                            allow_infer = True
+
+                            if(len(text) < 150):
+                                allow_infer = False
+
+                            # Initialize ref_path to None to ensure it has a value in all branches
+                            ref_opvoice_path = None
+
+                            # Check if starts with "speaker/"
+                            if opvoice_ref_list.startswith("speaker/"):
+                                speaker_wav = opvoice_ref_list.split("/")[-1]
+
+                                if speaker_wav == "reference" and speaker_path_text:
+                                    ref_opvoice_path = speaker_path_text
+                                else:
+                                    ref_opvoice_path = XTTS.get_speaker_path(speaker_wav)
+                                    if type(ref_opvoice_path) == list:
+                                        ref_opvoice_path = ref_opvoice_path[0]
+
+                            if speaker_wav == "reference" and not speaker_path_text:
+                                allow_infer = False
+                                print("Referenc not found, Skip")
+                            else:
+                                ref_opvoice_path = find_openvoice_ref_by_name(this_dir, opvoice_ref_list)
+
+                            if allow_infer:
+                              infer_openvoice(input_path=output_file, ref_path=ref_opvoice_path, output_path=result)
+
+                              # Update the output_file with the absolute path to the result
+                              output_file = result.absolute()
+
+
                 if improve_output_resemble:
                     output_file = resemble_enchance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
 
@@ -190,9 +225,13 @@ def generate_audio(
     if improve_output_voice2voice == "OpenVoice" and opvoice_ref_list != "None":
         temp_dir = this_dir / "output"
         result = temp_dir / f"{speaker_value_text}_tuned_{count}.{output_type}"
+        allow_infer = True
 
         # Initialize ref_path to None to ensure it has a value in all branches
         ref_opvoice_path = None
+
+        if(len(text) < 150):
+            allow_infer = False
 
         # Check if starts with "speaker/"
         if opvoice_ref_list.startswith("speaker/"):
@@ -204,19 +243,18 @@ def generate_audio(
                 ref_opvoice_path = XTTS.get_speaker_path(speaker_wav)
                 if type(ref_opvoice_path) == list:
                     ref_opvoice_path = ref_opvoice_path[0]
+        
+        if speaker_wav == "reference" and not speaker_path_text:
+            allow_infer = False
+            print("Referenc not found, Skip")
         else:
             ref_opvoice_path = find_openvoice_ref_by_name(this_dir, opvoice_ref_list)
+        
+        if allow_infer:
+          infer_openvoice(input_path=output_file, ref_path=ref_opvoice_path, output_path=result)
 
-        # Ensure ref_path is not None before proceeding
-        if ref_opvoice_path is None:
-            raise ValueError("Reference path (ref_opvoice_path) could not be determined.")
-
-        print(ref_opvoice_path)
-
-        infer_openvoice(input_path=output_file, ref_path=ref_opvoice_path, output_path=result)
-
-        # Update the output_file with the absolute path to the result
-        output_file = result.absolute()
+          # Update the output_file with the absolute path to the result
+          output_file = result.absolute()
 
     if improve_output_resemble:
         output_file = resemble_enchance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
