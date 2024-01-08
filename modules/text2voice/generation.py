@@ -4,7 +4,7 @@ import langid
 
 import gradio as gr
 from pathlib import Path
-from scripts.funcs import improve_and_convert_audio,resemble_enchance_audio,str_to_list
+from scripts.funcs import improve_and_convert_audio,resemble_enhance_audio,str_to_list
 from scripts.voice2voice import infer_rvc,infer_openvoice,find_openvoice_ref_by_name
 
 import uuid
@@ -188,7 +188,7 @@ def generate_audio(
 
 
                 if improve_output_resemble:
-                    output_file = resemble_enchance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
+                    output_file = resemble_enhance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
 
         if enable_waveform:
             return gr.make_waveform(audio=output_file),output_file
@@ -244,11 +244,11 @@ def generate_audio(
                 if type(ref_opvoice_path) == list:
                     ref_opvoice_path = ref_opvoice_path[0]
         
-        if speaker_wav == "reference" and not speaker_path_text:
-            allow_infer = False
-            print("Referenc not found, Skip")
-        else:
-            ref_opvoice_path = find_openvoice_ref_by_name(this_dir, opvoice_ref_list)
+            if speaker_wav == "reference" and not speaker_path_text:
+                allow_infer = False
+                print("Referenc not found, Skip")
+            else:
+                ref_opvoice_path = find_openvoice_ref_by_name(this_dir, opvoice_ref_list)
         
         if allow_infer:
           infer_openvoice(input_path=output_file, ref_path=ref_opvoice_path, output_path=result)
@@ -257,7 +257,7 @@ def generate_audio(
           output_file = result.absolute()
 
     if improve_output_resemble:
-        output_file = resemble_enchance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
+        output_file = resemble_enhance_audio(**resemble_enhance_settings,audio_path=output_file,output_type=output_type)
 
     if enable_waveform:
         return gr.make_waveform(audio=output_file),output_file

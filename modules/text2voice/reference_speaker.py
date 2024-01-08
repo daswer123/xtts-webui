@@ -6,7 +6,7 @@ from pathlib import Path
 import shutil
 import uuid
 
-from scripts.funcs import save_audio_to_wav,resample_audio,improve_ref_audio,resemble_enchance_audio,cut_audio
+from scripts.funcs import save_audio_to_wav,resample_audio,improve_ref_audio,resemble_enhance_audio,cut_audio
 
 from xtts_webui import *
 
@@ -77,7 +77,7 @@ def change_current_speaker_audio(improve_reference_resemble,improve_reference_au
    output_path = save_audio_to_wav(rate, y,this_dir,auto_cut)
 
    if improve_reference_resemble:
-     output_path = resemble_enchance_audio(output_path,True)
+     output_path = resemble_enhance_audio(output_path,True)
    if use_resample:
      output_path = resample_audio(output_path,this_dir)
 
