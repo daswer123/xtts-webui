@@ -157,7 +157,7 @@ def generate_audio(
 
                 output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.{output_type}"
                 output_file = XTTS.process_tts_to_file(
-                    text, lang_code, ref_speaker_wav, options, output_file_path)
+                    this_dir,text, lang_code, ref_speaker_wav, options, output_file_path)
 
                 if improve_output_audio:
                     output_file = improve_and_convert_audio(
@@ -245,7 +245,7 @@ def generate_audio(
     status_message = "Done"
     # Perform TTS and save to the generated filename
     output_file = XTTS.process_tts_to_file(
-        text, lang_code, ref_speaker_wav, options, output_file_path)
+       this_dir, text, lang_code, ref_speaker_wav, options, output_file_path)
 
     if improve_output_audio:
         output_file = improve_and_convert_audio(output_file, output_type)
