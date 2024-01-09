@@ -99,7 +99,7 @@ def infer_rvc(pitch, index_rate, protect_voiceless, method, index_path, model_pa
         print(f"Error: {e}")
         return False
 
-def infer_rvc_batch(model_name,pitch, index_rate, protect_voiceless, method, index_path, model_path, paths, opt_path,filter_radius=rvc_settings_filter_radius,resemple_rate=rvc_settings_resemple_rate,envelope_mix=rvc_settings_envelope_mix):
+def infer_rvc_batch(model_name,pitch, index_rate, protect_voiceless, method, index_path, model_path, paths, opt_path,filter_radius=3,resemple_rate=0,envelope_mix=0.25):
     f0method = method
     device = "cuda:0"
     protect = protect_voiceless
