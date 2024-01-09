@@ -172,7 +172,7 @@ def generate_audio(
                 if improve_output_voice2voice == "RVC" and rvc_settings_model_path:
                     temp_dir = this_dir / "output"
                     result = temp_dir / \
-                        f"{speaker_value_text}_{rvc_settings_model_name}_{count}.{output_type}"
+                        f"{speaker_value_text}_{rvc_settings_model_name}_{Path(file_path).stem}.{output_type}"
                     infer_rvc(rvc_settings_pitch,
                               rvc_settings_index_rate,
                               rvc_settings_protect_voiceless,
@@ -190,7 +190,7 @@ def generate_audio(
                 if improve_output_voice2voice == "OpenVoice" and opvoice_ref_list != "None":
                     temp_dir = this_dir / "output"
                     result = temp_dir / \
-                        f"{speaker_value_text}_tuned_{count}.{output_type}"
+                        f"{speaker_value_text}_tuned_{filename}.{output_type}"
                     allow_infer = True
 
                     if (len(text) < 150):
@@ -212,10 +212,10 @@ def generate_audio(
                             if type(ref_opvoice_path) == list:
                                 ref_opvoice_path = ref_opvoice_path[0]
 
-                    if speaker_wav == "reference" and not speaker_path_text:
-                        allow_infer = False
-                        status_message += "\nReference for OpenVoice not found, Skip tunning"
-                        print("Referenc not found, Skip")
+                        if speaker_wav == "reference" and not speaker_path_text:
+                             allow_infer = False
+                             status_message += "\nReference for OpenVoice not found, Skip tunning"
+                             print("Referenc not found, Skip")
                     else:
                         ref_opvoice_path = find_openvoice_ref_by_name(
                             this_dir, opvoice_ref_list)
@@ -303,7 +303,7 @@ def generate_audio(
             if speaker_wav == "reference" and not speaker_path_text:
                 allow_infer = False
                 print("Referenc not found, Skip")
-            else:
+        else:
                 ref_opvoice_path = find_openvoice_ref_by_name(
                     this_dir, opvoice_ref_list)
 

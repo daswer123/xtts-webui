@@ -1,4 +1,4 @@
-from scripts.voice2voice import infer_rvc,get_openvoice_refs, infer_rvc_batch, infer_openvoice,find_openvoice_ref_by_name
+from scripts.voice2voice import infer_rvc, get_openvoice_refs, infer_rvc_batch, infer_openvoice, find_openvoice_ref_by_name
 from scripts.funcs import save_audio_to_wav
 import shutil
 from datetime import datetime
@@ -63,129 +63,126 @@ this_dir = Path(__file__).parent.resolve()
 # XTTS.load_model(this_dir)
 
 
-def infer_openvoice_audio(openvoice_audio_single,openvoice_audio_batch,openvoice_audio_batch_path,openvoice_voice_ref_list,openvoice_status_bar,speaker_path_text):
+# Constants
+WAV_EXTENSION = "*.wav"
+MP3_EXTENSION = "*.mp3"
+FLAC_EXTENSION = "*.flac"
+
+DATE_FORMAT = "%Y%m%d_%H%M%S"
+SPEAKER_PREFIX = "speaker/"
+REFERENCE_KEYWORD = "reference"
+
+# Auxiliary functions
+
+
+def get_reference_path(speaker_wav, speaker_path_text):
+    if speaker_wav == REFERENCE_KEYWORD:
+        return speaker_path_text if speaker_path_text else None
+    else:
+        ref_path = XTTS.get_speaker_path(speaker_wav)
+        return ref_path[0] if isinstance(ref_path, list) else ref_path
+
+
+def find_audio_files(batch_path):
+    return glob.glob(os.path.join(batch_path, WAV_EXTENSION)) + \
+        glob.glob(os.path.join(batch_path, MP3_EXTENSION)) + \
+        glob.glob(os.path.join(batch_path, FLAC_EXTENSION))
+
+# Main optimization function
+
+
+def infer_openvoice_audio(openvoice_audio_single, openvoice_audio_batch, openvoice_audio_batch_path,
+                          openvoice_voice_ref_list, openvoice_status_bar, speaker_path_text):
     print("hello world")
 
     if openvoice_voice_ref_list == "None":
-        return None, None, "Please select Refernce audio"
+        return None, None, "Please select Reference audio"
 
     if not openvoice_audio_single and not openvoice_audio_batch and not openvoice_audio_batch_path:
         return None, None, "Please load audio"
 
-    openvoice_status_bar = gr.Progress(track_tqdm=True)
-
     output_folder = this_dir / OUTPUT_FOLDER
-    folder_name = ""
-
-    done_message = ""
-
-    folder_name = "openvoice"
-    folder_name += "_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+    folder_name = "openvoice_" + datetime.now().strftime(DATE_FORMAT)
 
     # Save Audio
-    if openvoice_audio_single is not None:
+    input_file = None
+    if openvoice_audio_single:
         rate, y = openvoice_audio_single
-        input_file = save_audio_to_wav(rate, y, this_dir)
+        input_file = save_audio_to_wav(rate, y, Path.cwd())
 
-    audio_files = openvoice_audio_batch
-
+    audio_files = openvoice_audio_batch or []
     if openvoice_audio_batch_path:
-        audio_files = glob.glob(openvoice_audio_batch_path + "/*.wav")
-        audio_files += glob.glob(openvoice_audio_batch_path + "/*.mp3")
-        audio_files += glob.glob(openvoice_audio_batch_path + "/*.flac")
+        audio_files.extend(find_audio_files(openvoice_audio_batch_path))
 
-    if openvoice_audio_batch or openvoice_audio_batch_path:
+    openvoice_status_bar = gr.Progress(track_tqdm=True)
+    if audio_files:
         output_folder = output_folder / folder_name
         os.makedirs(output_folder, exist_ok=True)
-
-        output_audio = "OPENVOICE FUNC"
-        tqdm_object = openvoice_status_bar.tqdm(audio_files, desc="Tuning Files...")
+        tqdm_object = openvoice_status_bar.tqdm(
+            audio_files, desc="Tuning Files...")
 
         for audio_file in tqdm_object:
+            ref_voice_opvoice_path = None
             allow_infer = True
 
-            # Initialize ref_path to None to ensure it has a value in all branches
-            ref_voice_opvoice_path = None
-    
-            # Check if starts with "speaker/"
-            if openvoice_voice_ref_list.startswith("speaker/"):
+            if openvoice_voice_ref_list.startswith(SPEAKER_PREFIX):
                 speaker_wav = openvoice_voice_ref_list.split("/")[-1]
-    
-                if speaker_wav == "reference" and speaker_path_text:
-                    ref_voice_opvoice_path = speaker_path_text
-                else:
-                    ref_voice_opvoice_path = XTTS.get_speaker_path(speaker_wav)
-                    if type(ref_voice_opvoice_path) == list:
-                        ref_voice_opvoice_path = ref_voice_opvoice_path[0]
-    
-                if speaker_wav == "reference" and not speaker_path_text:
+                ref_voice_opvoice_path = get_reference_path(
+                    speaker_wav, speaker_path_text)
+
+                if not ref_voice_opvoice_path:
                     allow_infer = False
                     print("Reference not found")
-            else:   
-                    
-                    ref_voice_opvoice_path = find_openvoice_ref_by_name(
-                        this_dir, openvoice_voice_ref_list)
-
-            file_basename = Path(audio_file).stem
-            output_filename = output_folder / f"openvoice_{file_basename}.wav"
-            if allow_infer:
-                infer_openvoice(input_path=audio_file,
-                                ref_path=ref_voice_opvoice_path, output_path=output_filename)
-        return None, None, f"Files saved in {output_folder} folder"
-    else:
-        # Func for single file rvc
-        temp_dir = this_dir / "output"
-        # result = temp_dir / f"{speaker_value_text}_tuned_{count}.{output_type}"
-        allow_infer = True
-
-        # Initialize ref_path to None to ensure it has a value in all branches
-        ref_voice_opvoice_path = None
-
-        # Check if starts with "speaker/"
-        if openvoice_voice_ref_list.startswith("speaker/"):
-            speaker_wav = openvoice_voice_ref_list.split("/")[-1]
-            file_basename = speaker_wav
-
-            if speaker_wav == "reference" and speaker_path_text:
-                ref_voice_opvoice_path = speaker_path_text
             else:
-                ref_voice_opvoice_path = XTTS.get_speaker_path(speaker_wav)
-                if type(ref_voice_opvoice_path) == list:
-                    ref_voice_opvoice_path = ref_voice_opvoice_path[0]
-
-            if speaker_wav == "reference" and not speaker_path_text:
-                allow_infer = False
-                print("Reference not found")
-        else:   
-                file_basename = Path(openvoice_voice_ref_list).stem
                 ref_voice_opvoice_path = find_openvoice_ref_by_name(
-                    this_dir, openvoice_voice_ref_list)
-        
-        output_filename = output_folder / f"openvoice_{file_basename}_f{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
-        if allow_infer:
-            infer_openvoice(input_path=input_file,
-                            ref_path=ref_voice_opvoice_path, output_path=output_filename)
+                    Path.cwd(), openvoice_voice_ref_list)
 
-            # Update the output_file with the absolute path to the result
-            output_file = "test.wav"
+            if allow_infer and ref_voice_opvoice_path:
+                
+                output_filename = output_folder / \
+                    f"openvoice_{Path(audio_file).stem}.wav"
+                infer_openvoice(
+                    input_path=audio_file, ref_path=ref_voice_opvoice_path, output_path=output_filename)
 
-        output_audio = "OPENVOICE FUNC"
-        done_message = f"Done"
-        output_audio = "test.wav"
+        return None, None, f"Files saved in {output_folder} folder"
 
-    return None, gr.Audio(label="Result", value=output_audio), done_message
+    elif openvoice_audio_single:
+        temp_dir = Path.cwd() / "output"
+        filename_openvoice = Path(ref_voice_opvoice_path).stem
+        output_filename = temp_dir / \
+            f"openvoice_{filename_openvoice}_{datetime.now().strftime(DATE_FORMAT)}.wav"
+
+        if openvoice_voice_ref_list.startswith(SPEAKER_PREFIX):
+            speaker_wav = openvoice_voice_ref_list.split("/")[-1]
+            ref_voice_opvoice_path = get_reference_path(
+                speaker_wav, speaker_path_text)
+        else:
+            ref_voice_opvoice_path = find_openvoice_ref_by_name(
+                Path.cwd(), openvoice_voice_ref_list)
+
+        if ref_voice_opvoice_path:
+            infer_openvoice(
+                input_path=input_file, ref_path=ref_voice_opvoice_path, output_path=output_filename)
+            output_audio = output_filename
+            done_message = "Done"
+        else:
+            output_audio = None
+            done_message = "Reference not found"
+
+        return None, gr.Audio(label="Result", value=output_audio), done_message
+
+    # If none of the conditions are met, return an error message
+    return None, None, "An unexpected error occurred during processing"
 
 
+# Main optimization function
 def infer_rvc_audio(
-        # INPUT
         rvc_audio_single,
         rvc_audio_batch,
         rvc_audio_batch_path,
-        # PATH
         rvc_voice_settings_model_name,
         rvc_voice_settings_model_path,
         rvc_voice_settings_index_path,
-        # SETTINGS
         rvc_voice_settings_pitch,
         rvc_voice_settings_index_rate,
         rvc_voice_settings_protect_voiceless,
@@ -193,39 +190,30 @@ def infer_rvc_audio(
         rvc_voice_filter_radius,
         rvc_voice_resemple_rate,
         rvc_voice_envelope_mix,
-        # STATUS
         rvc_voice_status_bar
-
 ):
     if not rvc_voice_settings_model_name:
         return None, None, "Please select RVC model"
 
-    if not rvc_audio_single and not rvc_audio_batch and not rvc_audio_batch_path:
+    if not (rvc_audio_single or rvc_audio_batch or rvc_audio_batch_path):
         return None, None, "Please load audio"
 
-    rvc_voice_status_bar = gr.Progress(track_tqdm=True)
-
     output_folder = this_dir / OUTPUT_FOLDER
-    folder_name = ""
-
+    folder_name = f"rvc_{datetime.now().strftime(DATE_FORMAT)}"
     done_message = ""
 
-    folder_name = "rvc"
-    folder_name += "_" + datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Save Audio
-    if rvc_audio_single is not None:
+    input_file = None
+    if rvc_audio_single:
         rate, y = rvc_audio_single
-        input_file = save_audio_to_wav(rate, y, this_dir)
+        input_file = save_audio_to_wav(rate, y, Path.cwd())
 
-    audio_files = rvc_audio_batch
-
+    audio_files = rvc_audio_batch or []
     if rvc_audio_batch_path:
-        audio_files = glob.glob(rvc_audio_batch_path + "/*.wav")
-        audio_files += glob.glob(rvc_audio_batch_path + "/*.mp3")
-        audio_files += glob.glob(rvc_audio_batch_path + "/*.flac")
+        audio_files.extend(find_audio_files(rvc_audio_batch_path))
 
-    if rvc_audio_batch or rvc_audio_batch_path:
+    rvc_voice_status_bar = gr.Progress(track_tqdm=True)
+    # Process batches of files
+    if audio_files:
         output_folder = output_folder / folder_name / "temp"
         os.makedirs(output_folder, exist_ok=True)
 
@@ -243,13 +231,14 @@ def infer_rvc_audio(
             resemple_rate=rvc_voice_resemple_rate,
             envelope_mix=rvc_voice_envelope_mix,
         )
-        print(output_folder)
+
         done_message = f"Done, file saved in {folder_name} folder"
         return None, None, done_message
-    else:
-        # Func for single file rvc
+
+    # Process single file
+    elif rvc_audio_single:
         output_file_name = output_folder / \
-            f"rvc_{rvc_voice_settings_model_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
+            f"rvc_{rvc_voice_settings_model_name}_{datetime.now().strftime(DATE_FORMAT)}.wav"
         infer_rvc(
             pitch=rvc_voice_settings_pitch,
             index_rate=rvc_voice_settings_index_rate,
@@ -261,11 +250,15 @@ def infer_rvc_audio(
             opt_path=output_file_name,
             filter_radius=rvc_voice_filter_radius,
             resemple_rate=rvc_voice_resemple_rate,
-            envelope_mix=rvc_voice_envelope_mix)
-        done_message = f"Done"
-        output_audio = output_file_name
+            envelope_mix=rvc_voice_envelope_mix
+        )
 
-    return None, gr.Audio(label="Result", value=output_audio), done_message
+        done_message = "Done"
+        output_audio = output_file_name
+        return None, gr.Audio(label="Result", value=output_audio), done_message
+
+    # If none of the conditions are met, return an error message
+    return None, None, "An unexpected error occurred during processing"
 
 
 with gr.Blocks(css=css) as demo:
@@ -405,7 +398,8 @@ with gr.Blocks(css=css) as demo:
     opvoice_voice_show_speakers.change(fn=update_openvoice_ref_list, inputs=[
         opvoice_voice_ref_list, opvoice_voice_show_speakers], outputs=[opvoice_voice_ref_list])
 
-    openvoice_voice_infer_btn.click(fn=infer_openvoice_audio,inputs=[openvoice_audio_single,openvoice_audio_batch,openvoice_audio_batch_path,opvoice_voice_ref_list,openvoice_status_bar,speaker_path_text],outputs=[openvoice_video_output,openvoice_voice_output,openvoice_status_bar])
+    openvoice_voice_infer_btn.click(fn=infer_openvoice_audio, inputs=[openvoice_audio_single, openvoice_audio_batch, openvoice_audio_batch_path,
+                                    opvoice_voice_ref_list, openvoice_status_bar, speaker_path_text], outputs=[openvoice_video_output, openvoice_voice_output, openvoice_status_bar])
     # LOAD FUNCTIONS AND HANDLERS
     import modules
 if __name__ == "__main__":
