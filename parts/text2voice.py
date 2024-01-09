@@ -8,8 +8,7 @@ with gr.Row():
     with gr.Column():
         with gr.Tab("Text"):
             text = gr.TextArea(label="Input Text",
-                               placeholder="Input Text Here...",
-                               lines=12)
+                               placeholder="Input Text Here...")
         with gr.Tab("Batch"):
             batch_generation = gr.Files(
                 label="Upload .txt files", file_types=["text"])
