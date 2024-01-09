@@ -1,6 +1,2 @@
-import modules.generation
-import modules.reference_save
-import modules.reference_speaker
-import modules.select_models
-import modules.settings
-import modules.rvc
+import modules.text2voice
+import modules.insturment_resemble
