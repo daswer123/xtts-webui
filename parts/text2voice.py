@@ -7,8 +7,9 @@ from xtts_webui import *
 with gr.Row():
     with gr.Column():
         with gr.Tab("Text"):
-            text = gr.TextArea(label="Input Textt",
-                               placeholder="Input Text Here...")
+            text = gr.TextArea(label="Input Text",
+                               placeholder="Input Text Here...",
+                               lines=12)
         with gr.Tab("Batch"):
             batch_generation = gr.Files(
                 label="Upload .txt files", file_types=["text"])
