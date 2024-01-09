@@ -74,13 +74,13 @@ with gr.Blocks(css=css) as demo:
     with gr.Tab("Text2Voice"):
         from parts.text2voice import *
 
-    # with gr.Tab("Voice2Voice"):
-    #     with gr.Tab("RVC"):
-    #         gr.Markdown("WIP")
-    #     with gr.Tab("OpenVoice"):
-    #         gr.Markdown("WIP")
-    #     with gr.Tab("Translate"):
-    #         gr.Markdown("WIP")
+    with gr.Tab("Voice2Voice"):
+        with gr.Tab("RVC"):
+            gr.Markdown("WIP")
+        with gr.Tab("OpenVoice"):
+            gr.Markdown("WIP")
+        with gr.Tab("Translate"):
+            gr.Markdown("WIP")
 
     with gr.Tab("Train"):
         from parts.train import *
