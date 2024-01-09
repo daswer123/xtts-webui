@@ -58,6 +58,9 @@ def generate_audio(
     rvc_settings_index_rate,
     rvc_settings_protect_voiceless,
     rvc_settings_method,
+    rvc_settings_filter_radius,
+    rvc_settings_resemple_rate,
+    rvc_settings_envelope_mix,
     # OpenVoice Setting
     opvoice_ref_list,
     # Batch
@@ -157,7 +160,7 @@ def generate_audio(
 
                 output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.{output_type}"
                 output_file = XTTS.process_tts_to_file(
-                    text, lang_code, ref_speaker_wav, options, output_file_path)
+                    this_dir,text, lang_code, ref_speaker_wav, options, output_file_path)
 
                 if improve_output_audio:
                     output_file = improve_and_convert_audio(
@@ -178,6 +181,9 @@ def generate_audio(
                               rvc_settings_index_path,
                               output_file,
                               result,
+                              filter_radius=rvc_settings_filter_radius,
+                              resemple_rate=rvc_settings_resemple_rate,
+                              envelope_mix=rvc_settings_envelope_mix
                               )
                     output_file = result.absolute()
 
@@ -245,7 +251,7 @@ def generate_audio(
     status_message = "Done"
     # Perform TTS and save to the generated filename
     output_file = XTTS.process_tts_to_file(
-        text, lang_code, ref_speaker_wav, options, output_file_path)
+       this_dir, text, lang_code, ref_speaker_wav, options, output_file_path)
 
     if improve_output_audio:
         output_file = improve_and_convert_audio(output_file, output_type)
@@ -265,6 +271,9 @@ def generate_audio(
                   rvc_settings_index_path,
                   output_file,
                   result,
+                  filter_radius=rvc_settings_filter_radius,
+                  resemple_rate=rvc_settings_resemple_rate,
+                  envelope_mix=rvc_settings_envelope_mix
                   )
         output_file = result.absolute()
 
@@ -334,6 +343,9 @@ generate_btn.click(
         rvc_settings_index_rate,
         rvc_settings_protect_voiceless,
         rvc_settings_method,
+        rvc_settings_filter_radius,
+        rvc_settings_resemple_rate,
+        rvc_settings_envelope_mix,
         # OpenVoice Setting
         opvoice_ref_list,
         # Batch
