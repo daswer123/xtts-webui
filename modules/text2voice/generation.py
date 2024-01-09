@@ -143,6 +143,7 @@ def generate_audio(
 
         batch_dirname = f"output/batch_"+datetime.now().strftime("%Y%m%d_%H%M%S")
         os.makedirs(batch_dirname, exist_ok=True)
+        status_message = f"Done, generation saved in {batch_dirname}"
 
         for file_path in tqdm_object:
             with open(file_path, encoding="utf-8", mode="r") as f:
@@ -161,6 +162,9 @@ def generate_audio(
                 if improve_output_audio:
                     output_file = improve_and_convert_audio(
                         output_file, output_type)
+
+                if improve_output_voice2voice == "RVC" and not rvc_settings_model_path:
+                    status_message += "\nPlease select RVC model before generate"
 
                 if improve_output_voice2voice == "RVC" and rvc_settings_model_path:
                     temp_dir = this_dir / "output"
@@ -185,6 +189,7 @@ def generate_audio(
 
                     if (len(text) < 150):
                         allow_infer = False
+                        status_message += "\nYour text should be longer, more than 150 symblos to use OpenVoice Tunner"
 
                     # Initialize ref_path to None to ensure it has a value in all branches
                     ref_opvoice_path = None
@@ -203,6 +208,7 @@ def generate_audio(
 
                     if speaker_wav == "reference" and not speaker_path_text:
                         allow_infer = False
+                        status_message += "\nReference for OpenVoice not found, Skip tunning"
                         print("Referenc not found, Skip")
                     else:
                         ref_opvoice_path = find_openvoice_ref_by_name(
@@ -225,9 +231,9 @@ def generate_audio(
                 output_file = new_output_file
 
         if enable_waveform:
-            return gr.make_waveform(audio=output_file), output_file, f"Done, generation saved in {batch_dirname}"
+            return gr.make_waveform(audio=output_file), output_file, status_message
         else:
-            return None, output_file, f"Done, generation saved in {batch_dirname}"
+            return None, output_file, status_message
 
     # Check if the file already exists, if yes, add a number to the filename
     count = 1
@@ -236,12 +242,16 @@ def generate_audio(
         count += 1
         output_file_path = f"{additional_text}_({count})_{speaker_value_text}.{output_type}"
 
+    status_message = "Done"
     # Perform TTS and save to the generated filename
     output_file = XTTS.process_tts_to_file(
         text, lang_code, ref_speaker_wav, options, output_file_path)
 
     if improve_output_audio:
         output_file = improve_and_convert_audio(output_file, output_type)
+
+    if improve_output_voice2voice == "RVC" and not rvc_settings_model_path:
+        status_message = "Please select RVC model before generate"
 
     if improve_output_voice2voice == "RVC" and rvc_settings_model_path:
         temp_dir = this_dir / "output"
@@ -268,6 +278,7 @@ def generate_audio(
 
         if (len(text) < 150):
             allow_infer = False
+            status_message = "Your text should be longer, more than 150 symblos to use OpenVoice Tunner"
 
         # Check if starts with "speaker/"
         if opvoice_ref_list.startswith("speaker/"):
@@ -299,9 +310,9 @@ def generate_audio(
             **resemble_enhance_settings, audio_path=output_file, output_type=output_type)[1]
 
     if enable_waveform:
-        return gr.make_waveform(audio=output_file), output_file, "Done"
+        return gr.make_waveform(audio=output_file), output_file, status_message
     else:
-        return None, output_file, "Done"
+        return None, output_file, status_message
 
 
 # GENERATION HANDLERS
