@@ -31,7 +31,7 @@ with gr.Tab("Translate"):
                         label="Speaker Accent", choices=supported_languages_list, value="ru")
         with gr.Column():
             translate_status_bar = gr.Label(
-                value="Choose reference and click Infer button")
+                value="Select target language, mode and upload audio then press translate button.")
             translate_video_output = gr.Video(
                 label="Waveform Translate", value=None, interactive=False, visible=False)
             translate_voice_output = gr.Audio(
