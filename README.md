@@ -1,34 +1,32 @@
 # XTTS-WebUI
 
 ## About the Project
-XTTS-WebUI offers two interfaces designed to enhance your experience with XTTS. One interface serves as a user-friendly approach to interact with XTTS, while the other is an enhanced version of the web interface intended for fine-tuning. This project simplifies interaction with XTTS through two files and provides a feature-rich web interface for optimal utilization.
+XTTS-Webui is a web interface that allows you to make the most of XTTS. There are other neural networks around this interface that will improve your results. You can also fine tune the model and get a high quality voice model.
 
-## 1 - webui 
-![image](https://github.com/daswer123/xtts-webui/assets/22278673/c0549b7d-5689-4166-8f6e-1c3975e5efc3)
-
-
-## 2 - finetune webui
-![image](https://github.com/daswer123/xtts-webui/assets/22278673/f0d7768e-77e4-4087-acb2-175eeddc9d2c)
-
-![image](https://github.com/daswer123/xtts-webui/assets/22278673/0b5b1b99-2678-4cd0-ae80-bebf66b06e3d)
+![image](https://github.com/daswer123/xtts-webui/assets/22278673/89eb50c5-9a1e-41cf-8ae9-b734761716a6)
 
 ## Key Features
-- **xtts_finetune_webui.py**: An improved version of the official web interface tailored for ease of use on personal computers.
-- **xtts_webui.py**: Original work that will be further developed; currently operates flawlessly, featuring numerous settings and quick image addition capabilities.
-
-If you don't know where to start for xtts-finetune-webui, watch this [video](https://www.youtube.com/watch?v=8tpDiiouGxc)
+- Easy working with XTTSv2
+- Batch processing for dubbing a large number of files
+- Ability to translate any audio with voice saving
+- Ability to improve results using neural networks and audio tools automatically
+- Ability to fine tune the model and use it immediately
+- Ability to use tools such as: **RVC**, **OpenVoice**, **Resemble Enhance**, both together and separately
+- Ability to customize XTTS generation, all parameters, multiple speaking samples
 
 ## TODO
-- [ ] Add a status bar with progress and error information
+- [x] Add a status bar with progress and error information
+- [x] Integrate training into the standard interface
+- [ ] Add the ability to stream to check the result
+- [ ] Add a new way to process text for voiceover
 - [ ] Add the ability to customize speakers when batch processing
-- [ ] Integrate training into the standard interface
 - [ ] Add API
 
 ## Installation
 
 Use this web UI through [Google Colab](https://colab.research.google.com/drive/1MrzAYgANm6u79rCCQQqBSoelYGiJ1qYL)
 
-**Please ensure you have Python 3.10.x or Python 3.11, CUDA 11.8 , Microsoft Builder Tools 2019 with c++ package, and ffmpeg installed**
+**Please ensure you have Python 3.10.x or Python 3.11, CUDA 11.8 or CUDA 12.1 , Microsoft Builder Tools 2019 with c++ package, and ffmpeg installed**
 
 ### 1 Method, through scripts
 
@@ -36,13 +34,12 @@ Use this web UI through [Google Colab](https://colab.research.google.com/drive/1
 To get started:
 - Run 'install.bat' file
 - To start the web UI, run 'start_xtts_webui.bat'
-- If you want to start fine tuning web UI, run 'start_xtts_finetune_webui.bat'
 - Open your preferred browser and go to local address displayed in console.
+- 
 #### Linux
 To get started:
 - Run 'install.sh' file
 - To start the web UI, run 'start_xtts_webui.sh'
-- If you want to start fine tuning web UI, run 'start_xtts_finetune_webui.sh'
 - Open your preferred browser and go to local address displayed in console.
 
 ### 2 Method, Manual
@@ -97,19 +94,13 @@ Here are some runtime arguments that can be used when starting the application:
 |--share   		 ||Allows sharing of interface outside local computer|
 |--rvc     	 ||Enable RVC post-processing, all models should locate in rvc folder|
 
-#### Starting XTTS Finetune WebUI:
-If you want start finetuning process use following command :
-```bash
-python xtts_finetune_webui.py
-```
-
 ### TTS -> RVC
 
 Module for RVC, you can enable the RVC module to postprocess the received audio for this you need to add the --rvc flag if you are running in the console or write it to the startup file
 
-In order for the model to work in RVC settings you need to select a model that you must first upload to the rvc folder, the model and index file must be together, the index file is optional, each model must be in a separate folder.
+In order for the model to work in RVC settings you need to select a model that you must first upload to the voice2voice/rvc folder, the model and index file must be together, the index file is optional, each model must be in a separate folder.
 
-## Differences between xtts-finetune webui and the [official webui](https://github.com/coqui-ai/TTS/pull/3296)
+## Differences between xtts-webui and the [official webui](https://github.com/coqui-ai/TTS/pull/3296)
 
 ### Data processing
 
