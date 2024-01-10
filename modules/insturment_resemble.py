@@ -38,8 +38,7 @@ def instrument_enchane_audio(
     folder_name += "_" + datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Create output dir
-    output_dir = output_folder / folder_name
-    os.makedirs(output_dir, exist_ok=True)
+    
 
     # Save Audio
     if resemble_audio_single is not None:
@@ -57,6 +56,9 @@ def instrument_enchane_audio(
         audio_files += glob.glob(resemble_audio_batch_path + "/*.flac")
 
     if resemble_audio_batch or resemble_audio_batch_path:
+        output_dir = output_folder / folder_name
+        os.makedirs(output_dir, exist_ok=True)
+
         if resemble_status_label is not None:
             tqdm_object = resemble_status_label.tqdm(
                 audio_files, desc="Enchance files...")
@@ -90,7 +92,7 @@ def instrument_enchane_audio(
             chunks_overlap=resemble_chunk_overlap,
             denoising=resemble_denoise,
             output_type="wav",
-            output_folder=folder_name
+            output_folder=""
         )
         done_message = f"Done"
 
