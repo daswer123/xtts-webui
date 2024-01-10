@@ -299,8 +299,12 @@ class TTSWrapper:
         text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
         return text
 
-    def local_generation(self, text, ref_speaker_wav, speaker_wav, language, options, output_file):
+    def local_generation(self,this_dir, text, ref_speaker_wav, speaker_wav, language, options, output_file):
         # Log time
+        if (self.model_loaded == False):
+            print("Loading model")
+            self.load_model(this_dir)
+
         generate_start_time = time.time()  # Record the start time of loading the model
 
         gpt_cond_latent, speaker_embedding = self.get_or_create_latents(
@@ -397,7 +401,7 @@ class TTSWrapper:
             # Define generation if model via api or locally
             if self.model_source == "local":
                 self.local_generation(
-                    clear_text, ref_speaker_wav, speaker_wav, language, options, output_file)
+                    this_dir,clear_text, ref_speaker_wav, speaker_wav, language, options, output_file)
             else:
                 self.api_generation(clear_text, speaker_wav,
                                     language, options, output_file)

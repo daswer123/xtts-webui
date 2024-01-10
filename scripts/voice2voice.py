@@ -165,3 +165,6 @@ def infer_openvoice(input_path, ref_path, output_path):
     except Exception as e:
         print(f"Error: {e}")
         return False
+
+
+# def translate_audio_file(input_file,translate_whisper_model,translate_audio_mode,translate_source_lang,translate_target_lang,translate_speaker_lang):

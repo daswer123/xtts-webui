@@ -20,3 +20,4 @@ faiss-cpu
 pyworld
 torchcrepe
 praat-parselmouth>=0.4.2
+translators
