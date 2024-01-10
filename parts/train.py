@@ -2,6 +2,14 @@ import gradio as gr
 from xtts_webui import *
 
 with gr.Column():
+    gr.Markdown("""
+This train tab allows you to fine-tune the XTTS, resulting in a model that matches the models that can be used for voiceovers.
+
+You need to download a set of dates, select a language and click "Train". Once training is complete, your model will automatically rotate into the model rest position.
+
+You can watch a video from the developers that shows how to do [finetune](
+https://www.youtube.com/watch?v=8tpDiouGxc)
+    """)
     gr.Markdown("# 1 Stage - Prepare Dataset")
     load_params_btn = gr.Button(value="Load Params from output folder")
     custom_model_name = gr.Textbox(

@@ -2,6 +2,7 @@ import gradio as gr
 from xtts_webui import *
 
 with gr.Tab("Resemble Enhance"):
+    gr.Markdown("")
     with gr.Row():
         with gr.Column():
             with gr.Tab("Single"):

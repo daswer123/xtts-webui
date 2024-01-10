@@ -62,6 +62,8 @@ class TTSWrapper:
         self.speaker_folder = speaker_folder
         self.output_folder = output_folder
 
+        self.model_loaded = False
+
         self.language = "en"
         self.speaker_wav = ""
         self.available_model_versions = [
@@ -72,6 +74,7 @@ class TTSWrapper:
 
     def unload_model(self):
         self.model = None
+        self.model_loaded = False
         torch.cuda.empty_cache()
         logger.info("Model unloaded")
 
@@ -96,6 +99,7 @@ class TTSWrapper:
                 logger.info("Pre-create latents for all current speakers")
                 self.create_latents_for_all()
 
+        self.model_loaded = True
         logger.info("Model successfully loaded ")
 
     def load_local_model(self, this_dir):
@@ -113,6 +117,7 @@ class TTSWrapper:
         self.model = Xtts.init_from_config(config)
         self.model.load_checkpoint(
             config, use_deepspeed=USE_DEEPSPEED, checkpoint_dir=str(checkpoint_dir))
+        self.model_loaded = True
         self.model.to(self.device)
 
     def switch_model_device(self):
@@ -294,8 +299,12 @@ class TTSWrapper:
         text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
         return text
 
-    def local_generation(self, text, ref_speaker_wav, speaker_wav, language, options, output_file):
+    def local_generation(self,this_dir, text, ref_speaker_wav, speaker_wav, language, options, output_file):
         # Log time
+        if (self.model_loaded == False):
+            print("Loading model")
+            self.load_model(this_dir)
+
         generate_start_time = time.time()  # Record the start time of loading the model
 
         gpt_cond_latent, speaker_embedding = self.get_or_create_latents(
@@ -367,7 +376,7 @@ class TTSWrapper:
             return speaker_wavs[0]
         return speaker_wavs
 
-    def process_tts_to_file(self, text, language, ref_speaker_wav, options, file_name_or_path="out.wav"):
+    def process_tts_to_file(self,this_dir, text, language, ref_speaker_wav, options, file_name_or_path="out.wav"):
         try:
             speaker_wav = self.get_speaker_path(ref_speaker_wav)
 
@@ -383,12 +392,16 @@ class TTSWrapper:
             # Replace double quotes with single, asterisks, carriage returns, and line feeds
             clear_text = self.clean_text(text)
 
+            if (self.model_loaded == False):
+                print("Loading model")
+                self.load_model(this_dir)
+
             self.switch_model_device()  # Load to CUDA if lowram ON
 
             # Define generation if model via api or locally
             if self.model_source == "local":
                 self.local_generation(
-                    clear_text, ref_speaker_wav, speaker_wav, language, options, output_file)
+                    this_dir,clear_text, ref_speaker_wav, speaker_wav, language, options, output_file)
             else:
                 self.api_generation(clear_text, speaker_wav,
                                     language, options, output_file)

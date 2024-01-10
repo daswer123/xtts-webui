@@ -58,6 +58,9 @@ def generate_audio(
     rvc_settings_index_rate,
     rvc_settings_protect_voiceless,
     rvc_settings_method,
+    rvc_settings_filter_radius,
+    rvc_settings_resemple_rate,
+    rvc_settings_envelope_mix,
     # OpenVoice Setting
     opvoice_ref_list,
     # Batch
@@ -157,7 +160,7 @@ def generate_audio(
 
                 output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.{output_type}"
                 output_file = XTTS.process_tts_to_file(
-                    text, lang_code, ref_speaker_wav, options, output_file_path)
+                    this_dir,text, lang_code, ref_speaker_wav, options, output_file_path)
 
                 if improve_output_audio:
                     output_file = improve_and_convert_audio(
@@ -169,7 +172,7 @@ def generate_audio(
                 if improve_output_voice2voice == "RVC" and rvc_settings_model_path:
                     temp_dir = this_dir / "output"
                     result = temp_dir / \
-                        f"{speaker_value_text}_{rvc_settings_model_name}_{count}.{output_type}"
+                        f"{speaker_value_text}_{rvc_settings_model_name}_{Path(file_path).stem}.{output_type}"
                     infer_rvc(rvc_settings_pitch,
                               rvc_settings_index_rate,
                               rvc_settings_protect_voiceless,
@@ -178,13 +181,16 @@ def generate_audio(
                               rvc_settings_index_path,
                               output_file,
                               result,
+                              filter_radius=rvc_settings_filter_radius,
+                              resemple_rate=rvc_settings_resemple_rate,
+                              envelope_mix=rvc_settings_envelope_mix
                               )
                     output_file = result.absolute()
 
                 if improve_output_voice2voice == "OpenVoice" and opvoice_ref_list != "None":
                     temp_dir = this_dir / "output"
                     result = temp_dir / \
-                        f"{speaker_value_text}_tuned_{count}.{output_type}"
+                        f"{speaker_value_text}_tuned_{filename}.{output_type}"
                     allow_infer = True
 
                     if (len(text) < 150):
@@ -206,10 +212,10 @@ def generate_audio(
                             if type(ref_opvoice_path) == list:
                                 ref_opvoice_path = ref_opvoice_path[0]
 
-                    if speaker_wav == "reference" and not speaker_path_text:
-                        allow_infer = False
-                        status_message += "\nReference for OpenVoice not found, Skip tunning"
-                        print("Referenc not found, Skip")
+                        if speaker_wav == "reference" and not speaker_path_text:
+                             allow_infer = False
+                             status_message += "\nReference for OpenVoice not found, Skip tunning"
+                             print("Referenc not found, Skip")
                     else:
                         ref_opvoice_path = find_openvoice_ref_by_name(
                             this_dir, opvoice_ref_list)
@@ -245,7 +251,7 @@ def generate_audio(
     status_message = "Done"
     # Perform TTS and save to the generated filename
     output_file = XTTS.process_tts_to_file(
-        text, lang_code, ref_speaker_wav, options, output_file_path)
+       this_dir, text, lang_code, ref_speaker_wav, options, output_file_path)
 
     if improve_output_audio:
         output_file = improve_and_convert_audio(output_file, output_type)
@@ -265,6 +271,9 @@ def generate_audio(
                   rvc_settings_index_path,
                   output_file,
                   result,
+                  filter_radius=rvc_settings_filter_radius,
+                  resemple_rate=rvc_settings_resemple_rate,
+                  envelope_mix=rvc_settings_envelope_mix
                   )
         output_file = result.absolute()
 
@@ -294,7 +303,7 @@ def generate_audio(
             if speaker_wav == "reference" and not speaker_path_text:
                 allow_infer = False
                 print("Referenc not found, Skip")
-            else:
+        else:
                 ref_opvoice_path = find_openvoice_ref_by_name(
                     this_dir, opvoice_ref_list)
 
@@ -334,6 +343,9 @@ generate_btn.click(
         rvc_settings_index_rate,
         rvc_settings_protect_voiceless,
         rvc_settings_method,
+        rvc_settings_filter_radius,
+        rvc_settings_resemple_rate,
+        rvc_settings_envelope_mix,
         # OpenVoice Setting
         opvoice_ref_list,
         # Batch

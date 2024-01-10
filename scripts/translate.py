@@ -1,4 +1,8 @@
-from easygoogletranslate import EasyGoogleTranslate
+import shutil
+from tqdm import tqdm
+import gradio as gr
+from datetime import datetime
+import translators as ts
 from pydub import AudioSegment
 
 import torch
@@ -17,15 +21,18 @@ import noisereduce
 from pedalboard import Pedalboard, NoiseGate, LowpassFilter, Compressor, LowShelfFilter, Gain
 import soundfile as sf
 
+from faster_whisper import WhisperModel
+import random
+
 
 def local_generation(xtts, text, speaker_wav, language, output_file, options={}):
     # Log time
     generate_start_time = time.time()  # Record the start time of loading the model
 
-    gpt_cond_latent, speaker_embedding = xtts.get_conditioning_latents(
-        speaker_wav)
+    gpt_cond_latent, speaker_embedding = xtts.get_or_create_latents(
+        "", speaker_wav)
 
-    out = xtts.inference(
+    out = xtts.model.inference(
         text,
         language,
         gpt_cond_latent=gpt_cond_latent,
@@ -64,6 +71,7 @@ def removeTempFiles(file_list):
 
 def segment_audio(start_time, end_time, input_file, output_file):
     # Cut the segment using ffmpeg and convert it to required format and specifications
+    # print(start_time, end_time, input_file, output_file,"segment")
     (
         ffmpeg
         .input(input_file)
@@ -145,15 +153,39 @@ def create_directory_if_not_exists(directory_path):
         print(
             f"An error occurred while creating folder '{directory_path}': {e}")
 
+
 # Assuming translator, segment_audio, get_suitable_segment,
 # local_generation, combine_wav_files are defined elsewhere.
+def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, source_lang, target_lang,
+                            speaker_lang, options={}, text_translator="google", translate_mode=True,
+                            output_filename="result.mp3", speaker_wavs=None, improve_audio_func=False, progress=None):
 
+    model_size = whisper_model
+    print(f"Loading Whisper model {whisper_model}...")
+    model = WhisperModel(whisper_model, device="cuda", compute_type="float16")
+    print("Whisper model loaded")
 
-def translate_and_get_voice(filename, xtts, segments, mode, source_lang, target_lang,
-                            speaker_lang, options={}, translate_mode=True,
-                            output_filename="result.mp3", speaker_wavs=None, improve_audio_func=False):
+    if source_lang == "auto":
+        language_for_whisper = None
+    else:
+        language_for_whisper = source_lang
 
-    translator = EasyGoogleTranslate()
+    segments, info = model.transcribe(
+        filename, language=language_for_whisper, beam_size=5)
+    print("Detected language '%s' with probability %f" %
+          (info.language, info.language_probability))
+
+    if source_lang == "auto":
+        source_lang = info.language
+
+    options = {
+        "temperature": 0.7,
+        "length_penalty": 1.0,
+        "repetition_penalty": 5.0,
+        "top_k": 50,
+        "top_p": 0.7,
+        "speed": 1.0,
+    }
 
     original_segment_files = []
     translated_segment_files = []
@@ -161,16 +193,32 @@ def translate_and_get_voice(filename, xtts, segments, mode, source_lang, target_
     output_folder = os.path.dirname(output_filename)
     output_folder = Path(output_folder)
 
-    create_directory_if_not_exists(output_folder)
+    temp_folder_name = Path(
+        "./temp") / f'translate_{datetime.now().strftime("%Y%m%d%H%M%S")}'
+    temp_folder = temp_folder_name
 
-    segments = list(segments)
+    create_directory_if_not_exists(temp_folder)
 
-    for i, segment in enumerate(segments):
+    segments = list(segments)  # Убедитесь, что 'segments' является списком
+    total_segments = len(segments)
+
+    # Создаем список пустых элементов размером total_segments
+    indices = list(range(total_segments))
+
+    if progress is not None:
+        tqdm_object = progress.tqdm(
+            indices, total=total_segments, desc="Translate and voiceover...")
+    else:
+        tqdm_object = tqdm(indices, total=total_segments,
+                           desc="Translate and voiceover...")
+
+    for i in tqdm_object:  # Используем значения из indices для прогресса
+        segment = segments[i]  # Получаем текущий сегмент используя индекс
         text_to_syntez = ""
 
         if translate_mode:
-            text_to_syntez = translator.translate(
-                segment.text, target_lang, source_lang)
+            text_to_syntez = ts.translate_text(
+                query_text=segment.text, translator=text_translator, from_language=source_lang, to_language=target_lang)
             print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
         else:
             print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}")
@@ -180,6 +228,7 @@ def translate_and_get_voice(filename, xtts, segments, mode, source_lang, target_
         original_segment_files.append(original_audio_segment_file)
 
         # Segment audio according to mode
+        mode = int(mode)
         if mode == 1 or mode == 2:
             start_time = segment.start if mode == 1 else get_suitable_segment(
                 i, segments).start
@@ -187,13 +236,13 @@ def translate_and_get_voice(filename, xtts, segments, mode, source_lang, target_
                 i, segments).end
 
             # Exporting segmented audio; assuming 'filename' is available here
-            output_segment_folder = output_folder / original_audio_segment_file
+            output_segment_folder = temp_folder / original_audio_segment_file
             segment_audio(start_time=start_time, end_time=end_time,
                           input_file=filename, output_file=str(output_segment_folder))
 
         # Prepare TTS input based on provided `mode`
         tts_input_wav = speaker_wavs if (
-            mode == 3 and speaker_wavs) else output_folder / original_audio_segment_file
+            mode == 3 and speaker_wavs) else temp_folder / original_audio_segment_file
 
         synthesized_audio_file = ""
 
@@ -202,20 +251,24 @@ def translate_and_get_voice(filename, xtts, segments, mode, source_lang, target_
         else:
             synthesized_audio_file = f"original_segment_{i}.wav"
 
+        current_datetime = str(datetime.now())
         # Start transformation using TTS system; assuming all required fields are correct
-        local_generation(
-            xtts=xtts,
+        xtts.local_generation(
+            this_dir=this_dir,
             text=text_to_syntez,
+            ref_speaker_wav=current_datetime,
             speaker_wav=tts_input_wav,
             language=speaker_lang,
             options=options,
-            output_file=output_folder / synthesized_audio_file
+            output_file=temp_folder / synthesized_audio_file
         )
 
         translated_segment_files.append(synthesized_audio_file)
+        # tqdm_object.update(1)
 
+    # tqdm_object.close()
     combined_output_filepath = os.path.join(output_filename)
-    combine_wav_files([os.path.join(output_folder, f)
+    combine_wav_files([os.path.join(temp_folder, f)
                       for f in translated_segment_files], combined_output_filepath)
 
     if improve_audio_func:
@@ -226,78 +279,8 @@ def translate_and_get_voice(filename, xtts, segments, mode, source_lang, target_
 
     # Optionally remove temporary files after combining them into final output.
     clean_temporary_files(translated_segment_files +
-                          (original_segment_files if mode != 3 else []), output_folder)
-    return output_filename
+                          (original_segment_files if mode != 3 else []), temp_folder)
 
-# source_lang = info.language
-# target_lang = "en"
-# speaker_lang = "ru"
-
-# segments = list(segments)
-# translate_and_get_voice(segments,1,source_lang,target_lang,speaker_lang,"output","result.mp3")
-
-# def main():
-#     parser = argparse.ArgumentParser(description='Translate audio segments and synthesize speech.')
-
-#     parser.add_argument('--input',"-i", required=True, help='Path to the file containing segment data')
-#     parser.add_argument('--whsper_model',"-wm", default='large-v3', help='Model for Whisper')
-#     parser.add_argument('--xtts_version',"-xv", default='2.0.2', help='Version of XTTS')
-#     parser.add_argument('--mode',"-m", type=int, choices=[1, 2, 3], default=1,
-#                         help='Mode of operation for audio processing')
-#     parser.add_argument('--source_lang',"-sol", default=None, help='Source language code')
-#     parser.add_argument('--target_lang',"-tl", default='en', required=True, help='Target language code')
-#     parser.add_argument('--speaker_lang',"-spl", default="en", help='Speaker language code for synthesis')
-#     parser.add_argument('--output_folder',"-ofo", default="output", help='Output folder path')
-#     parser.add_argument('--output_filename',"-ofi", default="result.mp3", help='Name for the output audio file')
-#     parser.add_argument('--speaker_wav_path',"-spw",
-#                         type=lambda p: Path(p).absolute(),
-#                         required=False,
-#                         help="Path to original speaker's WAV file")
-
-#     args = parser.parse_args()
-
-#     #  LOAD WHISPER MODEL
-#     model_size = args.whsper_model
-#     print(f"Loading Whisper model {model_size}...")
-#     model = WhisperModel(model_size, device="cuda", compute_type="float16")
-#     print("Whisper model loaded")
-#     filename = args.input # Make sure this is a string
-
-#     # Load XTTS model
-#     xtts_model_version = args.xtts_version
-
-#     this_dir = Path(__file__).parent.resolve()
-
-#     download_model(this_dir,xtts_model_version)
-
-#     config = XttsConfig()
-#     config_path = this_dir / 'models' / f'v{xtts_model_version}' / 'config.json'
-#     checkpoint_dir = this_dir / 'models' / f'v{xtts_model_version}'
-
-#     config.load_json(str(config_path))
-
-#     xtts = Xtts.init_from_config(config)
-#     xtts.load_checkpoint(config, checkpoint_dir=str(checkpoint_dir))
-#     print("Loading XTTS model")
-#     xtts.to("cuda")
-#     print("XTTS model loaded")
-
-#     # Transcribe the audio file using WhisperModel
-#     segments, info = model.transcribe(filename,language=args.source_lang, beam_size=5)
-
-#     print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
-
-#     translate_and_get_voice(filename =filename,
-#                             xtts = xtts,
-#                             segments=segments,
-#                             mode=args.mode,
-#                             source_lang=args.source_lang,
-#                             target_lang=args.target_lang,
-#                             speaker_lang=args.speaker_lang,
-#                             output_folder=args.output_folder,
-#                             output_filename=args.output_filename,
-#                             speaker_wavs=str(args.speaker_wav_path))
-
-# if __name__ == "__main__":
-#    main()
-#    print("Done")
+    new_file_name = output_folder / Path(output_filename).name
+    shutil.move(output_filename, new_file_name)
+    return new_file_name

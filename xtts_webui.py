@@ -1,3 +1,4 @@
+
 from scripts.modeldownloader import get_folder_names_advanced
 from scripts.tts_funcs import TTSWrapper
 
@@ -47,7 +48,7 @@ supported_languages = {
 reversed_supported_languages = {
     name: code for code, name in supported_languages.items()}
 reversed_supported_languages_list = list(reversed_supported_languages.keys())
-
+supported_languages_list = list(supported_languages.keys())
 # INIT MODEL
 XTTS = TTSWrapper(OUTPUT_FOLDER, SPEAKER_FOLDER, LOWVRAM_MODE,
                   MODEL_SOURCE, MODEL_VERSION, DEVICE)
@@ -56,6 +57,7 @@ XTTS = TTSWrapper(OUTPUT_FOLDER, SPEAKER_FOLDER, LOWVRAM_MODE,
 logger.info(f"Start loading model {MODEL_VERSION}")
 this_dir = Path(__file__).parent.resolve()
 XTTS.load_model(this_dir)
+
 
 with gr.Blocks(css=css) as demo:
     gr.Markdown(
@@ -74,13 +76,8 @@ with gr.Blocks(css=css) as demo:
     with gr.Tab("Text2Voice"):
         from parts.text2voice import *
 
-    # with gr.Tab("Voice2Voice"):
-    #     with gr.Tab("RVC"):
-    #         gr.Markdown("WIP")
-    #     with gr.Tab("OpenVoice"):
-    #         gr.Markdown("WIP")
-    #     with gr.Tab("Translate"):
-    #         gr.Markdown("WIP")
+    with gr.Tab("Voice2Voice"):
+        from parts.voice2voice import *
 
     with gr.Tab("Train"):
         from parts.train import *
@@ -88,6 +85,7 @@ with gr.Blocks(css=css) as demo:
     with gr.Tab("Instuments"):
         from parts.instuments import *
 
+    
     # LOAD FUNCTIONS AND HANDLERS
     import modules
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import glob
 from tqdm import tqdm
 from pathlib import Path
 import requests
+import shutil
 
 
 def get_rvc_models(this_dir):
@@ -68,13 +69,10 @@ def find_openvoice_ref_by_name(this_dir, filename):
             return openvoice_models_base / model
 
 
-def infer_rvc(pitch, index_rate, protect_voiceless, method, index_path, model_path, input_path, opt_path):
+def infer_rvc(pitch, index_rate, protect_voiceless, method, index_path, model_path, input_path, opt_path, filter_radius = 3, resemple_rate = 0, envelope_mix = 0.25):
     f0method = method
     device = "cuda:0"
     protect = protect_voiceless
-    crepe_hop_length = 128
-    f0_minimum = 50
-    f0_maximum = 1100
     autotune_enable = False
 
     index_path = str(index_path)
@@ -90,10 +88,64 @@ def infer_rvc(pitch, index_rate, protect_voiceless, method, index_path, model_pa
             '--index', model_path,
             '--index_rate', str(index_rate),
             '--device', device,
-            '--protect', str(protect).lower()
+            '--protect', str(protect).lower(),
+            '--filter_radius', str(filter_radius),
+            '--resample_sr', str(resemple_rate),
+            '--rms_mix_rate', str(envelope_mix)
         ]
 
         subprocess.run(cmd)
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
+
+def infer_rvc_batch(model_name,pitch, index_rate, protect_voiceless, method, index_path, model_path, paths, opt_path,filter_radius=3,resemple_rate=0,envelope_mix=0.25):
+    f0method = method
+    device = "cuda:0"
+    protect = protect_voiceless
+
+    index_path = str(index_path)
+    model_path = str(model_path)
+
+    temp_dir = Path(os.getcwd()) / "temp" / "rvc"
+
+    if temp_dir.exists():
+        shutil.rmtree(temp_dir)
+    
+    temp_dir.mkdir(exist_ok=True)
+    new_paths = []
+    for file in paths:
+        # Copy in temp dir with same name and 
+        new_path = temp_dir / Path(file).name
+        shutil.copy(file, new_path)
+        new_paths.append(new_path)
+
+    try:
+        cmd = [
+            'venv/rvc_venv/scripts/python', '-m', 'rvc_python',
+            '--dir', temp_dir,
+            '--model', index_path,
+            '--pitch', str(pitch),
+            '--method', f0method,
+            '--output', opt_path,
+            '--index', model_path,
+            '--index_rate', str(index_rate),
+            '--device', device,
+            '--protect', str(protect).lower(),
+            '--filter_radius', str(filter_radius),
+            '--resample_sr', str(resemple_rate),
+            '--rms_mix_rate', str(envelope_mix)
+        ]
+
+        subprocess.run(cmd)
+
+        # Add suffix to all inference files, can be in any formate
+        # add _rvc and model_name var
+        opt_path = Path(opt_path).parent
+        for file in glob.glob(f"{opt_path}/*"):
+            new_name = Path(file).stem + f"_rvc_{model_name}" + Path(file).suffix
+            os.rename(file, opt_path / new_name)
+        
     except Exception as e:
         print(f"Error: {e}")
         return False
@@ -113,3 +165,6 @@ def infer_openvoice(input_path, ref_path, output_path):
     except Exception as e:
         print(f"Error: {e}")
         return False
+
+
+# def translate_audio_file(input_file,translate_whisper_model,translate_audio_mode,translate_source_lang,translate_target_lang,translate_speaker_lang):

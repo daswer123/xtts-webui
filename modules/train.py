@@ -64,8 +64,8 @@ def train_model(custom_model, version, language, train_csv, eval_csv, num_epochs
     run_dir = output_path / "run"
 
     # # Remove train dir
-    if run_dir.exists():
-        os.remove(run_dir)
+    # if run_dir.exists():
+    #     os.remove(run_dir)
 
     # Check if the dataset language matches the language you specified
     lang_file_path = output_path / "dataset" / "lang.txt"

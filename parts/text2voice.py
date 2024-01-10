@@ -28,35 +28,35 @@ with gr.Row():
         )
         with gr.Accordion("Advanced settings", open=False) as acr:
             temperature = gr.Slider(
-                label="temperature",
+                label="Temperature",
                 minimum=0.01,
                 maximum=1,
                 step=0.05,
                 value=0.75,
             )
             length_penalty = gr.Slider(
-                label="length_penalty",
+                label="Length Penalty",
                 minimum=-10.0,
                 maximum=10.0,
                 step=0.5,
                 value=1,
             )
             repetition_penalty = gr.Slider(
-                label="repetition penalty",
+                label="Repetition Penalty",
                 minimum=1,
                 maximum=10,
                 step=0.5,
                 value=5,
             )
             top_k = gr.Slider(
-                label="top_k",
+                label="Top K",
                 minimum=1,
                 maximum=100,
                 step=1,
                 value=50,
             )
             top_p = gr.Slider(
-                label="top_p",
+                label="Top P",
                 minimum=0.01,
                 maximum=1,
                 step=0.05,
@@ -67,11 +67,10 @@ with gr.Row():
                 value=True,
             )
 
-            infer_type = gr.Radio(["api", "local"], value="local", label="Type of Processing",
-                                  info="Defines how the text will be processed,local gives you more options. Api does not allow you to use advanced settings")
+            # infer_type = gr.Radio(["api", "local"], value="local", label="Type of Processing",
+            #                       info="Defines how the text will be processed,local gives you more options. Api does not allow you to use advanced settings")
 
         speakers_list = XTTS.get_speakers()
-        # speakers_list = ["Popa"]
         speaker_value = ""
         if not speakers_list:
             speakers_list = ["None"]
@@ -84,11 +83,11 @@ with gr.Row():
             ref_speaker_list = gr.Dropdown(
                 label="Reference Speaker from folder 'speakers'", value=speaker_value, choices=speakers_list)
             show_ref_speaker_from_list = gr.Checkbox(
-                value=False, label="Show example", info="This option will allow you to listen to your reference sample")
+                value=False, label="Show reference sample", info="This option will allow you to listen to your reference sample")
             update_ref_speaker_list_btn = gr.Button(
                 value="Update", elem_classes="speaker-update__btn")
         ref_speaker_example = gr.Audio(
-            label="speaker example", sources="upload", visible=False, interactive=False)
+            label="speaker sample", sources="upload", visible=False, interactive=False)
 
         with gr.Tab(label="Single"):
             ref_speaker = gr.Audio(
@@ -97,7 +96,7 @@ with gr.Row():
             ref_speakers = gr.Files(
                 label="Reference Speakers (mp3, wav, flac)", file_types=["audio"])
 
-        with gr.Accordion(label="Reference Speaker settings.", open=True):
+        with gr.Accordion(label="Reference Speaker settings.", open=False):
             gr.Markdown(
                 value="**Note: the settings only work when you enable them and upload files when they are enabled**")
             gr.Markdown(
@@ -127,7 +126,7 @@ with gr.Row():
 
     with gr.Column():
         status_bar = gr.Label(
-            label="Status bar", value="Enter text, select language and reference speaker, and click Generate")
+            label="Status bar", value="Enter text, select language and speaker, then click Generate")
         video_gr = gr.Video(label="Waveform Visual",
                             visible=False, interactive=False)
         audio_gr = gr.Audio(label="Synthesised Audio",
@@ -158,8 +157,8 @@ with gr.Row():
                     improve_output_resemble = gr.Checkbox(
                         label="Resemble enhancement", info="Uses Resemble enhance to improve sound quality through neural networking. Uses extra 4GB VRAM", value=False)
                 with gr.Row():
-                    improve_output_voice2voice = gr.Radio(label="Choose RVC or OpenVoice to improve result", visible=RVC_ENABLE,
-                                                          info="Uses RVC to convert the output to the RVC model voice, make sure you have a model folder with the pth file inside the rvc folder", choices=["RVC", "OpenVoice", "None"], value="None")
+                    improve_output_voice2voice = gr.Radio(label="Use RVC or OpenVoice to improve result", visible=RVC_ENABLE,
+                                                          info="Uses RVC to convert the output to the RVC model voice, make sure you have a model folder with the pth file inside the voice2voice/rvc folder", choices=["RVC", "OpenVoice", "None"], value="None")
                 with gr.Accordion(label="Resemble enhancement Settings", open=False):
                     enhance_resemble_chunk_seconds = gr.Slider(
                         minimum=2, maximum=40, value=8, step=1, label="Chunk seconds (more secods more VRAM usage and faster inference speed)")
@@ -205,6 +204,12 @@ with gr.Row():
                         minimum=0, maximum=0.5, value=0.33, step=0.01, label="Protect voiceless")
                     rvc_settings_method = gr.Radio(
                         ["crepe", "pm", "rmvpe", "harvest"], value="rmvpe", label="RVC Method")
+                    rvc_settings_filter_radius = gr.Slider(
+                        minimum=0, maximum=7, value=3, step=1, label="If >=3: apply median filtering to the harvested pitch results. The value represents the filter radius and can reduce breathiness.")
+                    rvc_settings_resemple_rate = gr.Slider(
+                        minimum=0, maximum=48000, value=0, step=1, label="Resample the output audio in post-processing to the final sample rate. Set to 0 for no resampling")
+                    rvc_settings_envelope_mix = gr.Slider(
+                        minimum=0, maximum=1, value=0.25, step=0.01, label="Use the volume envelope of the input to replace or mix with the volume envelope of the output. The closer the ratio is to 1, the more the output envelope is used")
                 with gr.Row():
                     output_type = gr.Radio(
                         ["mp3", "wav"], value="wav", label="Output Type")
