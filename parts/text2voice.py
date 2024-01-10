@@ -158,7 +158,7 @@ with gr.Row():
                         label="Resemble enhancement", info="Uses Resemble enhance to improve sound quality through neural networking. Uses extra 4GB VRAM", value=False)
                 with gr.Row():
                     improve_output_voice2voice = gr.Radio(label="Use RVC or OpenVoice to improve result", visible=RVC_ENABLE,
-                                                          info="Uses RVC to convert the output to the RVC model voice, make sure you have a model folder with the pth file inside the rvc folder", choices=["RVC", "OpenVoice", "None"], value="None")
+                                                          info="Uses RVC to convert the output to the RVC model voice, make sure you have a model folder with the pth file inside the voice2voice/rvc folder", choices=["RVC", "OpenVoice", "None"], value="None")
                 with gr.Accordion(label="Resemble enhancement Settings", open=False):
                     enhance_resemble_chunk_seconds = gr.Slider(
                         minimum=2, maximum=40, value=8, step=1, label="Chunk seconds (more secods more VRAM usage and faster inference speed)")

@@ -21,6 +21,7 @@ REFERENCE_KEYWORD = "reference"
 
 # Auxiliary functions
 
+
 def translate_and_voiceover(
     translate_audio_single,
     translate_audio_batch,
@@ -38,7 +39,8 @@ def translate_and_voiceover(
         return None, None, "Please load audio"
 
     output_folder = this_dir / OUTPUT_FOLDER
-    folder_name = f"translated_from_{translate_source_lang}_to_{translate_target_lang}" + datetime.now().strftime(DATE_FORMAT)
+    folder_name = f"translated_from_{translate_source_lang}_to_{translate_target_lang}" + \
+        datetime.now().strftime(DATE_FORMAT)
 
     # Save Audio
     input_file = None
@@ -54,20 +56,21 @@ def translate_and_voiceover(
     tranlsated_filename = f"translated_from_{translate_source_lang}_to_{translate_target_lang}_{current_date}.wav"
     translate_audio_file = translate_and_get_voice(
         this_dir=this_dir,
-        filename = input_file,
-        xtts = XTTS,
+        filename=input_file,
+        xtts=XTTS,
         text_translator=translate_translator,
         translate_mode=True,
-        whisper_model = translate_whisper_model,
-        mode= translate_audio_mode,
-        source_lang = translate_source_lang,
-        target_lang = translate_target_lang,
-        speaker_lang = translate_speaker_lang,
-        output_filename= output_folder / tranlsated_filename,
+        whisper_model=translate_whisper_model,
+        mode=translate_audio_mode,
+        source_lang=translate_source_lang,
+        target_lang=translate_target_lang,
+        speaker_lang=translate_speaker_lang,
+        output_filename=output_folder / tranlsated_filename,
         progress=gr.Progress(track_tqdm=True),
     )
     openvoice_status_bar = gr.Progress(track_tqdm=True)
     return None, translate_audio_file, "Done"
+
 
 def get_reference_path(speaker_wav, speaker_path_text):
     if speaker_wav == REFERENCE_KEYWORD:
@@ -132,7 +135,7 @@ def infer_openvoice_audio(openvoice_audio_single, openvoice_audio_batch, openvoi
                     Path.cwd(), openvoice_voice_ref_list)
 
             if allow_infer and ref_voice_opvoice_path:
-                
+
                 output_filename = output_folder / \
                     f"openvoice_{Path(audio_file).stem}.wav"
                 infer_openvoice(
@@ -255,51 +258,51 @@ def infer_rvc_audio(
     return None, None, "An unexpected error occurred during processing"
 
 
-translate_btn.click(fn=translate_and_voiceover,inputs=[translate_audio_single,
-        translate_audio_batch,
-        translate_audio_batch_path,
-        translate_whisper_model,
-        translate_audio_mode,
-        translate_source_lang,
-        translate_target_lang,
-        translate_speaker_lang,
-        translate_translator,
-        translate_status_bar
-    ], outputs=[translate_video_output,translate_voice_output,translate_status_bar])
+translate_btn.click(fn=translate_and_voiceover, inputs=[translate_audio_single,
+                                                        translate_audio_batch,
+                                                        translate_audio_batch_path,
+                                                        translate_whisper_model,
+                                                        translate_audio_mode,
+                                                        translate_source_lang,
+                                                        translate_target_lang,
+                                                        translate_speaker_lang,
+                                                        translate_translator,
+                                                        translate_status_bar
+                                                        ], outputs=[translate_video_output, translate_voice_output, translate_status_bar])
 
-    
+
 rvc_voice_settings_model_name.change(fn=select_rvc_model, inputs=[rvc_voice_settings_model_name], outputs=[
-        rvc_voice_settings_model_path, rvc_voice_settings_index_path])
+    rvc_voice_settings_model_path, rvc_voice_settings_index_path])
 rvc_voice_settings_update_btn.click(fn=update_rvc_model, inputs=[rvc_voice_settings_model_name], outputs=[
-        rvc_voice_settings_model_name, rvc_voice_settings_model_path, rvc_voice_settings_index_path])
+    rvc_voice_settings_model_name, rvc_voice_settings_model_path, rvc_voice_settings_index_path])
 
 rvc_voice_infer_btn.click(fn=infer_rvc_audio, inputs=[
-        # INPUT
-        rvc_audio_single,
-        rvc_audio_batch,
-        rvc_audio_batch_path,
-        # PATH
-        rvc_voice_settings_model_name,
-        rvc_voice_settings_model_path,
-        rvc_voice_settings_index_path,
-        # SETTINGS
-        rvc_voice_settings_pitch,
-        rvc_voice_settings_index_rate,
-        rvc_voice_settings_protect_voiceless,
-        rvc_voice_settings_method,
-        rvc_voice_filter_radius,
-        rvc_voice_resemple_rate,
-        rvc_voice_envelope_mix,
-        # STATUS
-        rvc_voice_status_bar
-    ], outputs=[
-        rvc_video_output,
-        rvc_voice_output,
-        rvc_voice_status_bar
-    ])
+    # INPUT
+    rvc_audio_single,
+    rvc_audio_batch,
+    rvc_audio_batch_path,
+    # PATH
+    rvc_voice_settings_model_name,
+    rvc_voice_settings_model_path,
+    rvc_voice_settings_index_path,
+    # SETTINGS
+    rvc_voice_settings_pitch,
+    rvc_voice_settings_index_rate,
+    rvc_voice_settings_protect_voiceless,
+    rvc_voice_settings_method,
+    rvc_voice_filter_radius,
+    rvc_voice_resemple_rate,
+    rvc_voice_envelope_mix,
+    # STATUS
+    rvc_voice_status_bar
+], outputs=[
+    rvc_video_output,
+    rvc_voice_output,
+    rvc_voice_status_bar
+])
 
 opvoice_voice_show_speakers.change(fn=update_openvoice_ref_list, inputs=[
-        opvoice_voice_ref_list, opvoice_voice_show_speakers], outputs=[opvoice_voice_ref_list])
+    opvoice_voice_ref_list, opvoice_voice_show_speakers], outputs=[opvoice_voice_ref_list])
 
 openvoice_voice_infer_btn.click(fn=infer_openvoice_audio, inputs=[openvoice_audio_single, openvoice_audio_batch, openvoice_audio_batch_path,
-                                    opvoice_voice_ref_list, openvoice_status_bar, speaker_path_text], outputs=[openvoice_video_output, openvoice_voice_output, openvoice_status_bar])
+                                                                  opvoice_voice_ref_list, openvoice_status_bar, speaker_path_text], outputs=[openvoice_video_output, openvoice_voice_output, openvoice_status_bar])
