@@ -20,5 +20,4 @@ def change_language(languages):
 
 
 languages.change(fn=change_language, inputs=[languages], outputs=[languages])
-infer_type.input(fn=change_infer_type, inputs=[
-                 infer_type], outputs=[infer_type])
+# infer_type.input(fn=change_infer_type, inputs=[infer_type], outputs=[infer_type])

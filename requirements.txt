@@ -1,4 +1,4 @@
-gradio==4.10.0
+gradio==4.13.0
 torch==2.1.1
 torchaudio==2.1.1
 faster_whisper==0.10.0
