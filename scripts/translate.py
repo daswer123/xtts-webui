@@ -158,32 +158,56 @@ def clean_text(text):
     text = text.replace(".", "..")
     return text
 
+def transcribe_audio(whisper_model, filename, source_lang='auto'):
+    model = WhisperModel(whisper_model, device="cuda", compute_type="float16")
+    print("Whisper model loaded")
+
+    language_for_whisper = None if source_lang == "auto" else source_lang
+
+    segments, info = model.transcribe(
+        filename, language=language_for_whisper,vad_filter=True, beam_size=5)
+
+    print("Detected language '%s' with probability %f" %
+          (info.language, info.language_probability))
+
+    if source_lang == "auto":
+        detected_language = info.language   # Сохраняем определенный язык
+    else:
+        detected_language = source_lang
+
+    return segments, detected_language
+
+def accumulate_segments(segments, start_index, segment_filenames, temp_folder, desired_duration=20):
+    accumulated_duration = 0
+    accumulated_segment_files = []
+
+    for i in range(start_index, len(segments)):
+        if accumulated_duration >= desired_duration:
+            break
+
+        segment = segments[i]
+        duration_of_segment = segment.end - segment.start
+        original_audio_segment_file = temp_folder / segment_filenames[i]
+
+        # Add file name to list of files we'll pass to TTS.
+        accumulated_segment_files.append(original_audio_segment_file)
+
+        accumulated_duration += duration_of_segment
+
+    return accumulated_segment_files
+
+
 # Assuming translator, segment_audio, get_suitable_segment,
 # local_generation, combine_wav_files are defined elsewhere.
 def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, source_lang, target_lang,
                             speaker_lang, options={}, text_translator="google", translate_mode=True,
                             output_filename="result.mp3", speaker_wavs=None, improve_audio_func=False, progress=None):
 
-    model_size = whisper_model
-    print(f"Loading Whisper model {whisper_model}...")
-    model = WhisperModel(whisper_model, device="cuda", compute_type="float16")
-    print("Whisper model loaded")
+    # STAGE - 1 TRANSCRIBE
+    segments, detected_language = transcribe_audio(whisper_model,filename,source_lang)
 
     if source_lang == "auto":
-        language_for_whisper = None
-    else:
-        language_for_whisper = source_lang
-
-    segments, info = model.transcribe(
-        filename, language=language_for_whisper, beam_size=5)
-    print("Detected language '%s' with probability %f" %
-          (info.language, info.language_probability))
-
-    if source_lang == "auto":
-        source_lang = info.language
-
-    original_segment_files = []
-    translated_segment_files = []
+        source_lang = detected_language
 
     output_folder = os.path.dirname(output_filename)
     output_folder = Path(output_folder)
@@ -191,15 +215,37 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
     temp_folder_name = Path(
         "./temp") / f'translate_{datetime.now().strftime("%Y%m%d%H%M%S")}'
     temp_folder = temp_folder_name
-
     create_directory_if_not_exists(temp_folder)
 
+    # STAGE 1.5 CREATE LIST OF SEGMENTS
     segments = list(segments)  # Убедитесь, что 'segments' является списком
     total_segments = len(segments)
-
     # Создаем список пустых элементов размером total_segments
     indices = list(range(total_segments))
 
+    # STAGE 2: CUT ALL SEGMENTS
+    segment_filenames = []
+    mode = int(mode)
+
+    for i in range(total_segments):
+        segment = segments[i]
+
+        original_audio_segment_file = f"original_segment_{i}.wav"
+        segment_filenames.append(original_audio_segment_file)
+
+        # start_time = segment.start if mode == 1 else get_suitable_segment(i, segments).start
+        # end_time = segment.end if mode == 1 else get_suitable_segment(i, segments).end
+
+        start_time = segment.start
+        end_time = segment.end
+
+        output_segment_folder = temp_folder / original_audio_segment_file
+        segment_audio(start_time=start_time,
+                      end_time=end_time,
+                      input_file=filename,
+                      output_file=str(output_segment_folder))
+
+    # CREATE PROGRESS BAR
     if progress is not None:
         tqdm_object = progress.tqdm(
             indices, total=total_segments, desc="Translate and voiceover...")
@@ -207,76 +253,80 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
         tqdm_object = tqdm(indices, total=total_segments,
                            desc="Translate and voiceover...")
 
-    for i in tqdm_object:  # Используем значения из indices для прогресса
-        segment = segments[i]  # Получаем текущий сегмент используя индекс
-        text_to_syntez = ""
+    # original_segment_files = []
+    translated_segment_files = []
 
-        cleared_text = clean_text(segment.text)
+    # STAGE 3: VOICEOVER
+    for i in tqdm_object:  
+        segment = segments[i]
+        tts_input_wavs = []  
+        text_to_syntez = ""
 
         if translate_mode:
             text_to_syntez = ts.translate_text(
-                query_text=cleared_text, translator=text_translator, from_language=source_lang, to_language=target_lang)
+                query_text=segment.text, translator=text_translator, from_language=source_lang, to_language=target_lang)
             print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
         else:
-            print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {cleared_text}")
-            text_to_syntez = cleared_text
+            print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}")
+            text_to_syntez = clean_text(text_to_syntez)
 
-        original_audio_segment_file = f"original_segment_{i}.wav"
-        original_segment_files.append(original_audio_segment_file)
+        synthesized_audio_file = f"synthesized_segment_{i}.wav"
+        if mode == 1:
+            # Use single file for TTS input as before.
+            
+            original_audio_segment_file = segment_filenames[i]
 
-        # Segment audio according to mode
-        mode = int(mode)
-        if mode == 1 or mode == 2:
-            start_time = segment.start if mode == 1 else get_suitable_segment(
-                i, segments).start
-            end_time = segment.end if mode == 1 else get_suitable_segment(
-                i, segments).end
+            tts_input_wavs.append(temp_folder / original_audio_segment_file)
 
-            # Exporting segmented audio; assuming 'filename' is available here
-            output_segment_folder = temp_folder / original_audio_segment_file
-            segment_audio(start_time=start_time, end_time=end_time,
-                          input_file=filename, output_file=str(output_segment_folder))
+        elif mode == 2:
+            # Accumulate multiple files until reaching at least 20 seconds.
 
-        # Prepare TTS input based on provided `mode`
-        tts_input_wav = speaker_wavs if (
-            mode == 3 and speaker_wavs) else temp_folder / original_audio_segment_file
+            synthesized_audio_starting_from_i_wav_name_pattern = f"synthesized_segments_starting_from_{i}_combined.wav"
 
-        synthesized_audio_file = ""
+            accumulated_files_for_tts_input=accumulate_segments(
+                segments,start_index=i,
+                segment_filenames=segment_filenames,
+                temp_folder=temp_folder)
 
-        if translate_mode:
-            synthesized_audio_file = f"synthesized_segment_{i}.wav"
-        else:
-            synthesized_audio_file = f"original_segment_{i}.wav"
+            tts_input_combined_path_temporary_output_filename=temp_folder/synthesized_audio_starting_from_i_wav_name_pattern
+
+            tts_input_wavs = accumulated_files_for_tts_input
+
+            # if len(accumulated_files_for_tts_input) > 1:
+            #     # If more than one file was found, combine them into one WAV file for TTS processing.
+            #     combine_wav_files([os.path.join(temp_folder,f)
+            #         for f in accumulated_files_for_tts_input],
+            #         str(tts_input_combined_path_temporary_output_filename))
+
+            #     tts_input_wavs.append(tts_input_combined_path_temporary_output_filename)
+
+            # elif len(accumulated_files_for_tts_input) ==1:
+            #     # If only one file was found (less than 20 seconds), use it directly.
+            #     tts_input_wavs.append(os.path.join(temp_folder,
+            #                                        accumulated_files_for_tts_input[0]))
 
         current_datetime = str(datetime.now())
         # Start transformation using TTS system; assuming all required fields are correct
+        print(tts_input_wavs)
         xtts.local_generation(
             this_dir=this_dir,
             text=text_to_syntez,
             ref_speaker_wav=current_datetime,
-            speaker_wav=tts_input_wav,
+            speaker_wav=tts_input_wavs,
             language=speaker_lang,
             options=options,
             output_file=temp_folder / synthesized_audio_file
         )
 
         translated_segment_files.append(synthesized_audio_file)
-        # tqdm_object.update(1)
 
-    # tqdm_object.close()
     combined_output_filepath = os.path.join(output_filename)
     combine_wav_files([os.path.join(temp_folder, f)
                       for f in translated_segment_files], combined_output_filepath)
 
-    if improve_audio_func:
-        out_dir = os.path.dirname(output_filename)
-        improved_audio_path = os.path.join(out_dir, "improved.mp3")
-        improve_audio(output_filename, improved_audio_path)
-        output_filename = improved_audio_path
-
     # Optionally remove temporary files after combining them into final output.
     clean_temporary_files(translated_segment_files +
-                          (original_segment_files if mode != 3 else []), temp_folder)
+                          (segment_filenames if mode != 3 else []), temp_folder)
 
     new_file_name = output_folder / Path(output_filename).name
     shutil.move(output_filename, new_file_name)

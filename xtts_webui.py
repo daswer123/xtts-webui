@@ -56,6 +56,8 @@ XTTS = TTSWrapper(OUTPUT_FOLDER, SPEAKER_FOLDER, LOWVRAM_MODE,
 # LOAD MODEL
 logger.info(f"Start loading model {MODEL_VERSION}")
 this_dir = Path(__file__).parent.resolve()
+
+logger.info(f"this dir: {this_dir}")
 XTTS.load_model(this_dir)
 
 

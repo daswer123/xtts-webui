@@ -209,7 +209,7 @@ with gr.Row():
                     rvc_settings_resemple_rate = gr.Slider(
                         minimum=0, maximum=48000, value=0, step=1, label="Resample the output audio in post-processing to the final sample rate. Set to 0 for no resampling")
                     rvc_settings_envelope_mix = gr.Slider(
-                        minimum=0, maximum=1, value=0.25, step=0.01, label="Use the volume envelope of the input to replace or mix with the volume envelope of the output. The closer the ratio is to 1, the more the output envelope is used")
+                        minimum=0, maximum=1, value=1, step=0.01, label="Use the volume envelope of the input to replace or mix with the volume envelope of the output. The closer the ratio is to 1, the more the output envelope is used")
                 with gr.Row():
                     output_type = gr.Radio(
                         ["mp3", "wav"], value="wav", label="Output Type")
