@@ -19,7 +19,7 @@ with gr.Tab("Translate"):
                 translate_whisper_model = gr.Dropdown(label="Whisper Model", choices=[
                                                       "small", "medium", "large-v2", "large-v3"], value="medium")
                 translate_audio_mode = gr.Radio(label="Mode", choices=[
-                                                1, 2], value=1, info="1 - Takes each sentence as a sample and voices the text using this sample\n2 - Intended for 1 speaker, takes the sample that is longer and closest to the current sentence.")
+                                                1, 2], value=2, info="1 - Takes each sentence as a sample and voices the text using this sample\n2 - Intended for 1 speaker, takes the sample that is longer and closest to the current sentence.")
                 translate_translator = gr.Radio(label="Translator", choices=[
                                                 "google", "bing", "baidu"], value="google")
                 with gr.Row():
@@ -29,6 +29,55 @@ with gr.Tab("Translate"):
                         label="Target lang", choices=supported_languages_list, value="ru")
                     translate_speaker_lang = gr.Dropdown(
                         label="Speaker Accent", choices=supported_languages_list, value="ru")
+                with gr.Column():
+                  with gr.Accordion("XTTS settings", open=False,visible=True):
+                    translate_speed = gr.Slider(
+                        label="Speed",
+                        minimum=0.5,
+                        maximum=2,
+                        step=0.01,
+                        value=1,
+                    )
+                    translate_temperature = gr.Slider(
+                        label="Temperature",
+                        minimum=0.01,
+                        maximum=1,
+                        step=0.05,
+                        value=0.75,
+                    )
+                    translate_length_penalty = gr.Slider(
+                        label="Length Penalty",
+                        minimum=-10.0,
+                        maximum=10.0,
+                        step=0.5,
+                        value=1,
+                    )
+                    translate_repetition_penalty = gr.Slider(
+                        label="Repetition Penalty",
+                        minimum=1,
+                        maximum=10,
+                        step=0.5,
+                        value=5,
+                    )
+                    translate_top_k = gr.Slider(
+                        label="Top K",
+                        minimum=1,
+                        maximum=100,
+                        step=1,
+                        value=50,
+                    )
+                    translate_top_p = gr.Slider(
+                        label="Top P",
+                        minimum=0.01,
+                        maximum=1,
+                        step=0.05,
+                        value=0.85,
+                    )
+                    translate_sentence_split = gr.Checkbox(
+                        label="Enable text splitting",
+                        value=False,
+                    )
+                    
         with gr.Column():
             translate_status_bar = gr.Label(
                 value="Select target language, mode and upload audio then press translate button.")

@@ -153,6 +153,10 @@ def create_directory_if_not_exists(directory_path):
         print(
             f"An error occurred while creating folder '{directory_path}': {e}")
 
+def clean_text(text):
+    # Replace Dot to .. 
+    text = text.replace(".", "..")
+    return text
 
 # Assuming translator, segment_audio, get_suitable_segment,
 # local_generation, combine_wav_files are defined elsewhere.
@@ -177,15 +181,6 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
 
     if source_lang == "auto":
         source_lang = info.language
-
-    options = {
-        "temperature": 0.7,
-        "length_penalty": 1.0,
-        "repetition_penalty": 5.0,
-        "top_k": 50,
-        "top_p": 0.7,
-        "speed": 1.0,
-    }
 
     original_segment_files = []
     translated_segment_files = []
@@ -216,13 +211,15 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
         segment = segments[i]  # Получаем текущий сегмент используя индекс
         text_to_syntez = ""
 
+        cleared_text = clean_text(segment.text)
+
         if translate_mode:
             text_to_syntez = ts.translate_text(
-                query_text=segment.text, translator=text_translator, from_language=source_lang, to_language=target_lang)
+                query_text=cleared_text, translator=text_translator, from_language=source_lang, to_language=target_lang)
             print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
         else:
-            print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}")
-            text_to_syntez = segment.text
+            print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {cleared_text}")
+            text_to_syntez = cleared_text
 
         original_audio_segment_file = f"original_segment_{i}.wav"
         original_segment_files.append(original_audio_segment_file)

@@ -32,12 +32,27 @@ def translate_and_voiceover(
     translate_target_lang,
     translate_speaker_lang,
     translate_translator,
+    translate_speed,
+    translate_temperature,
+    translate_length_penalty,
+    translate_repetition_penalty,
+    translate_top_k,
+    translate_top_p,
+    translate_sentence_split,
     translate_status_bar
 ):
     print("Hello world")
     if not translate_audio_single and not translate_audio_batch and not translate_audio_batch_path:
         return None, None, "Please load audio"
 
+    options = {
+        "temperature": float(translate_temperature),
+        "length_penalty": float(translate_length_penalty),
+        "repetition_penalty": float(translate_repetition_penalty),
+        "top_k": translate_top_k,
+        "top_p": float(translate_top_p),
+        "speed": float(translate_speed),
+    }
     output_folder = this_dir / OUTPUT_FOLDER
     folder_name = f"translated_from_{translate_source_lang}_to_{translate_target_lang}" + \
         datetime.now().strftime(DATE_FORMAT)
@@ -58,6 +73,7 @@ def translate_and_voiceover(
         this_dir=this_dir,
         filename=input_file,
         xtts=XTTS,
+        options=options,
         text_translator=translate_translator,
         translate_mode=True,
         whisper_model=translate_whisper_model,
@@ -258,15 +274,27 @@ def infer_rvc_audio(
     return None, None, "An unexpected error occurred during processing"
 
 
-translate_btn.click(fn=translate_and_voiceover, inputs=[translate_audio_single,
+translate_btn.click(fn=translate_and_voiceover, inputs=[
+                                                        # INPUTS
+                                                        translate_audio_single,
                                                         translate_audio_batch,
                                                         translate_audio_batch_path,
+                                                        # TRANSLATE SETTIGNS
                                                         translate_whisper_model,
                                                         translate_audio_mode,
                                                         translate_source_lang,
                                                         translate_target_lang,
                                                         translate_speaker_lang,
+                                                        # XTTS SETTINGS
                                                         translate_translator,
+                                                        translate_speed,
+                                                        translate_temperature,
+                                                        translate_length_penalty,
+                                                        translate_repetition_penalty,
+                                                        translate_top_k,
+                                                        translate_top_p,
+                                                        translate_sentence_split,
+                                                        # STATUS BAR
                                                         translate_status_bar
                                                         ], outputs=[translate_video_output, translate_voice_output, translate_status_bar])
 
