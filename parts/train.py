@@ -8,7 +8,7 @@ This train tab allows you to fine-tune the XTTS, resulting in a model that match
 You need to download a set of dates, select a language and click "Train". Once training is complete, your model will automatically rotate into the model rest position.
 
 You can watch a video from the developers that shows how to do [finetune](
-https://www.youtube.com/watch?v=8tpDiouGxc)
+https://www.youtube.com/watch?v=8tpDiiouGxc)
     """)
     gr.Markdown("# 1 Stage - Prepare Dataset")
     load_params_btn = gr.Button(value="Load Params from output folder")
