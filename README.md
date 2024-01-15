@@ -1,134 +1,135 @@
 # XTTS-WebUI
 
-## About the Project
-XTTS-Webui is a web interface that allows you to make the most of XTTS. There are other neural networks around this interface that will improve your results. You can also fine tune the model and get a high quality voice model.
+## Sobre o projeto
+XTTS-Webui é uma interface web que permite aproveitar ao máximo o XTTS. Existem outras redes neurais em torno desta interface que irão melhorar seus resultados. Você também pode ajustar o modelo e obter um modelo de voz de alta qualidade.
 
-![image](https://github.com/daswer123/xtts-webui/assets/22278673/89eb50c5-9a1e-41cf-8ae9-b734761716a6)
+![image](https://github.com/RafaelGodoyEbert/xtts-webui/assets/78083427/3dd80284-88dd-4555-943b-04f13be88aea)
 
-## Key Features
-- Easy working with XTTSv2
-- Batch processing for dubbing a large number of files
-- Ability to translate any audio with voice saving
-- Ability to improve results using neural networks and audio tools automatically
-- Ability to fine tune the model and use it immediately
-- Ability to use tools such as: **RVC**, **OpenVoice**, **Resemble Enhance**, both together and separately
-- Ability to customize XTTS generation, all parameters, multiple speaking samples
 
-## TODO
-- [x] Add a status bar with progress and error information
-- [x] Integrate training into the standard interface
-- [ ] Add the ability to stream to check the result
-- [ ] Add a new way to process text for voiceover
-- [ ] Add the ability to customize speakers when batch processing
-- [ ] Add API
+## Características principais
+- Fácil trabalho com XTTSv2
+- Processamento em lote para dublagem de um grande número de arquivos
+- Capacidade de traduzir qualquer áudio com salvamento de voz
+- Capacidade de melhorar resultados usando redes neurais e ferramentas de áudio automaticamente
+- Capacidade de ajustar o modelo e usá-lo imediatamente
+- Capacidade de usar ferramentas como: **RVC**, **OpenVoice**, **Resemble Enhance**, juntas e separadamente
+- Capacidade de personalizar a geração de XTTS, todos os parâmetros, múltiplas amostras de fala
 
-## Installation
+## PENDÊNCIA
+- [x] Adicione uma barra de status com informações de progresso e erro
+- [x] Integrar o treinamento na interface padrão
+- [ ] Adicione a capacidade de transmitir para verificar o resultado
+- [ ] Adicionar uma nova maneira de processar texto para narração
+- [ ] Adicionar a capacidade de personalizar alto-falantes durante o processamento em lote
+- [ ] Adicionar API
 
-Use this web UI through [Google Colab](https://colab.research.google.com/drive/1MrzAYgANm6u79rCCQQqBSoelYGiJ1qYL)
+## Instalação
 
-**Please ensure you have Python 3.10.x or Python 3.11, CUDA 11.8 or CUDA 12.1 , Microsoft Builder Tools 2019 with c++ package, and ffmpeg installed**
+Use esta IU da web por meio de [Google Colab](https://colab.research.google.com/drive/1MrzAYgANm6u79rCCQQqBSoelYGiJ1qYL)
 
-### 1 Method, through scripts
+**Certifique-se de ter Python 3.10.x ou Python 3.11, CUDA 11.8 ou CUDA 12.1, Microsoft Builder Tools 2019 com pacote c++ e ffmpeg instalados**
+
+### 1 Método, através de scripts
 
 #### Windows
-To get started:
-- Run 'install.bat' file
-- To start the web UI, run 'start_xtts_webui.bat'
-- Open your preferred browser and go to local address displayed in console.
-- 
+Para começar:
+- Execute o arquivo 'install.bat'
+- Para iniciar a UI da web, execute 'start_xtts_webui.bat'
+- Abra seu navegador preferido e vá para o endereço local exibido no console.
+
 #### Linux
-To get started:
-- Run 'install.sh' file
-- To start the web UI, run 'start_xtts_webui.sh'
-- Open your preferred browser and go to local address displayed in console.
+Para começar:
+- Execute o arquivo 'install.sh'
+- Para iniciar a UI da web, execute 'start_xtts_webui.sh'
+- Abra seu navegador preferido e vá para o endereço local exibido no console.
 
-### 2 Method, Manual
-Follow these steps for installation:
-1. Ensure that `CUDA` is installed
-2. Clone the repository: `git clone https://github.com/daswer123/xtts-webui`
-3. Navigate into the directory: `cd xtts-webui`
-4. Create a virtual environment: `python -m venv venv`
-5. Activate the virtual environment:
-   - On Windows use : `venv\scripts\activate`
-   - On linux use    : `source venv\bin\activate`
+### 2 Método, Manual
+Siga estas etapas para instalação:
+1. Certifique-se de que `CUDA` esteja instalado
+2. Clone o repositório: `git clone https://github.com/daswer123/xtts-webui`
+3. Navegue até o diretório: `cd xtts-webui`
+4. Crie um ambiente virtual: `python -m venv venv`
+5. Ative o ambiente virtual:
+    - No Windows use: `venv\scripts\activate`
+    - No Linux use: `source venv\bin\activate`
 
-6. Install PyTorch and torchaudio with pip command :
+6. Instale PyTorch e torchaudio com o comando pip:
 
-   `pip install torch==2.1.1+cu118 torchaudio==2.1.1+cu118 --index-url https://download.pytorch.org/whl/cu118`
+    `pip install torch==2.1.1+cu118 torchaudio==2.1.1+cu118 --index-url https://download.pytorch.org/whl/cu118`
 
-7. Install all dependencies from requirements.txt :
+7. Instale todas as dependências de requirements.txt:
 
-    `pip install -r requirements.txt`
+     `pip install -r requirements.txt`
 
-## Running The Application
+## Executando o aplicativo
 
-To launch the interface please follow these steps:
+Para iniciar a interface, siga estas etapas:
 
-#### Starting XTTS WebUI :
-Activate your virtual environment:
+#### Iniciando o XTTS WebUI:
+Ative seu ambiente virtual:
 ```bash
 venv/scripts/activate
 ```
-or if you're on Linux,
+ou se você estiver no Linux,
 ```bash
 source venv/bin/activate
 ```
-Then start the webui for xtts by running this command:
+Em seguida, inicie o webui para xtts executando este comando:
 ```bash
 python app.py
 ```
 
-Here are some runtime arguments that can be used when starting the application:
+Aqui estão alguns argumentos de tempo de execução que podem ser usados ao iniciar o aplicativo:
 
-| Argument | Default Value | Description |
+| Argumento | Valor padrão | Descrição |
 | --- | --- | --- |
-| -hs, --host | 127.0.0.1 | The host to bind to |
-| -p, --port  | 8010       | The port number to listen on |
-| -d, --device   | cuda    | Which device to use (cpu or cuda) |
-| -sf,--speaker_folder  | speakers/   | Directory containing TTS samples|
-|-o,--output  	|"output/"		|Output directory|
-|-ms,--model-source  	|"local"			|Define the model source: 'api' for latest version from repository, api inference or 'local' for using local inference and model v2.0.2|
-|-v,-version  			|"v2.0.2"				|You can specify which version of xtts to use. You can specify the name of the custom model for this purpose put the folder in models and specify the name of the folder in this flag|
-|--lowvram   		||Enable low vram mode which switches the model to RAM when not actively processing|
-|--deepspeed   		||Enable deepspeed acceleration. Works on windows on python 3.10 and 3.11|
-|--share   		 ||Allows sharing of interface outside local computer|
-|--rvc     	 ||Enable RVC post-processing, all models should locate in rvc folder|
+| -hs, --host | 127.0.0.1 | O host ao qual vincular |
+| -p, --porta | 8010 | O número da porta para escutar |
+| -d, --dispositivo | cuda | Qual dispositivo usar (CPU ou Cuda) |
+| -sf,--speaker_folder | alto-falantes/ | Diretório contendo amostras TTS |
+|-o,--saída |"saída/" |Diretório de saída|
+|-ms,--model-source |"local" |Defina a fonte do modelo: 'api' para a versão mais recente do repositório, inferência de API ou 'local' para usar inferência local e modelo v2.0.2|
+|-v,-version |"v2.0.2" |Você pode especificar qual versão do xtts usar. Você pode especificar o nome do modelo customizado para esta finalidade, colocar a pasta em modelos e especificar o nome da pasta neste sinalizador |
+|--lowvram ||Ativa o modo low vram que alterna o modelo para RAM quando não está processando ativamente|
+|--deepspeed ||Ativa a aceleração deepspeed. Funciona no Windows em python 3.10 e 3.11 |
+|--share ||Permite o compartilhamento da interface fora do computador local|
+|--rvc ||Habilitar pós-processamento RVC, todos os modelos devem estar localizados na pasta rvc|
 
 ### TTS -> RVC
 
-Module for RVC, you can enable the RVC module to postprocess the received audio for this you need to add the --rvc flag if you are running in the console or write it to the startup file
+Módulo para RVC, você pode habilitar o módulo RVC para pós-processar o áudio recebido, para isso você precisa adicionar o sinalizador --rvc se estiver executando no console ou gravá-lo no arquivo de inicialização
 
-In order for the model to work in RVC settings you need to select a model that you must first upload to the voice2voice/rvc folder, the model and index file must be together, the index file is optional, each model must be in a separate folder.
+Para que o modelo funcione nas configurações RVC você precisa selecionar um modelo que você deve primeiro carregar na pasta voice2voice/rvc, o modelo e o arquivo de índice devem estar juntos, o arquivo de índice é opcional, cada modelo deve estar em um arquivo separado pasta.
 
-## Differences between xtts-webui and the [official webui](https://github.com/coqui-ai/TTS/pull/3296)
+## Diferenças entre xtts-webui e o [webui oficial](https://github.com/coqui-ai/TTS/pull/3296)
 
-### Data processing
+### Processamento de dados
 
-1. Updated faster-whisper to 0.10.0 with the ability to select a larger-v3 model.
-2. Changed output folder to output folder inside the main folder.
-3. If there is already a dataset in the output folder and you want to add new data, you can do so by simply adding new audio, what was there will not be processed again and the new data will be automatically added
-4. Turn on VAD filter
-5. After the dataset is created, a file is created that specifies the language of the dataset. This file is read before training so that the language always matches. It is convenient when you restart the interface
+1. Atualizado o sussurro mais rápido para 0.10.0 com a capacidade de selecionar um modelo v3 maior.
+2. Pasta de saída alterada para pasta de saída dentro da pasta principal.
+3. Se já existe um conjunto de dados na pasta de saída e você deseja adicionar novos dados, pode fazê-lo simplesmente adicionando um novo áudio, o que estava lá não será processado novamente e os novos dados serão adicionados automaticamente
+4. Ligue o filtro VAD
+5. Após a criação do conjunto de dados, é criado um arquivo que especifica o idioma do conjunto de dados. Este arquivo é lido antes do treino para que o idioma sempre corresponda. É conveniente quando você reinicia a interface
 
-### Fine-tuning XTTS Encoder
+### Codificador XTTS de ajuste fino
 
-1. Added the ability to select the base model for XTTS, as well as when you re-training does not need to download the model again.
-2. Added ability to select custom model as base model during training, which will allow finetune already finetune model.
-3. Added possibility to get optimized version of the model for 1 click ( step 2.5, put optimized version in output folder).
-4. You can choose whether to delete training folders after you have optimized the model
-5. When you optimize the model, the example reference audio is moved to the output folder
-6. Checking for correctness of the specified language and dataset language
+1. Adicionada a capacidade de selecionar o modelo básico para XTTS, bem como quando você treinar novamente, não será necessário baixar o modelo novamente.
+2. Adicionada capacidade de selecionar modelo personalizado como modelo base durante o treinamento, o que permitirá o ajuste fino do modelo já ajustado.
+3. Adicionada possibilidade de obter a versão otimizada do modelo com 1 clique (etapa 2.5, colocar a versão otimizada na pasta de saída).
+4. Você pode escolher se deseja excluir as pastas de treinamento depois de otimizar o modelo
+5. Ao otimizar o modelo, o áudio de referência do exemplo é movido para a pasta de saída
+6. Verificando a exatidão do idioma especificado e do idioma do conjunto de dados
 
-### Inference
+### Inferência
 
-1. Added possibility to customize infer settings during model checking.
+1. Adicionada possibilidade de personalizar as configurações de inferência durante a verificação do modelo.
 
-### Other
+### Outro
 
-1. If you accidentally restart the interface during one of the steps, you can load data to additional buttons
-2. Removed the display of logs as it was causing problems when restarted
-3. The finished result is copied to the ready folder, these are fully finished files, you can move them anywhere and use them as a standard model
-4. Added support for Japanese [here](https://github.com/daswer123/xtts-webui/issues/15#issuecomment-1869090189)
+1. Se você reiniciar acidentalmente a interface durante uma das etapas, poderá carregar dados em botões adicionais
+2. Removida a exibição de logs, pois causava problemas ao reiniciar
+3. O resultado final é copiado para a pasta finalizada, estes são arquivos totalmente finalizados, você pode movê-los para qualquer lugar e usá-los como modelo padrão
+4. Adicionado suporte para japonês [aqui](https://github.com/daswer123/xtts-webui/issues/15#issuecomment-1869090189)
 
 
 
