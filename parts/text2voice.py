@@ -4,66 +4,69 @@ from scripts.voice2voice import get_rvc_models, find_rvc_model_by_name, get_open
 
 from xtts_webui import *
 
+from i18n.i18n import I18nAuto
+i18n = I18nAuto()
+
 with gr.Row():
     with gr.Column():
-        with gr.Tab("Text"):
-            text = gr.TextArea(label="Input Text",
-                               placeholder="Input Text Here...")
-        with gr.Tab("Batch"):
+        with gr.Tab(i18n("Text")):
+            text = gr.TextArea(label=i18n("Input Text"),
+                               placeholder=i18n("Input Text Here..."))
+        with gr.Tab(i18n("Batch")):
             batch_generation = gr.Files(
-                label="Upload .txt files", file_types=["text"])
+                label=i18n("Upload .txt files"), file_types=["text"])
             batch_generation_path = gr.Textbox(
-                label="Path to folder with .txt files, Has priority over all ", value="")
+                label=i18n("Path to folder with .txt files, Has priority over all "), value="")
 
         language_auto_detect = gr.Checkbox(
-            label="Enable language auto detect", info="If your language is not supported or the text is less than 20 characters, this function will not work")
+            label=i18n("Enable language auto detect"), info=i18n("If your language is not supported or the text is less than 20 characters, this function will not work"))
         languages = gr.Dropdown(
-            label="Language", choices=reversed_supported_languages_list, value="English")
+            label=i18n("Language"), choices=reversed_supported_languages_list, value="English")
         speed = gr.Slider(
-            label="speed",
+            label=i18n("speed"),
             minimum=0.1,
             maximum=2,
             step=0.05,
             value=1,
         )
-        with gr.Accordion("Advanced settings", open=False) as acr:
+        with gr.Accordion(i18n("Advanced settings"), open=False) as acr:
             temperature = gr.Slider(
-                label="Temperature",
+                label=i18n("Temperature"),
                 minimum=0.01,
                 maximum=1,
                 step=0.05,
                 value=0.75,
             )
             length_penalty = gr.Slider(
-                label="Length Penalty",
+                label=i18n("Length Penalty"),
                 minimum=-10.0,
                 maximum=10.0,
                 step=0.5,
                 value=1,
             )
             repetition_penalty = gr.Slider(
-                label="Repetition Penalty",
+                label=i18n("Repetition Penalty"),
                 minimum=1,
                 maximum=10,
                 step=0.5,
                 value=5,
             )
             top_k = gr.Slider(
-                label="Top K",
+                label=i18n("Top K"),
                 minimum=1,
                 maximum=100,
                 step=1,
                 value=50,
             )
             top_p = gr.Slider(
-                label="Top P",
+                label=i18n("Top P"),
                 minimum=0.01,
                 maximum=1,
                 step=0.05,
                 value=0.85,
             )
             sentence_split = gr.Checkbox(
-                label="Enable text splitting",
+                label=i18n("Enable text splitting"),
                 value=True,
             )
 
@@ -81,58 +84,58 @@ with gr.Row():
 
         with gr.Row():
             ref_speaker_list = gr.Dropdown(
-                label="Reference Speaker from folder 'speakers'", value=speaker_value, choices=speakers_list)
+                label=i18n("Reference Speaker from folder 'speakers'"), value=speaker_value, choices=speakers_list)
             show_ref_speaker_from_list = gr.Checkbox(
-                value=False, label="Show reference sample", info="This option will allow you to listen to your reference sample")
+                value=False, label=i18n("Show reference sample"), info=i18n("This option will allow you to listen to your reference sample"))
             update_ref_speaker_list_btn = gr.Button(
-                value="Update", elem_classes="speaker-update__btn")
+                value=i18n("Update"), elem_classes="speaker-update__btn")
         ref_speaker_example = gr.Audio(
-            label="speaker sample", sources="upload", visible=False, interactive=False)
+            label=i18n("speaker sample"), sources="upload", visible=False, interactive=False)
 
-        with gr.Tab(label="Single"):
+        with gr.Tab(label=i18n("Single")):
             ref_speaker = gr.Audio(
-                label="Reference Speaker (mp3, wav, flac)", editable=False)
-        with gr.Tab(label="Multiple"):
+                label=i18n("Reference Speaker (mp3, wav, flac)"), editable=False)
+        with gr.Tab(label=i18n("Multiple")):
             ref_speakers = gr.Files(
-                label="Reference Speakers (mp3, wav, flac)", file_types=["audio"])
+                label=i18n("Reference Speakers (mp3, wav, flac)"), file_types=["audio"])
 
-        with gr.Accordion(label="Reference Speaker settings.", open=False):
+        with gr.Accordion(label=i18n("Reference Speaker settings."), open=False):
             gr.Markdown(
-                value="**Note: the settings only work when you enable them and upload files when they are enabled**")
+                value=i18n("**Note: the settings only work when you enable them and upload files when they are enabled**"))
             gr.Markdown(
-                value="Take a look at how to create good samples [here](https://github.com/daswer123/xtts-api-server?tab=readme-ov-file#note-on-creating-samples-for-quality-voice-cloning)")
+                value=i18n("Take a look at how to create good samples [here](https://github.com/daswer123/xtts-api-server?tab=readme-ov-file#note-on-creating-samples-for-quality-voice-cloning)"))
             with gr.Row():
                 use_resample = gr.Checkbox(
-                    label="Resample reference audio to 22050Hz", info="This is for better processing", value=True)
+                    label=i18n("Resample reference audio to 22050Hz"), info=i18n("This is for better processing"), value=True)
                 improve_reference_audio = gr.Checkbox(
-                    label="Clean up reference audio", info="Trim silence, use lowpass and highpass filters", value=False)
+                    label=i18n("Clean up reference audio"), info=i18n("Trim silence, use lowpass and highpass filters"), value=False)
                 improve_reference_resemble = gr.Checkbox(
-                    label="Resemble enhancement (Uses extra 4GB VRAM)", info="You can find the settings next to the settings for the result", value=False)
+                    label=i18n("Resemble enhancement (Uses extra 4GB VRAM)"), info=i18n("You can find the settings next to the settings for the result"), value=False)
             auto_cut = gr.Slider(
-                label="Automatically trim audio up to x seconds, 0 without trimming ",
+                label=i18n("Automatically trim audio up to x seconds, 0 without trimming "),
                 minimum=0,
                 maximum=30,
                 step=1,
                 value=0,
             )
             gr.Markdown(
-                value="You can save the downloaded recording or microphone recording to a shared list, you need to set a name and click save")
+                value=i18n("You can save the downloaded recording or microphone recording to a shared list, you need to set a name and click save"))
             speaker_wav_save_name = gr.Textbox(
-                label="Speaker save name", value="new_speaker_name")
+                label=i18n("Speaker save name"), value="new_speaker_name")
             save_speaker_btn = gr.Button(
-                value="Save a single sample for the speaker", visible=False)
+                value=i18n("Save a single sample for the speaker"), visible=False)
             save_multiple_speaker_btn = gr.Button(
-                value="Save multiple samples for the speaker", visible=False)
+                value=i18n("Save multiple samples for the speaker"), visible=False)
 
     with gr.Column():
         status_bar = gr.Label(
-            label="Status bar", value="Enter text, select language and speaker, then click Generate")
-        video_gr = gr.Video(label="Waveform Visual",
+            label=i18n("Status bar"), value=i18n("Enter text, select language and speaker, then click Generate"))
+        video_gr = gr.Video(label=i18n("Waveform Visual"),
                             visible=False, interactive=False)
-        audio_gr = gr.Audio(label="Synthesised Audio",
+        audio_gr = gr.Audio(label=i18n("Synthesised Audio"),
                             interactive=False, autoplay=False)
         generate_btn = gr.Button(
-            value="Generate", size="lg", elem_classes="generate-btn")
+            value=i18n("Generate"), size="lg", elem_classes="generate-btn")
 
         rvc_models = []
         current_rvc_model = ""
@@ -147,80 +150,80 @@ with gr.Row():
                     rvc_models.append(rvc_model["model_name"])
             # print(rvc_models)
 
-        with gr.Accordion(label="Output settings", open=True):
+        with gr.Accordion(label=i18n("Output settings"), open=True):
             with gr.Column():
                 with gr.Row():
                     enable_waveform = gr.Checkbox(
-                        label="Enable Waveform", info="Create video based on audio in the form of a waveform", value=False)
+                        label=i18n("Enable Waveform"), info=i18n("Create video based on audio in the form of a waveform"), value=False)
                     improve_output_audio = gr.Checkbox(
-                        label="Improve output quality", info="Reduces noise and makes audio slightly better", value=False)
+                        label=i18n("Improve output quality"), info=i18n("Reduces noise and makes audio slightly better"), value=False)
                     improve_output_resemble = gr.Checkbox(
-                        label="Resemble enhancement", info="Uses Resemble enhance to improve sound quality through neural networking. Uses extra 4GB VRAM", value=False)
+                        label=i18n("Resemble enhancement"), info=i18n("Uses Resemble enhance to improve sound quality through neural networking. Uses extra 4GB VRAM"), value=False)
                 with gr.Row():
-                    improve_output_voice2voice = gr.Radio(label="Use RVC or OpenVoice to improve result", visible=RVC_ENABLE,
-                                                          info="Uses RVC to convert the output to the RVC model voice, make sure you have a model folder with the pth file inside the voice2voice/rvc folder", choices=["RVC", "OpenVoice", "None"], value="None")
-                with gr.Accordion(label="Resemble enhancement Settings", open=False):
+                    improve_output_voice2voice = gr.Radio(label=i18n("Use RVC or OpenVoice to improve result"), visible=RVC_ENABLE,
+                                                          info=i18n("Uses RVC to convert the output to the RVC model voice, make sure you have a model folder with the pth file inside the voice2voice/rvc folder"), choices=["RVC", "OpenVoice", "None"], value="None")
+                with gr.Accordion(label=i18n("Resemble enhancement Settings"), open=False):
                     enhance_resemble_chunk_seconds = gr.Slider(
-                        minimum=2, maximum=40, value=8, step=1, label="Chunk seconds (more secods more VRAM usage and faster inference speed)")
+                        minimum=2, maximum=40, value=8, step=1, label=i18n("Chunk seconds (more secods more VRAM usage and faster inference speed)"))
                     enhance_resemble_chunk_overlap = gr.Slider(
-                        minimum=0.1, maximum=2, value=1, step=0.2, label="Overlap seconds")
-                    enhance_resemble_solver = gr.Dropdown(label="CFM ODE Solver (Midpoint is recommended)", choices=[
+                        minimum=0.1, maximum=2, value=1, step=0.2, label=i18n("Overlap seconds"))
+                    enhance_resemble_solver = gr.Dropdown(label=i18n("CFM ODE Solver (Midpoint is recommended)"), choices=[
                                                           "Midpoint", "RK4", "Euler"], value="Midpoint")
                     enhance_resemble_num_funcs = gr.Slider(
-                        minimum=1, maximum=128, value=64, step=1, label="CFM Number of Function Evaluations (higher values in general yield better quality but may be slower)")
+                        minimum=1, maximum=128, value=64, step=1, label=i18n("CFM Number of Function Evaluations (higher values in general yield better quality but may be slower)"))
                     enhance_resemble_temperature = gr.Slider(
-                        minimum=0, maximum=1, value=0.5, step=0.01, label="CFM Prior Temperature (higher values can improve quality but can reduce stability)")
+                        minimum=0, maximum=1, value=0.5, step=0.01, label=i18n("CFM Prior Temperature (higher values can improve quality but can reduce stability)"))
                     enhance_resemble_denoise = gr.Checkbox(
-                        value=True, label="Denoise Before Enhancement (tick if your audio contains heavy background noise)")
+                        value=True, label=i18n("Denoise Before Enhancement (tick if your audio contains heavy background noise)"))
 
-                with gr.Accordion(label="OpenVoice settings", visible=RVC_ENABLE, open=False):
+                with gr.Accordion(label=i18n("OpenVoice settings"), visible=RVC_ENABLE, open=False):
                     open_voice_ref_list = get_openvoice_refs(this_dir)
                     if len(open_voice_ref_list) == 0:
                         open_voice_ref_list = ["None"]
 
                     gr.Markdown(
-                        "**Add samples to the voice2voice/openvoice audio files folder or select from the reference speaker list**")
+                        i18n("**Add samples to the voice2voice/openvoice audio files folder or select from the reference speaker list**"))
                     opvoice_ref_list = gr.Dropdown(
-                        label="Reference sample", value=open_voice_ref_list[0], choices=open_voice_ref_list)
+                        label=i18n("Reference sample"), value=open_voice_ref_list[0], choices=open_voice_ref_list)
                     opvoice_show_speakers = gr.Checkbox(
-                        value=False, label="Show choises from the speakers folder")
+                        value=False, label=i18n("Show choises from the speakers folder"))
 
-                with gr.Accordion(label="RVC settings", visible=RVC_ENABLE, open=False):
+                with gr.Accordion(label=i18n("RVC settings"), visible=RVC_ENABLE, open=False):
                     # RVC variables
                     with gr.Row():
                         rvc_settings_model_name = gr.Dropdown(
-                            label="RVC Model name", info="Create a folder with your model name in the rvc folder and put .pth and .index there , .index optional", choices=rvc_models)
+                            label=i18n("RVC Model name"), info=i18n("Create a folder with your model name in the rvc folder and put .pth and .index there , .index optional"), choices=rvc_models)
                         rvc_settings_update_btn = gr.Button(
-                            value="Update", elem_classes="rvc_update-btn", visible=True)
+                            value=i18n("Update"), elem_classes="rvc_update-btn", visible=True)
                     rvc_settings_model_path = gr.Textbox(
-                        label="RVC Model", value="", visible=True, interactive=False)
+                        label=i18n("RVC Model"), value="", visible=True, interactive=False)
                     rvc_settings_index_path = gr.Textbox(
-                        label="Index file", value="", visible=True, interactive=False)
+                        label=i18n("Index file"), value="", visible=True, interactive=False)
                     rvc_settings_pitch = gr.Slider(
-                        minimum=-24, maximum=24, value=0, step=1, label="Pitch")
+                        minimum=-24, maximum=24, value=0, step=1, label=i18n("Pitch"))
                     rvc_settings_index_rate = gr.Slider(
-                        minimum=0, maximum=1, value=0.75, step=0.01, label="Index rate")
+                        minimum=0, maximum=1, value=0.75, step=0.01, label=i18n("Index rate"))
                     rvc_settings_protect_voiceless = gr.Slider(
-                        minimum=0, maximum=0.5, value=0.33, step=0.01, label="Protect voiceless")
+                        minimum=0, maximum=0.5, value=0.33, step=0.01, label=i18n("Protect voiceless"))
                     rvc_settings_method = gr.Radio(
-                        ["crepe", "pm", "rmvpe", "harvest"], value="rmvpe", label="RVC Method")
+                        ["crepe", "pm", "rmvpe", "harvest"], value="rmvpe", label=i18n("RVC Method"))
                     rvc_settings_filter_radius = gr.Slider(
-                        minimum=0, maximum=7, value=3, step=1, label="If >=3: apply median filtering to the harvested pitch results. The value represents the filter radius and can reduce breathiness.")
+                        minimum=0, maximum=7, value=3, step=1, label=i18n("If >=3: apply median filtering to the harvested pitch results. The value represents the filter radius and can reduce breathiness."))
                     rvc_settings_resemple_rate = gr.Slider(
-                        minimum=0, maximum=48000, value=0, step=1, label="Resample the output audio in post-processing to the final sample rate. Set to 0 for no resampling")
+                        minimum=0, maximum=48000, value=0, step=1, label=i18n("Resample the output audio in post-processing to the final sample rate. Set to 0 for no resampling"))
                     rvc_settings_envelope_mix = gr.Slider(
-                        minimum=0, maximum=1, value=1, step=0.01, label="Use the volume envelope of the input to replace or mix with the volume envelope of the output. The closer the ratio is to 1, the more the output envelope is used")
+                        minimum=0, maximum=1, value=1, step=0.01, label=i18n("Use the volume envelope of the input to replace or mix with the volume envelope of the output. The closer the ratio is to 1, the more the output envelope is used"))
                 with gr.Row():
                     output_type = gr.Radio(
-                        ["mp3", "wav"], value="wav", label="Output Type")
+                        ["mp3", "wav"], value="wav", label=i18n("Output Type"))
             additional_text_input = gr.Textbox(
-                label="File Name Value", value="output")
+                label=i18n("File Name Value"), value="output")
 
            # Variables
         speaker_value_text = gr.Textbox(
-            label="Reference Speaker Name", value=speaker_value, visible=False)
+            label=i18n("Reference Speaker Name"), value=speaker_value, visible=False)
         speaker_path_text = gr.Textbox(
-            label="Reference Speaker Path", value="", visible=False)
+            label=i18n("Reference Speaker Path"), value="", visible=False)
         speaker_wav_modifyed = gr.Checkbox(
-            "Reference Audio", visible=False, value=False)
+            i18n("Reference Audio"), visible=False, value=False)
         speaker_ref_wavs = gr.Text(visible=False)
