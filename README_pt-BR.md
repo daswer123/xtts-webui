@@ -1,5 +1,8 @@
 # XTTS-WebUI
 
+[English](https://github.com/RafaelGodoyEbert/xtts-webui/blob/main/README.md)
+[Português](https://github.com/RafaelGodoyEbert/xtts-webui/blob/main/README_pt-BR.md)
+
 ## Sobre o projeto
 XTTS-Webui é uma interface web que permite aproveitar ao máximo o XTTS. Existem outras redes neurais em torno desta interface que irão melhorar seus resultados. Você também pode ajustar o modelo e obter um modelo de voz de alta qualidade.
 
