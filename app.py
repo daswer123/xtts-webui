@@ -14,6 +14,8 @@ parser.add_argument("-sf", "--speaker_folder", default="speakers/",
                     type=str, help="The folder where you get the samples for tts")
 parser.add_argument("-o", "--output", default="output/",
                     type=str, help="Output folder")
+parser.add_argument("-l", "--language", default="Auto",
+                    type=str, help="WebUI language")
 parser.add_argument("-ms", "--model-source", default="local", choices=["api", "local"],
                     help="Define the model source: 'api' for latest version from repository, api inference or 'local' for using local inference and model v2.0.2.")
 parser.add_argument("-v", "--version", default="v2.0.2", type=str,
@@ -42,6 +44,8 @@ os.environ['MODEL_SOURCE'] = args.model_source
 os.environ["LOWVRAM_MODE"] = str(args.lowvram).lower()  # Set lowvram mode
 os.environ["DEEPSPEED"] = str(args.deepspeed).lower()  # Enable Streaming mode
 os.environ["MODEL_VERSION"] = args.version  # Specify version of XTTS model
+
+os.environ["LANGUAGE"] = args.language 
 
 os.environ["RVC_ENABLED"] = str(args.rvc).lower()
 

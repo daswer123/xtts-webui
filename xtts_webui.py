@@ -7,6 +7,9 @@ import gradio as gr
 from pathlib import Path
 from loguru import logger
 
+from i18n.i18n import I18nAuto
+i18n = I18nAuto()
+
 # Read css
 css = os.path.join(os.path.dirname(__file__), "style.css")
 with open(css) as f:
@@ -54,7 +57,7 @@ XTTS = TTSWrapper(OUTPUT_FOLDER, SPEAKER_FOLDER, LOWVRAM_MODE,
                   MODEL_SOURCE, MODEL_VERSION, DEVICE)
 
 # LOAD MODEL
-logger.info(f"Start loading model {MODEL_VERSION}")
+logger.info(f"{i18n('Start loading model')} {MODEL_VERSION}")
 this_dir = Path(__file__).parent.resolve()
 
 logger.info(f"this dir: {this_dir}")
@@ -63,28 +66,28 @@ XTTS.load_model(this_dir)
 
 with gr.Blocks(css=css) as demo:
     gr.Markdown(
-        value="# XTTS-webui by [daswer123](https://github.com/daswer123)")
+        value=f"# XTTS-webui by [daswer123](https://github.com/daswer123)\n {i18n(' ')}.")
     with gr.Row(elem_classes="model-choose"):
         models_list = get_folder_names_advanced(this_dir / "models")
         model = gr.Dropdown(
-            label="Select XTTS model version",
+            label=i18n("Select XTTS model version"),
             value=MODEL_VERSION,
             choices=models_list,
             elem_classes="model-choose__checkbox"
         )
         refresh_model_btn = gr.Button(
-            value="Update", elem_classes="model-choose__btn")
+            value=i18n("Update"), elem_classes="model-choose__btn")
 
-    with gr.Tab("Text2Voice"):
+    with gr.Tab(i18n("Text2Voice")):
         from parts.text2voice import *
 
-    with gr.Tab("Voice2Voice"):
+    with gr.Tab(i18n("Voice2Voice")):
         from parts.voice2voice import *
 
-    with gr.Tab("Train"):
+    with gr.Tab(i18n("Train")):
         from parts.train import *
 
-    with gr.Tab("Instuments"):
+    with gr.Tab(i18n("Instuments")):
         from parts.instuments import *
 
     
