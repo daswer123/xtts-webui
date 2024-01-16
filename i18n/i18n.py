@@ -10,7 +10,9 @@ def load_language_list(language):
 
 
 class I18nAuto:
-    def __init__(self, language=None):
+    def __init__(self):
+        language = os.getenv("LANGUAGE", "Auto")
+
         if language in ["Auto", None]:
             language = locale.getdefaultlocale()[
                 0

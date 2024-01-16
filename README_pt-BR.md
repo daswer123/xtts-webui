@@ -1,7 +1,10 @@
 # XTTS-WebUI
 
-[English](https://github.com/RafaelGodoyEbert/xtts-webui/blob/main/README.md)
-[Português](https://github.com/RafaelGodoyEbert/xtts-webui/blob/main/README_pt-BR.md)
+[English](https://github.com/daswer123/xtts-webui/blob/main/README.md)
+
+[Russian](https://github.com/daswer123/xtts-webui/blob/main/README_ru_RU.md)
+
+[Português](https://github.com/daswer123/xtts-webui/blob/main/README_pt-BR.md)
 
 ## Sobre o projeto
 XTTS-Webui é uma interface web que permite aproveitar ao máximo o XTTS. Existem outras redes neurais em torno desta interface que irão melhorar seus resultados. Você também pode ajustar o modelo e obter um modelo de voz de alta qualidade.
@@ -93,6 +96,7 @@ Aqui estão alguns argumentos de tempo de execução que podem ser usados ao ini
 |-o,--saída |"saída/" |Diretório de saída|
 |-ms,--model-source |"local" |Defina a fonte do modelo: 'api' para a versão mais recente do repositório, inferência de API ou 'local' para usar inferência local e modelo v2.0.2|
 |-v,-version |"v2.0.2" |Você pode especificar qual versão do xtts usar. Você pode especificar o nome do modelo customizado para esta finalidade, colocar a pasta em modelos e especificar o nome da pasta neste sinalizador |
+|-l,--language 	|"auto"	|Idioma do Webui, você pode ver as traduções disponíveis na pasta i18n/locale.|
 |--lowvram ||Ativa o modo low vram que alterna o modelo para RAM quando não está processando ativamente|
 |--deepspeed ||Ativa a aceleração deepspeed. Funciona no Windows em python 3.10 e 3.11 |
 |--share ||Permite o compartilhamento da interface fora do computador local|

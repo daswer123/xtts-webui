@@ -1,7 +1,10 @@
 # XTTS-WebUI
 
-[English](https://github.com/RafaelGodoyEbert/xtts-webui/blob/main/README.md)
-[Português](https://github.com/RafaelGodoyEbert/xtts-webui/blob/main/README_pt-BR.md)
+[English](https://github.com/daswer123/xtts-webui/blob/main/README.md)
+
+[Russian](https://github.com/daswer123/xtts-webui/blob/main/README_ru_RU.md)
+
+[Português](https://github.com/daswer123/xtts-webui/blob/main/README_pt-BR.md)
 
 ## About the Project
 XTTS-Webui is a web interface that allows you to make the most of XTTS. There are other neural networks around this interface that will improve your results. You can also fine tune the model and get a high quality voice model.
@@ -90,6 +93,7 @@ Here are some runtime arguments that can be used when starting the application:
 | -d, --device   | cuda    | Which device to use (cpu or cuda) |
 | -sf,--speaker_folder  | speakers/   | Directory containing TTS samples|
 |-o,--output  	|"output/"		|Output directory|
+|-l,--language  	|"auto"		|Webui language, you can see the available translations in the i18n/locale folder.|
 |-ms,--model-source  	|"local"			|Define the model source: 'api' for latest version from repository, api inference or 'local' for using local inference and model v2.0.2|
 |-v,-version  			|"v2.0.2"				|You can specify which version of xtts to use. You can specify the name of the custom model for this purpose put the folder in models and specify the name of the folder in this flag|
 |--lowvram   		||Enable low vram mode which switches the model to RAM when not actively processing|
