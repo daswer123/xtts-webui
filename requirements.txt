@@ -21,3 +21,4 @@ pyworld
 torchcrepe
 praat-parselmouth>=0.4.2
 translators
+transformers==4.36.2
