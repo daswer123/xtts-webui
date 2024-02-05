@@ -31,6 +31,8 @@ def translate_and_voiceover(
     translate_source_lang,
     translate_target_lang,
     translate_speaker_lang,
+    translate_num_sent,
+    translate_max_reference_seconds,
     translate_translator,
     translate_speed,
     translate_temperature,
@@ -81,6 +83,8 @@ def translate_and_voiceover(
         source_lang=translate_source_lang,
         target_lang=translate_target_lang,
         speaker_lang=translate_speaker_lang,
+        num_sen=translate_num_sent,
+        ref_seconds=translate_max_reference_seconds,
         output_filename=output_folder / tranlsated_filename,
         progress=gr.Progress(track_tqdm=True),
     )
@@ -287,6 +291,13 @@ def show_deepl_api_key(translate_translator):
     if translate_translator == "deepl":
         return gr.Textbox(label="Deepl Api Key", value="",type="password",visible=True)
 
+def switch_visible_mode2_params(translate_audio_mode):
+    if translate_audio_mode == 2:
+        return gr.Slider(label="Number of sentences that will be voiced at one time",minimum=1,maximum=6,step=1,visible=True),gr.Slider(label="Number of reference seconds that will be used",minimum=10,maximum=600,value=20,step=1,visible=True)
+    return gr.Slider(visible=False), gr.Slider(visible=False)
+
+translate_audio_mode.change(fn=switch_visible_mode2_params,inputs=[translate_audio_mode],outputs=[translate_num_sent,translate_max_reference_seconds])
+
 translate_translator.change(fn=show_deepl_api_key,inputs=[translate_translator],outputs=[deepl_auth_key_textbox])
 deepl_auth_key_textbox.change(fn=save_auth_key,inputs=[deepl_auth_key_textbox])
 
@@ -301,6 +312,8 @@ translate_btn.click(fn=translate_and_voiceover, inputs=[
                                                         translate_source_lang,
                                                         translate_target_lang,
                                                         translate_speaker_lang,
+                                                        translate_num_sent,
+                                                        translate_max_reference_seconds,
                                                         # XTTS SETTINGS
                                                         translate_translator,
                                                         translate_speed,

@@ -29,6 +29,10 @@ with gr.Tab(i18n("Translate")):
                 deepl_auth_key_textbox = gr.Textbox(label="Deepl Api Key", value="",type="password",visible=False)
                 
                 with gr.Row():
+                    translate_num_sent = gr.Slider(label="Number of sentences that will be voiced at one time",minimum=1,maximum=6,step=1,visible=True)
+                    translate_max_reference_seconds= gr.Slider(label="Number of reference seconds that will be used",minimum=10,maximum=600,value=20,step=1,visible=True)
+                
+                with gr.Row():
                     translate_source_lang = gr.Text(
                         value="auto", label=i18n("Enter lang code of source lang, if you want define automaticly type 'auto'"))
                     translate_target_lang = gr.Dropdown(
@@ -88,7 +92,7 @@ with gr.Tab(i18n("Translate")):
             translate_status_bar = gr.Label(
                 value=i18n("Select target language, mode and upload audio then press translate button."))
             translate_video_output = gr.Video(
-                label=i18n("Waveform Translate"), value=None, interactive=False, visible=False)
+                label=i18n("Mp4 Translate"), value=None, interactive=False,visible=False)
             translate_voice_output = gr.Audio(
                 label=i18n("Result"), value=None, interactive=False)
             translate_files_output = gr.Files(label="Subtitles",interactive=False)

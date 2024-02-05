@@ -219,7 +219,7 @@ def transcribe_audio(whisper_model, filename, source_lang='auto'):
           (info.language, info.language_probability))
 
     if source_lang == "auto":
-        detected_language = info.language   # Сохраняем определенный язык
+        detected_language = info.language  
     else:
         detected_language = source_lang
 
@@ -249,7 +249,7 @@ def accumulate_segments(segments, start_index, segment_filenames, temp_folder, d
 # local_generation, combine_wav_files are defined elsewhere.
 def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, source_lang, target_lang,
                             speaker_lang, options={}, text_translator="google", translate_mode=True,
-                            output_filename="result.mp3", speaker_wavs=None, improve_audio_func=False, progress=None):
+                            output_filename="result.mp3",ref_seconds=20,num_sen = 1, speaker_wavs=None, improve_audio_func=False, progress=None):
 
     # STAGE - 1 TRANSCRIBE
     segments, detected_language = transcribe_audio(whisper_model,filename,source_lang)
@@ -266,9 +266,9 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
     create_directory_if_not_exists(temp_folder)
 
     # STAGE 1.5 CREATE LIST OF SEGMENTS
-    segments = list(segments)  # Убедитесь, что 'segments' является списком
+    segments = list(segments)  # Make sure that 'segments' is a list
     total_segments = len(segments)
-    # Создаем список пустых элементов размером total_segments
+    # Create a list of empty elements of size total_segments
     indices = list(range(total_segments))
     
     # Create new segments list
@@ -310,10 +310,16 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
     translated_segment_files = []
 
     # STAGE 3: VOICEOVER
-    for i in tqdm_object:  
+    i = 0
+    while i < total_segments:
         segment = segments[i]
         tts_input_wavs = []  
         text_to_syntez = ""
+        merged_text = ""
+        end_segment_index = min(i + num_sen, total_segments)
+
+        for segment_index in range(i, end_segment_index):
+            merged_text += segments[segment_index].text
         
         if text_translator == "deepl":
             api_key = os.getenv("DEEPL_API_KEY")
@@ -327,15 +333,15 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
                 if target_lang == "en":
                     target_lang = "en-US"
                     
-                text_to_syntez = deepl_translator.translate_text(segment.text,source_lang=source_lang, target_lang=target_lang)
+                text_to_syntez = deepl_translator.translate_text(merged_text,source_lang=source_lang, target_lang=target_lang)
                 text_to_syntez = text_to_syntez.text
                 print("Deepl:",text_to_syntez)
             else:
               text_to_syntez = ts.translate_text(
-                  query_text=segment.text, translator=text_translator, from_language=source_lang, to_language=target_lang)
+                  query_text=merged_text, translator=text_translator, from_language=source_lang, to_language=target_lang)
             print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
         else:
-            print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}")
+            print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {merged_text}")
             text_to_syntez = clean_text(text_to_syntez)
 
         synthesized_audio_file = f"synthesized_segment_{i}.wav"
@@ -354,7 +360,8 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
             accumulated_files_for_tts_input=accumulate_segments(
                 segments,start_index=i,
                 segment_filenames=segment_filenames,
-                temp_folder=temp_folder)
+                temp_folder=temp_folder,
+                desired_duration=ref_seconds)
 
             tts_input_combined_path_temporary_output_filename=temp_folder/synthesized_audio_starting_from_i_wav_name_pattern
 
@@ -379,28 +386,29 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
         end_time_translate = start_time_translate + current_durration
         new_segments_list.append({"start":start_time_translate,"end":end_time_translate,"text":text_to_syntez})
         start_time_translate = end_time_translate
-    
+
+        i+=num_sen
 
     print(new_segments_list)
     print(segments)
-    # Обрабатываем output_filename и создаем необходимую структуру каталога
-    base_name_with_ext = os.path.basename(output_filename)  # Имя файла с расширением
-    base_directory = os.path.dirname(output_filename)  # Директория файла
+    # Process output_filename and create the necessary directory structure
+    base_name_with_ext = os.path.basename(output_filename)  # File name with extension
+    base_directory = os.path.dirname(output_filename)  # File directory
 
-    # Определяем базовое имя без расширения
+    # Define a base name without extension
     base_name_without_ext = os.path.splitext(base_name_with_ext)[0]
 
-    # Создаем целевую папку если она ещё не существует
+    # Create target folder if it does not exist yet
     target_folder_path = os.path.join(base_directory, base_name_without_ext)
     if not os.path.exists(target_folder_path):
         os.makedirs(target_folder_path)
 
-    # Теперь выполним функцию сохранения всего: .txt, .srt и .ass файлов.
+    # Now let's perform the function of saving all: .txt, .srt and .ass files.
     subtitles_files = save_subs_and_txt(new_segments_list, target_folder_path, base_name_without_ext)
 
     combined_audio_output_filepath = os.path.join(target_folder_path, base_name_with_ext)
 
-    # Передаем корректный путь для объединенного wav файла - уже внутри целевой директории.
+    # Pass the correct path for the merged wav file - already inside the target directory.
     combine_wav_files([os.path.join(temp_folder,f) for f in translated_segment_files], combined_audio_output_filepath)
 
     # Optionally remove temporary files after combining them into final output.
