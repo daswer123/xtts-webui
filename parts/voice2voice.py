@@ -24,7 +24,10 @@ with gr.Tab(i18n("Translate")):
                 translate_audio_mode = gr.Radio(label=i18n("Mode"), choices=[
                                                 1, 2], value=2, info=i18n("1 - Takes each sentence as a sample and voices the text using this sample\n2 - Intended for 1 speaker, takes the sample that is longer and closest to the current sentence."))
                 translate_translator = gr.Radio(label=i18n("Translator"), choices=[
-                                                "google", "bing", "baidu"], value="google")
+                                                "google", "bing", "baidu","deepl"], value="google")
+                
+                deepl_auth_key_textbox = gr.Textbox(label="Deepl Api Key", value="",type="password",visible=False)
+                
                 with gr.Row():
                     translate_source_lang = gr.Text(
                         value="auto", label=i18n("Enter lang code of source lang, if you want define automaticly type 'auto'"))
@@ -86,6 +89,7 @@ with gr.Tab(i18n("Translate")):
                 value=i18n("Select target language, mode and upload audio then press translate button."))
             translate_video_output = gr.Video(
                 label=i18n("Waveform Translate"), value=None, interactive=False, visible=False)
+            translate_files_output = gr.Files(label="Subtitles",interactive=False)
             translate_voice_output = gr.Audio(
                 label=i18n("Result"), value=None, interactive=False)
             translate_btn = gr.Button(value=i18n("Translate"))

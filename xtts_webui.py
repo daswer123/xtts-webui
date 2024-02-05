@@ -48,6 +48,8 @@ supported_languages = {
     "hi": "Hindi"
 }
 
+deepl_api_key = ""
+
 reversed_supported_languages = {
     name: code for code, name in supported_languages.items()}
 reversed_supported_languages_list = list(reversed_supported_languages.keys())

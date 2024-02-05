@@ -15,6 +15,8 @@ from pathlib import Path
 import ffmpeg
 import time
 import os
+
+
 import argparse
 
 import noisereduce
@@ -23,6 +25,10 @@ import soundfile as sf
 
 from faster_whisper import WhisperModel
 import random
+import pysubs2
+
+import deepl
+from xtts_webui import deepl_auth_key_textbox,deepl_api_key
 
 
 def local_generation(xtts, text, speaker_wav, language, output_file, options={}):
@@ -84,6 +90,25 @@ def segment_audio(start_time, end_time, input_file, output_file):
                 to=end_time)
         .run(capture_stdout=True, capture_stderr=True)
     )
+
+def save_subs_and_txt(segments, base_folder, base_name):
+    # Сохраняем txt
+    txt_output_path = os.path.join(base_folder, base_name + '.txt')
+    with open(txt_output_path, 'w', encoding='utf-8') as f:
+        for segment in segments:
+            f.write(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}\n")
+
+    # Создаем и сохраняем srt & ass subtitles
+    subs = pysubs2.SSAFile()
+
+    for segment in segments:
+        start_time = int(segment.start * 1000)  # Преобразовываем в миллисекунды для pysubs2
+        end_time = int(segment.end * 1000)
+        text = segment.text
+        subs.events.append(pysubs2.SSAEvent(start=start_time, end=end_time, text=text))
+
+    subs.save(os.path.join(base_folder, base_name + '.srt'))
+    subs.save(os.path.join(base_folder, base_name + '.ass'))
 
 
 def get_suitable_segment(i, segments):
@@ -261,10 +286,25 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
         segment = segments[i]
         tts_input_wavs = []  
         text_to_syntez = ""
+        
+        if text_translator == "deepl":
+            api_key = os.getenv("DEEPL_API_KEY")
+            print("api key =",api_key)
+            if not api_key:
+                return
+            deepl_translator = deepl.Translator(api_key)
 
         if translate_mode:
-            text_to_syntez = ts.translate_text(
-                query_text=segment.text, translator=text_translator, from_language=source_lang, to_language=target_lang)
+            if text_translator == "deepl":
+                if target_lang == "en":
+                    target_lang = "en-US"
+                    
+                text_to_syntez = deepl_translator.translate_text(segment.text,source_lang=source_lang, target_lang=target_lang)
+                text_to_syntez = text_to_syntez.text
+                print("Deepl:",text_to_syntez)
+            else:
+              text_to_syntez = ts.translate_text(
+                  query_text=segment.text, translator=text_translator, from_language=source_lang, to_language=target_lang)
             print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
         else:
             print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}")
@@ -320,14 +360,31 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
 
         translated_segment_files.append(synthesized_audio_file)
 
-    combined_output_filepath = os.path.join(output_filename)
-    combine_wav_files([os.path.join(temp_folder, f)
-                      for f in translated_segment_files], combined_output_filepath)
+    # Обрабатываем output_filename и создаем необходимую структуру каталога
+    base_name_with_ext = os.path.basename(output_filename)  # Имя файла с расширением
+    base_directory = os.path.dirname(output_filename)  # Директория файла
+
+    # Определяем базовое имя без расширения
+    base_name_without_ext = os.path.splitext(base_name_with_ext)[0]
+
+    # Создаем целевую папку если она ещё не существует
+    target_folder_path = os.path.join(base_directory, base_name_without_ext)
+    if not os.path.exists(target_folder_path):
+        os.makedirs(target_folder_path)
+
+    # Теперь выполним функцию сохранения всего: .txt, .srt и .ass файлов.
+    save_subs_and_txt(segments, target_folder_path, base_name_without_ext)
+
+    combined_audio_output_filepath = os.path.join(target_folder_path, base_name_with_ext)
+
+    # Передаем корректный путь для объединенного wav файла - уже внутри целевой директории.
+    combine_wav_files([os.path.join(temp_folder,f) for f in translated_segment_files], combined_audio_output_filepath)
 
     # Optionally remove temporary files after combining them into final output.
     clean_temporary_files(translated_segment_files +
                           (segment_filenames if mode != 3 else []), temp_folder)
 
-    new_file_name = output_folder / Path(output_filename).name
-    shutil.move(output_filename, new_file_name)
+    new_file_name = output_folder / Path(target_folder_path) / Path(output_filename).name
+    # print(new_file_name)
+    # shutil.move(output_filename, new_file_name)
     return new_file_name

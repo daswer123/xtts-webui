@@ -85,6 +85,8 @@ def translate_and_voiceover(
         progress=gr.Progress(track_tqdm=True),
     )
     openvoice_status_bar = gr.Progress(track_tqdm=True)
+    
+    print("Translate",translate_and_voiceover)
     return None, translate_audio_file, "Done"
 
 
@@ -273,6 +275,20 @@ def infer_rvc_audio(
     # If none of the conditions are met, return an error message
     return None, None, "An unexpected error occurred during processing"
 
+def save_auth_key(deepl_auth_key_textbox):
+    # Write to env
+    global deepl_api_key
+    deepl_api_key = deepl_auth_key_textbox
+    print("API key =",deepl_auth_key_textbox)
+    os.environ["DEEPL_API_KEY"] = deepl_auth_key_textbox
+    return
+
+def show_deepl_api_key(translate_translator):
+    if translate_translator == "deepl":
+        return gr.Textbox(label="Deepl Api Key", value="",type="password",visible=True)
+
+translate_translator.change(fn=show_deepl_api_key,inputs=[translate_translator],outputs=[deepl_auth_key_textbox])
+deepl_auth_key_textbox.change(fn=save_auth_key,inputs=[deepl_auth_key_textbox])
 
 translate_btn.click(fn=translate_and_voiceover, inputs=[
                                                         # INPUTS
