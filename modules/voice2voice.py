@@ -87,7 +87,7 @@ def translate_and_voiceover(
     openvoice_status_bar = gr.Progress(track_tqdm=True)
     
     print("Translate",translate_and_voiceover)
-    return None, translate_audio_file, "Done"
+    return None, translate_audio_file[0],translate_audio_file[1], "Done"
 
 
 def get_reference_path(speaker_wav, speaker_path_text):
@@ -312,7 +312,7 @@ translate_btn.click(fn=translate_and_voiceover, inputs=[
                                                         translate_sentence_split,
                                                         # STATUS BAR
                                                         translate_status_bar
-                                                        ], outputs=[translate_video_output, translate_voice_output, translate_status_bar])
+                                                        ], outputs=[translate_video_output, translate_voice_output,translate_files_output, translate_status_bar])
 
 
 rvc_voice_settings_model_name.change(fn=select_rvc_model, inputs=[rvc_voice_settings_model_name], outputs=[

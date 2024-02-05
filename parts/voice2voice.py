@@ -89,9 +89,9 @@ with gr.Tab(i18n("Translate")):
                 value=i18n("Select target language, mode and upload audio then press translate button."))
             translate_video_output = gr.Video(
                 label=i18n("Waveform Translate"), value=None, interactive=False, visible=False)
-            translate_files_output = gr.Files(label="Subtitles",interactive=False)
             translate_voice_output = gr.Audio(
                 label=i18n("Result"), value=None, interactive=False)
+            translate_files_output = gr.Files(label="Subtitles",interactive=False)
             translate_btn = gr.Button(value=i18n("Translate"))
 
 with gr.Tab("RVC"):

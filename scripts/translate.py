@@ -30,6 +30,12 @@ import pysubs2
 import deepl
 from xtts_webui import deepl_auth_key_textbox,deepl_api_key
 
+from pydub import AudioSegment
+
+def get_audio_duration(file_path):
+    audio = AudioSegment.from_file(file_path)
+    return len(audio) / 1000.0  # Возвращает длительность в секундах
+
 
 def local_generation(xtts, text, speaker_wav, language, output_file, options={}):
     # Log time
@@ -92,23 +98,40 @@ def segment_audio(start_time, end_time, input_file, output_file):
     )
 
 def save_subs_and_txt(segments, base_folder, base_name):
+    # Инициализируем список для хранения путей к файлам
+    files_paths = []
+
     # Сохраняем txt
     txt_output_path = os.path.join(base_folder, base_name + '.txt')
     with open(txt_output_path, 'w', encoding='utf-8') as f:
         for segment in segments:
-            f.write(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {segment.text}\n")
+            f.write(f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {segment['text']}\n")
+
+    # Добавляем путь к txt файлу в список
+    files_paths.append(txt_output_path)
 
     # Создаем и сохраняем srt & ass subtitles
     subs = pysubs2.SSAFile()
 
     for segment in segments:
-        start_time = int(segment.start * 1000)  # Преобразовываем в миллисекунды для pysubs2
-        end_time = int(segment.end * 1000)
-        text = segment.text
+        start_time = int(segment['start'] * 1000)
+        end_time = int(segment['end'] * 1000)
+        text = segment['text']
         subs.events.append(pysubs2.SSAEvent(start=start_time, end=end_time, text=text))
 
-    subs.save(os.path.join(base_folder, base_name + '.srt'))
-    subs.save(os.path.join(base_folder, base_name + '.ass'))
+    srt_output_path = os.path.join(base_folder, base_name + '.srt')
+    ass_output_path = os.path.join(base_folder, base_name + '.ass')
+
+    subs.save(srt_output_path)
+    subs.save(ass_output_path)
+
+    # Добавляем пути к srt и ass файлам в список
+    files_paths.append(srt_output_path)
+    files_paths.append(ass_output_path)
+    
+    return files_paths
+
+
 
 
 def get_suitable_segment(i, segments):
@@ -247,6 +270,11 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
     total_segments = len(segments)
     # Создаем список пустых элементов размером total_segments
     indices = list(range(total_segments))
+    
+    # Create new segments list
+    new_segments_list = []
+    start_time_translate = 0
+    end_time_translate = 0
 
     # STAGE 2: CUT ALL SEGMENTS
     segment_filenames = []
@@ -332,22 +360,8 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
 
             tts_input_wavs = accumulated_files_for_tts_input
 
-            # if len(accumulated_files_for_tts_input) > 1:
-            #     # If more than one file was found, combine them into one WAV file for TTS processing.
-            #     combine_wav_files([os.path.join(temp_folder,f)
-            #         for f in accumulated_files_for_tts_input],
-            #         str(tts_input_combined_path_temporary_output_filename))
-
-            #     tts_input_wavs.append(tts_input_combined_path_temporary_output_filename)
-
-            # elif len(accumulated_files_for_tts_input) ==1:
-            #     # If only one file was found (less than 20 seconds), use it directly.
-            #     tts_input_wavs.append(os.path.join(temp_folder,
-            #                                        accumulated_files_for_tts_input[0]))
-
         current_datetime = str(datetime.now())
         # Start transformation using TTS system; assuming all required fields are correct
-        print(tts_input_wavs)
         xtts.local_generation(
             this_dir=this_dir,
             text=text_to_syntez,
@@ -358,8 +372,17 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
             output_file=temp_folder / synthesized_audio_file
         )
 
+        syntez_file = temp_folder / synthesized_audio_file
         translated_segment_files.append(synthesized_audio_file)
+        # Update timestamps and durations
+        current_durration = get_audio_duration(syntez_file)
+        end_time_translate = start_time_translate + current_durration
+        new_segments_list.append({"start":start_time_translate,"end":end_time_translate,"text":text_to_syntez})
+        start_time_translate = end_time_translate
+    
 
+    print(new_segments_list)
+    print(segments)
     # Обрабатываем output_filename и создаем необходимую структуру каталога
     base_name_with_ext = os.path.basename(output_filename)  # Имя файла с расширением
     base_directory = os.path.dirname(output_filename)  # Директория файла
@@ -373,7 +396,7 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
         os.makedirs(target_folder_path)
 
     # Теперь выполним функцию сохранения всего: .txt, .srt и .ass файлов.
-    save_subs_and_txt(segments, target_folder_path, base_name_without_ext)
+    subtitles_files = save_subs_and_txt(new_segments_list, target_folder_path, base_name_without_ext)
 
     combined_audio_output_filepath = os.path.join(target_folder_path, base_name_with_ext)
 
@@ -387,4 +410,4 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
     new_file_name = output_folder / Path(target_folder_path) / Path(output_filename).name
     # print(new_file_name)
     # shutil.move(output_filename, new_file_name)
-    return new_file_name
+    return [new_file_name,subtitles_files]
