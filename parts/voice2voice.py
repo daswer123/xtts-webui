@@ -26,7 +26,7 @@ with gr.Tab(i18n("Translate")):
                 translate_translator = gr.Radio(label=i18n("Translator"), choices=[
                                                 "google", "bing", "baidu","deepl"], value="google")
                 
-                deepl_auth_key_textbox = gr.Textbox(label="Deepl Api Key", value="",type="password",visible=False)
+                deepl_auth_key_textbox = gr.Textbox(label="Deepl API Key", value="",type="password",visible=False)
                 
                 with gr.Row():
                     translate_num_sent = gr.Slider(label=i18n("Number of sentences that will be voiced at one time"),minimum=1,maximum=6,step=1,visible=True)
@@ -134,7 +134,8 @@ with gr.Tab(i18n("Translate")):
                 translate_advance_stage2_btn = gr.Button(value=i18n("Stage 2 - Voice Text"),visible=False)
                 transalte_advance_markdown = gr.Markdown(i18n("Work in progress..."),visible=False)
 
-with gr.Tab("RVC"):
+if RVC_ENABLE:
+  with gr.Tab("RVC"):
     with gr.Row():
         with gr.Column():
             with gr.Tab(i18n("Single")):
@@ -178,7 +179,8 @@ with gr.Tab("RVC"):
                 label=i18n("Result"), value=None, interactive=False)
             rvc_voice_infer_btn = gr.Button(value=i18n("Infer"))
 
-with gr.Tab("OpenVoice"):
+if RVC_ENABLE:
+  with gr.Tab("OpenVoice"):
     with gr.Row():
         with gr.Column():
             with gr.Tab(i18n("Single")):

@@ -544,42 +544,42 @@ translate_btn.click(fn=translate_and_voiceover, inputs=[
                                                         translate_ref_speaker_list
                                                         ], outputs=[translate_video_output, translate_voice_output,translate_files_output, translate_status_bar])
 
-
-rvc_voice_settings_model_name.change(fn=select_rvc_model, inputs=[rvc_voice_settings_model_name], outputs=[
-    rvc_voice_settings_model_path, rvc_voice_settings_index_path])
-rvc_voice_settings_update_btn.click(fn=update_rvc_model, inputs=[rvc_voice_settings_model_name], outputs=[
-    rvc_voice_settings_model_name, rvc_voice_settings_model_path, rvc_voice_settings_index_path])
-
-rvc_voice_infer_btn.click(fn=infer_rvc_audio, inputs=[
-    # INPUT
-    rvc_audio_single,
-    rvc_audio_batch,
-    rvc_audio_batch_path,
-    # PATH
-    rvc_voice_settings_model_name,
-    rvc_voice_settings_model_path,
-    rvc_voice_settings_index_path,
-    # SETTINGS
-    rvc_voice_settings_pitch,
-    rvc_voice_settings_index_rate,
-    rvc_voice_settings_protect_voiceless,
-    rvc_voice_settings_method,
-    rvc_voice_filter_radius,
-    rvc_voice_resemple_rate,
-    rvc_voice_envelope_mix,
-    # STATUS
-    rvc_voice_status_bar
-], outputs=[
-    rvc_video_output,
-    rvc_voice_output,
-    rvc_voice_status_bar
-])
-
-opvoice_voice_show_speakers.change(fn=update_openvoice_ref_list, inputs=[
-    opvoice_voice_ref_list, opvoice_voice_show_speakers], outputs=[opvoice_voice_ref_list])
-
-openvoice_voice_infer_btn.click(fn=infer_openvoice_audio, inputs=[openvoice_audio_single, openvoice_audio_batch, openvoice_audio_batch_path,
-                                                                  opvoice_voice_ref_list, openvoice_status_bar, speaker_path_text], outputs=[openvoice_video_output, openvoice_voice_output, openvoice_status_bar])
+if RVC_ENABLE:
+    rvc_voice_settings_model_name.change(fn=select_rvc_model, inputs=[rvc_voice_settings_model_name], outputs=[
+        rvc_voice_settings_model_path, rvc_voice_settings_index_path])
+    rvc_voice_settings_update_btn.click(fn=update_rvc_model, inputs=[rvc_voice_settings_model_name], outputs=[
+        rvc_voice_settings_model_name, rvc_voice_settings_model_path, rvc_voice_settings_index_path])
+    
+    rvc_voice_infer_btn.click(fn=infer_rvc_audio, inputs=[
+        # INPUT
+        rvc_audio_single,
+        rvc_audio_batch,
+        rvc_audio_batch_path,
+        # PATH
+        rvc_voice_settings_model_name,
+        rvc_voice_settings_model_path,
+        rvc_voice_settings_index_path,
+        # SETTINGS
+        rvc_voice_settings_pitch,
+        rvc_voice_settings_index_rate,
+        rvc_voice_settings_protect_voiceless,
+        rvc_voice_settings_method,
+        rvc_voice_filter_radius,
+        rvc_voice_resemple_rate,
+        rvc_voice_envelope_mix,
+        # STATUS
+        rvc_voice_status_bar
+    ], outputs=[
+        rvc_video_output,
+        rvc_voice_output,
+        rvc_voice_status_bar
+    ])
+    
+    opvoice_voice_show_speakers.change(fn=update_openvoice_ref_list, inputs=[
+        opvoice_voice_ref_list, opvoice_voice_show_speakers], outputs=[opvoice_voice_ref_list])
+    
+    openvoice_voice_infer_btn.click(fn=infer_openvoice_audio, inputs=[openvoice_audio_single, openvoice_audio_batch, openvoice_audio_batch_path,
+                                                                      opvoice_voice_ref_list, openvoice_status_bar, speaker_path_text], outputs=[openvoice_video_output, openvoice_voice_output, openvoice_status_bar])
 
 
 translate_advance_stage1_btn.click(fn=translate_and_voiceover_advance, inputs=[
