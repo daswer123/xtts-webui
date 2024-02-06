@@ -56,7 +56,6 @@ def whisperx_transcribe_func(
     # DIARIZE
     whisperx_enable_diarize,
     whisperx_diarize_split,
-    whisperx_diarize_speakers,
     # DIARIZE SETTINGS
     whisperx_diarize_speakers_max,
     whisperx_diarize_speakers_min,
@@ -143,7 +142,6 @@ whisperx_transcribe_btn.click(
     # DIARIZE
     whisperx_enable_diarize,
     whisperx_diarize_split,
-    whisperx_diarize_speakers,
     # DIARIZE SETTINGS
     whisperx_diarize_speakers_max,
     whisperx_diarize_speakers_min,
