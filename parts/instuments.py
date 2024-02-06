@@ -66,13 +66,13 @@ This project uses whisperX which in turn uses pyannote products. In order for al
                     label=i18n("Path to folder with audio files (High priority)"), value=None)
             with gr.Accordion(label="Main",open=True):
                 whisperx_model = gr.Dropdown(label=i18n("Whisper Model"), choices=["small", "medium", "large-v2", "large-v3"], value="medium")
-                whisperx_task = gr.Dropdown(label=i18n("Task"), choices=["transcribe","translate"], value="transcribe")
-                whisperx_language = gr.Dropdown(choices=sorted(get_language_names()), label="Language", value="Auto")
+                # whisperx_task = gr.Dropdown(label=i18n("Task"), choices=["transcribe","translate"], value="transcribe")
+                whisperx_language = gr.Dropdown(choices=sorted(get_language_names()),info="Leave empty if you want auto-detection", label="Language", value="Auto")
             with gr.Accordion(label="Options",open=True):
                 whisperx_align = gr.Checkbox(label="Align whisper output",value=True)
                 whisperx_timestamp = gr.Checkbox(label="Word Timestamps", value=True)
                 whisperx_timestamp_highlight = gr.Checkbox(label="Word Timestamps - Highlight Words", value=False)
-            with gr.Accordion(label="Diarize",open=True):
+            with gr.Accordion(label="Diarize (need HF_TOKEN)",open=True):
                 whisperx_enable_diarize = gr.Checkbox(label="Enable speaker diarization", value=False)
                 whisperx_diarize_split = gr.Checkbox(label="Create a separate audio file for each speaker", value=False)
                 whisperx_diarize_speakers = gr.Slider(label="Number of speakers (0 to auto)", value=2, minimum=0, maximum=10)
@@ -87,14 +87,15 @@ This project uses whisperX which in turn uses pyannote products. In order for al
                 whisperx_device = gr.Radio(label="Device",choices=["cuda","cpu"],value="cuda",info="change to 'int8' if low on GPU mem (may reduce accuracy)")
                 whisperx_batch_size = gr.Slider(label="Batch Size", minimum=1, maximum=32, value=8, step=1,info="reduce if low on GPU mem")
         with gr.Column():
+            whisperx_status_bar = gr.Label(label=i18n("Status"), visible=True, value="Upload audio and click Transcribe")
             whisperx_subtitles = gr.Files(interactive=False, label=i18n("Subtitles"))
             with gr.Column():
                 whisperx_transcribe = gr.Textbox(label=i18n("Transcription"), interactive=False, visible=True, value=None)
                 whisperx_segments = gr.Textbox(label=i18n("Segments"), interactive=False, visible=True, value=None)
+                whisperx_transcribe_btn = gr.Button(value=i18n("Transcribe"))
             with gr.Column():
                 whisperx_diarize_files = gr.Files(interactive=False,visible=False, label=i18n("Speaker diarization files"))
                 whisperx_diarize_files_list = gr.Dropdown(visible=False)
                 whisperx_diarize_audio_example = gr.Audio(visible=False)
-                whisperx_transcribe_btn = gr.Button(value=i18n("Transcribe"))
             
         
