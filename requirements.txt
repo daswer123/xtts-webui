@@ -27,3 +27,4 @@ deepl
 requests
 pysubs2
 whisperx
+youtube-dl
