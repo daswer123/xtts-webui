@@ -122,11 +122,11 @@
     "Clear train data, you will delete selected folder, after optimizing": "Clear train data, you will delete selected folder, after optimizing",
     "Train Status Bar": "Train Status Bar",
     "Load data, choose options and click Train": "Load data, choose options and click Train",
-
+    "Number of sentences that will be voiced at one time": "Number of sentences that will be voiced at one time",
     "Translate": "Translate",
     "Work in progress...": "Work in progress...",
     "Mode": "Mode",
-    "1 - Takes each sentence as a sample and voices the text using this sample\n2 - Intended for 1 speaker, takes the sample that is longer and closest to the current sentence.": "1 - Takes each sentence as a sample and voices the text using this sample\n2 - Intended for 1 speaker, takes the sample that is longer and closest to the current sentence.",
+    "Mode Desk": "1 - Takes each sentence as a sample speaker, turns out to get all the original voices. 2 - takes a set of x seconds close to the current sentence 3 - voices the selected speaker voice",
     "Translator": "Translator",
     "Enter lang code of source lang, if you want define automaticly type 'auto'": "Enter lang code of source lang, if you want define automaticly type 'auto'",
     "Target lang": "Target lang",
@@ -139,5 +139,14 @@
     "Waveform RVC": "Waveform RVC",
     "Infer": "Infer",
     "Choose reference and click Infer button": "Choose reference and click Infer button",
-    "Waveform OpenVoice": "Waveform OpenVoice"
+    "Waveform OpenVoice": "Waveform OpenVoice",
+    "Number of reference seconds that will be used": "Number of reference seconds that will be used",
+    "Subtitles": "Subtitles",
+    "Now edit the text and click on the 'Voice Text' button": "Now edit the text and click on the 'Voice Text' button",
+    "Translate mode":"Translate mode",
+    "Simple mode":"Simple mode",
+    "Advanced mode":"Advanced mode",
+    "Step 1 - Transcribe, translate and edit the text":"Step 1 - Transcribe, translate and edit the text",
+    "Stage 2 - Voice Text": "Step 2 - Voice Text",
+    "Translated Text": "Translated Text"
 }

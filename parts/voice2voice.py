@@ -22,15 +22,44 @@ with gr.Tab(i18n("Translate")):
                 translate_whisper_model = gr.Dropdown(label=i18n("Whisper Model"), choices=[
                                                       "small", "medium", "large-v2", "large-v3"], value="medium")
                 translate_audio_mode = gr.Radio(label=i18n("Mode"), choices=[
-                                                1, 2], value=2, info=i18n("1 - Takes each sentence as a sample and voices the text using this sample\n2 - Intended for 1 speaker, takes the sample that is longer and closest to the current sentence."))
+                                                1, 2,3], value=2, info=i18n("Mode Desk"))
                 translate_translator = gr.Radio(label=i18n("Translator"), choices=[
                                                 "google", "bing", "baidu","deepl"], value="google")
                 
                 deepl_auth_key_textbox = gr.Textbox(label="Deepl Api Key", value="",type="password",visible=False)
                 
                 with gr.Row():
-                    translate_num_sent = gr.Slider(label="Number of sentences that will be voiced at one time",minimum=1,maximum=6,step=1,visible=True)
-                    translate_max_reference_seconds= gr.Slider(label="Number of reference seconds that will be used",minimum=10,maximum=600,value=20,step=1,visible=True)
+                    translate_num_sent = gr.Slider(label=i18n("Number of sentences that will be voiced at one time"),minimum=1,maximum=6,step=1,visible=True)
+                    translate_max_reference_seconds= gr.Slider(label=i18n("Number of reference seconds that will be used"),minimum=10,maximum=600,value=20,step=1,visible=True)
+                
+                # speakers_list = XTTS.get_speakers()
+                # speaker_value = ""
+                # if not speakers_list:
+                #     speakers_list = ["None"]
+                #     speaker_value = "None"
+                # else:
+                #     speaker_value = speakers_list[0]
+                #     XTTS.speaker_wav = speaker_value
+
+                # translate_ref_speaker_list = gr.Dropdown(
+                #     label=i18n("Reference Speaker from folder 'speakers'"), value=speaker_value, choices=speakers_list)
+                # translate_show_ref_speaker_from_list = gr.Checkbox(
+                #     value=False, label=i18n("Show reference sample"), info=i18n("This option will allow you to listen to your reference sample"))
+                # translate_update_ref_speaker_list_btn = gr.Button(
+                #         value=i18n("Update"), elem_classes="speaker-update__btn")
+                # translate_ref_speaker_example = gr.Audio(
+                #     label=i18n("speaker sample"), sources="upload", visible=False, interactive=False)
+                
+                with gr.Column():
+                    with gr.Row():
+                        translate_ref_speaker_list = gr.Dropdown(
+                            label=i18n("Reference Speaker from folder 'speakers'"), visible=False)
+                        translate_show_ref_speaker_from_list = gr.Checkbox(
+                            value=False, label=i18n("Show reference sample"),visible=False, info=i18n("This option will allow you to listen to your reference sample"))
+                        translate_update_ref_speaker_list_btn = gr.Button(
+                                value=i18n("Update"),visible=False, elem_classes="speaker-update__btn")
+                    translate_ref_speaker_example = gr.Audio(
+                        label=i18n("speaker sample"), sources="upload", visible=False, interactive=False)
                 
                 with gr.Row():
                     translate_source_lang = gr.Text(
@@ -95,8 +124,15 @@ with gr.Tab(i18n("Translate")):
                 label=i18n("Mp4 Translate"), value=None, interactive=False,visible=False)
             translate_voice_output = gr.Audio(
                 label=i18n("Result"), value=None, interactive=False)
-            translate_files_output = gr.Files(label="Subtitles",interactive=False)
-            translate_btn = gr.Button(value=i18n("Translate"))
+            translate_files_output = gr.Files(label=i18n("Subtitles"),interactive=False)
+            with gr.Accordion(i18n("Translate mode")):
+              with gr.Tab(i18n("Simple mode")):
+                translate_btn = gr.Button(value=i18n("Translate"))
+              with gr.Tab(i18n("Advanced mode")):
+                translate_advance_stage1_btn = gr.Button(value=i18n("Step 1 - Transcribe, translate and edit the text"))
+                translate_advance_stage1_text = gr.TextArea(label=i18n("Translated Text"),value=None,visible=False)
+                translate_advance_stage2_btn = gr.Button(value=i18n("Stage 2 - Voice Text"),visible=False)
+                transalte_advance_markdown = gr.Markdown(i18n("Work in progress..."),visible=False)
 
 with gr.Tab("RVC"):
     with gr.Row():

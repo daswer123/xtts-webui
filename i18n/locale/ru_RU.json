@@ -122,11 +122,18 @@
     "Clear train data, you will delete selected folder, after optimizing": "Очистить промежуточные результаты тренировки, вы удалите выбранную папку после тренировки",
     "Train Status Bar": "Статус Тренировки",
     "Load data, choose options and click Train": "Загрузите данные, выберите параметры и нажмите кнопку Тренировать",
-
+    "Number of sentences that will be voiced at one time": "Количество предложений, которые будут озвучены одновременно",
+    "Number of reference seconds that will be used": "Кол-во секунд которые будут использоватся для референса в озвучке предложения",
     "Translate": "Перевод",
+    "Subtitles":"Субтитры",
+    "Translate mode":"Режим перевода",
+    "Simple mode":"Простой",
+    "Advanced mode":"Продвинутый",
+    "Stage 2 - Voice Text": "Шаг 2 - Озвучить текст",
+    "Now edit the text and click on the 'Voice Text' button": "Теперь отредактируйте текст и нажмите кнопку 'Озвучить текст'",
     "Work in progress...": "В работе...",
     "Mode": "Режим",
-    "1 - Takes each sentence as a sample and voices the text using this sample\n2 - Intended for 1 speaker, takes the sample that is longer and closest to the current sentence.": "Режим 1 - берет каждое предложение в качестве образца и озвучивает текст по этому образцу\nРежим 2 - предназначен для одного диктора, берет образец, который длиннее и ближе всего к текущему предложению.",
+    "Mode Desk": "1 - Берет каждое предложение как образец говорящего, получается получить все исходные голоса. 2 - берет набор из x секунд близких к текущему предложению 3 - озвучивает выбранным голосом speaker",
     "Translator": "Переводчик",
     "Enter lang code of source lang, if you want define automaticly type 'auto'": "Введите lang-код языка источника, если вы хотите определить его автоматически, введите 'auto'",
     "Target lang": "Язык перевода",
@@ -139,5 +146,7 @@
     "Waveform RVC": "Waveform RVC",
     "Infer": "Перевести",
     "Choose reference and click Infer button": "Выберите образец и нажмите кнопку Перевод",
-    "Waveform OpenVoice": "Waveform OpenVoice"
+    "Waveform OpenVoice": "Waveform OpenVoice",
+    "Step 1 - Transcribe, translate and edit the text":"Шаг 1 - транскрибация, перевод и редактирование текста",
+    "Translated Text": "Переведенный текст"
 }

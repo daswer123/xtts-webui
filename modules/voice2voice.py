@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 from modules.text2voice.voice2voice import select_rvc_model, update_rvc_model, update_openvoice_ref_list
-from scripts.translate import translate_and_get_voice
+from scripts.translate import translate_and_get_voice,translate_advance_stage1
 from scripts.voice2voice import infer_rvc, get_openvoice_refs, infer_rvc_batch, infer_openvoice, find_openvoice_ref_by_name
 from scripts.funcs import save_audio_to_wav
 
@@ -19,10 +19,10 @@ DATE_FORMAT = "%Y%m%d_%H%M%S"
 SPEAKER_PREFIX = "speaker/"
 REFERENCE_KEYWORD = "reference"
 
+prepare_segments = None
+
 # Auxiliary functions
-
-
-def translate_and_voiceover(
+def translate_and_voiceover_advance(
     translate_audio_single,
     translate_audio_batch,
     translate_audio_batch_path,
@@ -71,6 +71,92 @@ def translate_and_voiceover(
 
     current_date = datetime.now().strftime(DATE_FORMAT)
     tranlsated_filename = f"translated_from_{translate_source_lang}_to_{translate_target_lang}_{current_date}.wav"
+    translate_audio_file = translate_advance_stage1(
+        this_dir=this_dir,
+        filename=input_file,
+        xtts=XTTS,
+        options=options,
+        text_translator=translate_translator,
+        translate_mode=True,
+        whisper_model=translate_whisper_model,
+        mode=translate_audio_mode,
+        source_lang=translate_source_lang,
+        target_lang=translate_target_lang,
+        speaker_lang=translate_speaker_lang,
+        num_sen=translate_num_sent,
+        ref_seconds=translate_max_reference_seconds,
+        output_filename=output_folder / tranlsated_filename,
+        progress=gr.Progress(track_tqdm=True),
+    )
+    openvoice_status_bar = gr.Progress(track_tqdm=True)
+    
+    global prepare_segments
+        
+    translate_audio_file_ready = translate_audio_file[0]
+    translate_audio_file_ready = "\n".join(translate_audio_file_ready)
+    number_stork = len(translate_audio_file[0])
+    prepare_segments = translate_audio_file[1]
+        
+    print("Translate",translate_audio_file)
+    return gr.TextArea(value=translate_audio_file_ready,lines=number_stork,interactive=True,visible=True), gr.Button("Stage - 2 dub",visible=True),i18n("Now edit the text and click on the 'Voice Text' button")
+
+def translate_and_voiceover_advance_stage2(
+    translate_audio_single,
+    translate_audio_batch,
+    translate_audio_batch_path,
+    translate_whisper_model,
+    translate_audio_mode,
+    translate_source_lang,
+    translate_target_lang,
+    translate_speaker_lang,
+    translate_num_sent,
+    translate_max_reference_seconds,
+    translate_translator,
+    translate_speed,
+    translate_temperature,
+    translate_length_penalty,
+    translate_repetition_penalty,
+    translate_top_k,
+    translate_top_p,
+    translate_sentence_split,
+    translate_status_bar,
+    translate_advance_stage1_text,
+    translate_ref_speaker_list
+):
+    print("Hello world")
+    if not translate_audio_single and not translate_audio_batch and not translate_audio_batch_path:
+        return None, None, "Please load audio"
+
+    options = {
+        "temperature": float(translate_temperature),
+        "length_penalty": float(translate_length_penalty),
+        "repetition_penalty": float(translate_repetition_penalty),
+        "top_k": translate_top_k,
+        "top_p": float(translate_top_p),
+        "speed": float(translate_speed),
+    }
+    output_folder = this_dir / OUTPUT_FOLDER
+    folder_name = f"translated_from_{translate_source_lang}_to_{translate_target_lang}" + \
+        datetime.now().strftime(DATE_FORMAT)
+
+    # Save Audio
+    input_file = None
+    if translate_audio_single:
+        rate, y = translate_audio_single
+        input_file = save_audio_to_wav(rate, y, Path.cwd())
+
+    audio_files = translate_audio_batch or []
+    if translate_audio_batch_path:
+        audio_files.extend(find_audio_files(translate_audio_batch_path))
+    
+    speaker_wavs = None
+    if translate_ref_speaker_list:
+        speaker_wavs = XTTS.get_speaker_path(translate_ref_speaker_list)
+    
+    global prepare_segments
+
+    current_date = datetime.now().strftime(DATE_FORMAT)
+    tranlsated_filename = f"translated_from_{translate_source_lang}_to_{translate_target_lang}_{current_date}.wav"
     translate_audio_file = translate_and_get_voice(
         this_dir=this_dir,
         filename=input_file,
@@ -86,6 +172,87 @@ def translate_and_voiceover(
         num_sen=translate_num_sent,
         ref_seconds=translate_max_reference_seconds,
         output_filename=output_folder / tranlsated_filename,
+        prepare_text=translate_advance_stage1_text,
+        prepare_segments=prepare_segments,
+        speaker_wavs=speaker_wavs,
+        progress=gr.Progress(track_tqdm=True),
+    )
+    openvoice_status_bar = gr.Progress(track_tqdm=True)
+    
+    
+    print("Translate",translate_and_voiceover)
+    return None, translate_audio_file[0],translate_audio_file[1], "Done"
+
+def translate_and_voiceover(
+    translate_audio_single,
+    translate_audio_batch,
+    translate_audio_batch_path,
+    translate_whisper_model,
+    translate_audio_mode,
+    translate_source_lang,
+    translate_target_lang,
+    translate_speaker_lang,
+    translate_num_sent,
+    translate_max_reference_seconds,
+    translate_translator,
+    translate_speed,
+    translate_temperature,
+    translate_length_penalty,
+    translate_repetition_penalty,
+    translate_top_k,
+    translate_top_p,
+    translate_sentence_split,
+    translate_status_bar,
+    translate_ref_speaker_list
+):
+    print("Hello world")
+    if not translate_audio_single and not translate_audio_batch and not translate_audio_batch_path:
+        return None, None, "Please load audio"
+
+    options = {
+        "temperature": float(translate_temperature),
+        "length_penalty": float(translate_length_penalty),
+        "repetition_penalty": float(translate_repetition_penalty),
+        "top_k": translate_top_k,
+        "top_p": float(translate_top_p),
+        "speed": float(translate_speed),
+    }
+    output_folder = this_dir / OUTPUT_FOLDER
+    folder_name = f"translated_from_{translate_source_lang}_to_{translate_target_lang}" + \
+        datetime.now().strftime(DATE_FORMAT)
+
+    # Save Audio
+    input_file = None
+    if translate_audio_single:
+        rate, y = translate_audio_single
+        input_file = save_audio_to_wav(rate, y, Path.cwd())
+
+    audio_files = translate_audio_batch or []
+    if translate_audio_batch_path:
+        audio_files.extend(find_audio_files(translate_audio_batch_path))
+
+    speaker_wavs = None
+    if translate_ref_speaker_list:
+        speaker_wavs = XTTS.get_speaker_path(translate_ref_speaker_list)
+        
+    current_date = datetime.now().strftime(DATE_FORMAT)
+    tranlsated_filename = f"translated_from_{translate_source_lang}_to_{translate_target_lang}_{current_date}.wav"
+    translate_audio_file = translate_and_get_voice(
+        this_dir=this_dir,
+        filename=input_file,
+        xtts=XTTS,
+        options=options,
+        text_translator=translate_translator,
+        translate_mode=True,
+        whisper_model=translate_whisper_model,
+        mode=translate_audio_mode,
+        source_lang=translate_source_lang,
+        target_lang=translate_target_lang,
+        speaker_lang=translate_speaker_lang,
+        num_sen=translate_num_sent,
+        ref_seconds=translate_max_reference_seconds,
+        output_filename=output_folder / tranlsated_filename,
+        speaker_wavs=speaker_wavs,
         progress=gr.Progress(track_tqdm=True),
     )
     openvoice_status_bar = gr.Progress(track_tqdm=True)
@@ -279,27 +446,76 @@ def infer_rvc_audio(
     # If none of the conditions are met, return an error message
     return None, None, "An unexpected error occurred during processing"
 
+from scripts.funcs import write_key_value_to_env, read_key_from_env 
+
 def save_auth_key(deepl_auth_key_textbox):
     # Write to env
     global deepl_api_key
     deepl_api_key = deepl_auth_key_textbox
     print("API key =",deepl_auth_key_textbox)
-    os.environ["DEEPL_API_KEY"] = deepl_auth_key_textbox
+    write_key_value_to_env("DEEPL_API_KEY",deepl_auth_key_textbox)
     return
 
 def show_deepl_api_key(translate_translator):
     if translate_translator == "deepl":
-        return gr.Textbox(label="Deepl Api Key", value="",type="password",visible=True)
+        deepl_api_from_env = read_key_from_env("DEEPL_API_KEY")
+        return gr.Textbox(label="Deepl Api Key", value=deepl_api_from_env,type="password",visible=True)
+    return gr.Textbox(visible=False)
+
+def switch_visible_mode1_params(translate_audio_mode):
+    if translate_audio_mode == 1:
+        return gr.Markdown(value="**Attention, the number of rows must not be changed, otherwise an error will occur**",visible=True)
+    return gr.Markdown(visible=False)
 
 def switch_visible_mode2_params(translate_audio_mode):
     if translate_audio_mode == 2:
-        return gr.Slider(label="Number of sentences that will be voiced at one time",minimum=1,maximum=6,step=1,visible=True),gr.Slider(label="Number of reference seconds that will be used",minimum=10,maximum=600,value=20,step=1,visible=True)
+        return gr.Slider(label=i18n("Number of sentences that will be voiced at one time"),minimum=1,maximum=6,step=1,visible=True),gr.Slider(label=i18n("Number of reference seconds that will be used"),minimum=10,maximum=600,value=20,step=1,visible=True)
+    if translate_audio_mode == 3:
+        return gr.Slider(label=i18n("Number of sentences that will be voiced at one time"),minimum=1,maximum=6,step=1,visible=True),gr.Slider(visible=False)
     return gr.Slider(visible=False), gr.Slider(visible=False)
 
+def switch_visible_mode3_params(translate_audio_mode):
+    if translate_audio_mode == 3:
+        speakers_list = XTTS.get_speakers()
+        speaker_value = ""
+        if not speakers_list:
+            speakers_list = ["None"]
+            speaker_value = "None"
+        else:
+            speaker_value = speakers_list[0]
+            XTTS.speaker_wav = speaker_value
+
+        translate_ref_speaker_list = gr.Dropdown(
+            label=i18n("Reference Speaker from folder 'speakers'"),visible=True, value=speaker_value, choices=speakers_list)
+        translate_show_ref_speaker_from_list = gr.Checkbox(
+            value=False, label=i18n("Show reference sample"),visible=True, info=i18n("This option will allow you to listen to your reference sample"))
+        translate_update_ref_speaker_list_btn = gr.Button(
+                value=i18n("Update"), elem_classes="speaker-update__btn",visible=True)
+        translate_ref_speaker_example = gr.Audio(
+            label=i18n("speaker sample"), sources="upload", visible=False, interactive=False)
+        
+        return translate_ref_speaker_list,translate_show_ref_speaker_from_list,translate_update_ref_speaker_list_btn,translate_ref_speaker_example
+    return gr.Dropdown(visible=False,value=None),gr.Checkbox(visible=False),gr.Button(visible=False),gr.Audio(visible=False)
+
+translate_audio_mode.change(fn=switch_visible_mode1_params,inputs=[translate_audio_mode],outputs=[transalte_advance_markdown])
 translate_audio_mode.change(fn=switch_visible_mode2_params,inputs=[translate_audio_mode],outputs=[translate_num_sent,translate_max_reference_seconds])
+translate_audio_mode.change(fn=switch_visible_mode3_params,inputs=[translate_audio_mode],outputs=[translate_ref_speaker_list,translate_show_ref_speaker_from_list,translate_update_ref_speaker_list_btn,translate_ref_speaker_example])
 
 translate_translator.change(fn=show_deepl_api_key,inputs=[translate_translator],outputs=[deepl_auth_key_textbox])
 deepl_auth_key_textbox.change(fn=save_auth_key,inputs=[deepl_auth_key_textbox])
+
+# def switch_translate_modes(translate_audio_mode):
+#     if translate_audio_mode == 2 or translate_audio_mode == 3:
+#         return gr.Button(value=i18n("Stage 1 - Translate and edit Text"), visible=True), gr.TextArea(label="Translated Text", value=None, visible=False), gr.Button(value=i18n("Stage 2 - Dubbing"), visible=False), gr.Markdown(i18n("Work in progress..."), visible=False)
+#     else:
+#         return gr.Button(visible=False),gr.TextArea(visible=False), gr.Button(visible=False),gr.Markdown(i18n("Work in progress..."), visible=True)
+# translate_advance_stage1_btn = gr.Button(value=i18n("Stage 1 - Translate and edit Text"))
+                # translate_advance_stage1_text = gr.TextArea(label="Translated Text",value=None,visible=False)
+                # translate_advance_stage2_btn = gr.Button(value=i18n("Stage 2 - Dubbing"),visible=False)
+                # transalte_advance_markdown = gr.Markdown(i18n("Work in progress..."),visible=None)
+
+# translate_audio_mode.change(fn=switch_translate_modes,inputs=[translate_audio_mode],
+#                             outputs=[translate_advance_stage1_btn,translate_advance_stage1_text,translate_advance_stage2_btn,transalte_advance_markdown])
 
 translate_btn.click(fn=translate_and_voiceover, inputs=[
                                                         # INPUTS
@@ -324,7 +540,8 @@ translate_btn.click(fn=translate_and_voiceover, inputs=[
                                                         translate_top_p,
                                                         translate_sentence_split,
                                                         # STATUS BAR
-                                                        translate_status_bar
+                                                        translate_status_bar,
+                                                        translate_ref_speaker_list
                                                         ], outputs=[translate_video_output, translate_voice_output,translate_files_output, translate_status_bar])
 
 
@@ -363,3 +580,58 @@ opvoice_voice_show_speakers.change(fn=update_openvoice_ref_list, inputs=[
 
 openvoice_voice_infer_btn.click(fn=infer_openvoice_audio, inputs=[openvoice_audio_single, openvoice_audio_batch, openvoice_audio_batch_path,
                                                                   opvoice_voice_ref_list, openvoice_status_bar, speaker_path_text], outputs=[openvoice_video_output, openvoice_voice_output, openvoice_status_bar])
+
+
+translate_advance_stage1_btn.click(fn=translate_and_voiceover_advance, inputs=[
+                                                        # INPUTS
+                                                        translate_audio_single,
+                                                        translate_audio_batch,
+                                                        translate_audio_batch_path,
+                                                        # TRANSLATE SETTIGNS
+                                                        translate_whisper_model,
+                                                        translate_audio_mode,
+                                                        translate_source_lang,
+                                                        translate_target_lang,
+                                                        translate_speaker_lang,
+                                                        translate_num_sent,
+                                                        translate_max_reference_seconds,
+                                                        # XTTS SETTINGS
+                                                        translate_translator,
+                                                        translate_speed,
+                                                        translate_temperature,
+                                                        translate_length_penalty,
+                                                        translate_repetition_penalty,
+                                                        translate_top_k,
+                                                        translate_top_p,
+                                                        translate_sentence_split,
+                                                        # STATUS BAR
+                                                        translate_status_bar
+                                                        ], outputs=[translate_advance_stage1_text,translate_advance_stage2_btn,translate_status_bar])
+
+translate_advance_stage2_btn.click(fn=translate_and_voiceover_advance_stage2, inputs=[
+                                                        # INPUTS
+                                                        translate_audio_single,
+                                                        translate_audio_batch,
+                                                        translate_audio_batch_path,
+                                                        # TRANSLATE SETTIGNS
+                                                        translate_whisper_model,
+                                                        translate_audio_mode,
+                                                        translate_source_lang,
+                                                        translate_target_lang,
+                                                        translate_speaker_lang,
+                                                        translate_num_sent,
+                                                        translate_max_reference_seconds,
+                                                        # XTTS SETTINGS
+                                                        translate_translator,
+                                                        translate_speed,
+                                                        translate_temperature,
+                                                        translate_length_penalty,
+                                                        translate_repetition_penalty,
+                                                        translate_top_k,
+                                                        translate_top_p,
+                                                        translate_sentence_split,
+                                                        # STATUS BAR
+                                                        translate_status_bar,
+                                                        translate_advance_stage1_text,
+                                                        translate_ref_speaker_list
+                                                        ], outputs=[translate_video_output, translate_voice_output,translate_files_output, translate_status_bar])

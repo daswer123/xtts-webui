@@ -122,11 +122,18 @@
     "Clear train data, you will delete selected folder, after optimizing": "Limpar dados de treinamento, você excluirá a pasta selecionada, após a otimização",
     "Train Status Bar": "Barra de status do treinamento",
     "Load data, choose options and click Train": "Carregar dados, escolher opções e clicar em Treinar",
-
+    "Number of sentences that will be voiced at one time":"Número de frases que serão expressas de uma só vez",
     "Translate": "Traduzir",
     "Work in progress...": "Em andamento...",
     "Mode": "Modo",
-    "1 - Takes each sentence as a sample and voices the text using this sample\n2 - Intended for 1 speaker, takes the sample that is longer and closest to the current sentence.": "1 - Pega cada frase como uma amostra e dá voz ao texto usando essa amostra\n2 - Destinado a 1 palestrante, pega a amostra que é mais longa e mais próxima da frase atual.",
+    "Stage 2 - Voice Text": "Estágio 2 - Voice Text",
+    "Translate mode":"Modo de tradução",
+    "Simple mode":"Modo simples",
+    "Advanced mode":"Modo avançado",
+    "Subtitles":"Legendas",
+    "Now edit the text and click on the 'Voice Text' button": "Agora, edite o texto e clique no botão 'Voice Text'",
+    "Number of reference seconds that will be used": "Número de segundos que será usado para a referência na locução da frase",
+    "Mode Desk": "1 - Toma cada frase como um alto-falante de amostra e obtém todas as vozes originais. 2 - obtém um conjunto de x segundos próximo à frase atual 3 - dá voz ao alto-falante selecionado",
     "Translator": "Tradutor",
     "Enter lang code of source lang, if you want define automaticly type 'auto'": "Digite o código do idioma de origem, se quiser definir automaticamente digite 'auto'",
     "Target lang": "Idioma alvo",
@@ -141,5 +148,6 @@
     "Infer": "Inferir",
     "Show choises from the speakers folder": "Mostrar escolhas da pasta dos palestrantes",
     "Choose reference and click Infer button": "Escolha a referência e clique no botão Infer",
-    "Waveform OpenVoice": "Forma de Onda OpenVoice"
+    "Waveform OpenVoice": "Forma de Onda OpenVoice",
+    "Translated Text": "Texto traduzido"
 }

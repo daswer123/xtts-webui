@@ -194,6 +194,23 @@ show_ref_speaker_from_list.change(fn=switch_speaker_example_visibility,
                                           ref_speaker_list, speaker_value_text],
                                   outputs=[ref_speaker_example])
 
+# Translate Ref list
+# REFERENCE LIST
+translate_ref_speaker_list.change(fn=change_current_speaker,
+                        inputs=[translate_ref_speaker_list, speaker_value_text,
+                                translate_show_ref_speaker_from_list],
+                        outputs=[translate_ref_speaker_list, speaker_value_text, translate_ref_speaker_example])
+
+translate_update_ref_speaker_list_btn.click(fn=update_speakers_list,
+                                  inputs=[translate_ref_speaker_list, speaker_value_text,
+                                          speaker_path_text, speaker_ref_wavs],
+                                  outputs=[translate_ref_speaker_list, speaker_value_text])
+
+translate_show_ref_speaker_from_list.change(fn=switch_speaker_example_visibility,
+                                  inputs=[translate_ref_speaker_example, translate_show_ref_speaker_from_list,
+                                          translate_ref_speaker_list, speaker_value_text],
+                                  outputs=[translate_ref_speaker_example])
+
 # REFERENCE SINGLE UPLOAD OR MICROPHONE
 ref_speaker.stop_recording(fn=change_current_speaker_audio,
                            inputs=[improve_reference_resemble, improve_reference_audio, auto_cut, ref_speaker,

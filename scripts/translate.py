@@ -34,7 +34,7 @@ from pydub import AudioSegment
 
 def get_audio_duration(file_path):
     audio = AudioSegment.from_file(file_path)
-    return len(audio) / 1000.0  # Возвращает длительность в секундах
+    return len(audio) / 1000.0  # Returns the duration in seconds
 
 
 def local_generation(xtts, text, speaker_wav, language, output_file, options={}):
@@ -228,26 +228,246 @@ def transcribe_audio(whisper_model, filename, source_lang='auto'):
 def accumulate_segments(segments, start_index, segment_filenames, temp_folder, desired_duration=20):
     accumulated_duration = 0
     accumulated_segment_files = []
+    len_segments = len(segments)
 
-    for i in range(start_index, len(segments)):
-        if accumulated_duration >= desired_duration:
+    current_index = start_index % len_segments  # Начнем с start_index и обеспечим цикличность
+
+    while accumulated_duration < desired_duration:
+        # Если пройдены все сегменты и длительность не достигнута - выходим из цикла
+        if len(accumulated_segment_files) >= len_segments:
             break
 
-        segment = segments[i]
+        segment = segments[current_index]
         duration_of_segment = segment.end - segment.start
-        original_audio_segment_file = temp_folder / segment_filenames[i]
+        original_audio_segment_file = temp_folder / segment_filenames[current_index]
 
-        # Add file name to list of files we'll pass to TTS.
+        # Добавляем имя файла в список файлов для передачи в TTS.
         accumulated_segment_files.append(original_audio_segment_file)
 
         accumulated_duration += duration_of_segment
 
+        current_index += 1  # Переходим к следующему индексу
+
+        # Обеспечиваем цикличность перехода по списку
+        if current_index >= len_segments:
+            current_index = 0
+
     return accumulated_segment_files
 
+
+
+from scripts.funcs import  read_key_from_env 
 
 # Assuming translator, segment_audio, get_suitable_segment,
 # local_generation, combine_wav_files are defined elsewhere.
 def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, source_lang, target_lang,
+                            speaker_lang, options={}, text_translator="google", translate_mode=True,
+                            output_filename="result.mp3",ref_seconds=20,num_sen = 1,prepare_text = None,prepare_segments=None, speaker_wavs=None, improve_audio_func=False, progress=None):
+
+    # STAGE - 1 TRANSCRIBE
+    if not prepare_segments:
+      segments, detected_language = transcribe_audio(whisper_model,filename,source_lang)
+    else:
+      segments = prepare_segments
+      detected_language = None
+      
+    if source_lang == "auto":
+        source_lang = detected_language
+
+    output_folder = os.path.dirname(output_filename)
+    output_folder = Path(output_folder)
+
+    temp_folder_name = Path(
+        "./temp") / f'translate_{datetime.now().strftime("%Y%m%d%H%M%S")}'
+    temp_folder = temp_folder_name
+    create_directory_if_not_exists(temp_folder)
+
+    # STAGE 1.5 CREATE LIST OF SEGMENTS
+    segments = list(segments)  # Make sure that 'segments' is a list
+    total_segments = len(segments)
+    # Create a list of empty elements of size total_segments
+    indices = list(range(total_segments))
+    
+    # Create new segments list
+    new_segments_list = []
+    start_time_translate = 0
+    end_time_translate = 0
+
+    # STAGE 2: CUT ALL SEGMENTS
+    segment_filenames = []
+    mode = int(mode)
+
+    for i in range(total_segments):
+        segment = segments[i]
+
+        original_audio_segment_file = f"original_segment_{i}.wav"
+        segment_filenames.append(original_audio_segment_file)
+
+        # start_time = segment.start if mode == 1 else get_suitable_segment(i, segments).start
+        # end_time = segment.end if mode == 1 else get_suitable_segment(i, segments).end
+
+        start_time = segment.start
+        end_time = segment.end
+
+        output_segment_folder = temp_folder / original_audio_segment_file
+        segment_audio(start_time=start_time,
+                      end_time=end_time,
+                      input_file=filename,
+                      output_file=str(output_segment_folder))
+
+    # CREATE PROGRESS BAR
+    if progress is not None:
+        tqdm_object = progress.tqdm(
+            indices, total=total_segments, desc="Translate and voiceover...")
+    else:
+        tqdm_object = tqdm(indices, total=total_segments,
+                           desc="Translate and voiceover...")
+
+    # original_segment_files = []
+    translated_segment_files = []
+    ready_segments_text = {}
+    if prepare_text:
+        prepare_text = prepare_text.split("\n")
+        print("READY TEXT", prepare_text)
+
+    # STAGE 3: VOICEOVER
+    i = 0
+    preprare_text_i = 0
+    full_segments_list = total_segments
+    
+    if prepare_text:
+        full_segments_list = len(prepare_text)
+        
+    while i < full_segments_list:
+        if prepare_text:
+            num_sen = 1
+        
+        if not prepare_text:
+          segment = segments[i]
+        else:
+          segment = ""
+            
+        tts_input_wavs = []  
+        text_to_syntez = ""
+        if not prepare_text:
+          merged_text = ""
+          end_segment_index = min(i + num_sen, total_segments)
+  
+          for segment_index in range(i, end_segment_index):
+              merged_text += segments[segment_index].text
+          
+          if text_translator == "deepl":
+              api_key = read_key_from_env("DEEPL_API_KEY")
+              print("api key =",api_key)
+              if not api_key:
+                  return
+              deepl_translator = deepl.Translator(api_key)
+  
+          if translate_mode:
+              if text_translator == "deepl":
+                  if target_lang == "en":
+                      target_lang = "en-US"
+                      
+                  text_to_syntez = deepl_translator.translate_text(merged_text,source_lang=source_lang, target_lang=target_lang)
+                  text_to_syntez = text_to_syntez.text
+                  print("Deepl:",text_to_syntez)
+              else:
+                text_to_syntez = ts.translate_text(
+                    query_text=merged_text, translator=text_translator, from_language=source_lang, to_language=target_lang)
+              print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
+          else:
+              print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {merged_text}")
+              text_to_syntez = clean_text(text_to_syntez)
+        else:
+            text_to_syntez = prepare_text[preprare_text_i]
+
+        synthesized_audio_file = f"synthesized_segment_{i}.wav"
+        if mode == 1:
+            # Use single file for TTS input as before.
+            
+            original_audio_segment_file = segment_filenames[i]
+
+            tts_input_wavs.append(temp_folder / original_audio_segment_file)
+
+        if mode == 2:
+            # Accumulate multiple files until reaching at least 20 seconds.
+
+            synthesized_audio_starting_from_i_wav_name_pattern = f"synthesized_segments_starting_from_{i}_combined.wav"
+            # current_index = min(i, total_segments - 1)
+
+            accumulated_files_for_tts_input=accumulate_segments(
+                segments,start_index=i,
+                segment_filenames=segment_filenames,
+                temp_folder=temp_folder,
+                desired_duration=ref_seconds)
+
+            tts_input_combined_path_temporary_output_filename=temp_folder/synthesized_audio_starting_from_i_wav_name_pattern
+
+            tts_input_wavs = accumulated_files_for_tts_input
+            print(tts_input_wavs)
+        
+        if mode == 3:
+            tts_input_wavs = speaker_wavs
+
+        current_datetime = str(datetime.now())
+        # Start transformation using TTS system; assuming all required fields are correct
+        xtts.local_generation(
+            this_dir=this_dir,
+            text=text_to_syntez,
+            ref_speaker_wav=current_datetime,
+            speaker_wav=tts_input_wavs,
+            language=speaker_lang,
+            options=options,
+            output_file=temp_folder / synthesized_audio_file
+        )
+
+        syntez_file = temp_folder / synthesized_audio_file
+        translated_segment_files.append(synthesized_audio_file)
+        # Update timestamps and durations
+        current_durration = get_audio_duration(syntez_file)
+        end_time_translate = start_time_translate + current_durration
+        new_segments_list.append({"start":start_time_translate,"end":end_time_translate,"text":text_to_syntez})
+        start_time_translate = end_time_translate
+
+        i+=num_sen
+        preprare_text_i +=1
+
+    print(new_segments_list)
+    print(segments)
+    # Process output_filename and create the necessary directory structure
+    base_name_with_ext = os.path.basename(output_filename)  # File name with extension
+    base_directory = os.path.dirname(output_filename)  # File directory
+
+    # Define a base name without extension
+    base_name_without_ext = os.path.splitext(base_name_with_ext)[0]
+
+    # Create target folder if it does not exist yet
+    target_folder_path = os.path.join(base_directory, base_name_without_ext)
+    if not os.path.exists(target_folder_path):
+        os.makedirs(target_folder_path)
+
+    # Now let's perform the function of saving all: .txt, .srt and .ass files.
+    subtitles_files = save_subs_and_txt(new_segments_list, target_folder_path, base_name_without_ext)
+
+    combined_audio_output_filepath = os.path.join(target_folder_path, base_name_with_ext)
+
+    # Pass the correct path for the merged wav file - already inside the target directory.
+    combine_wav_files([os.path.join(temp_folder,f) for f in translated_segment_files], combined_audio_output_filepath)
+
+    # Optionally remove temporary files after combining them into final output.
+    clean_temporary_files(translated_segment_files +
+                          (segment_filenames if mode != 3 else []), temp_folder)
+
+    new_file_name = output_folder / Path(target_folder_path) / Path(output_filename).name
+    # print(new_file_name)
+    # shutil.move(output_filename, new_file_name)
+    return [new_file_name,subtitles_files]
+
+
+
+# Assuming translator, segment_audio, get_suitable_segment,
+# local_generation, combine_wav_files are defined elsewhere.
+def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model, source_lang, target_lang,
                             speaker_lang, options={}, text_translator="google", translate_mode=True,
                             output_filename="result.mp3",ref_seconds=20,num_sen = 1, speaker_wavs=None, improve_audio_func=False, progress=None):
 
@@ -308,6 +528,7 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
 
     # original_segment_files = []
     translated_segment_files = []
+    ready_segments_text = []
 
     # STAGE 3: VOICEOVER
     i = 0
@@ -322,27 +543,27 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
             merged_text += segments[segment_index].text
         
         if text_translator == "deepl":
-            api_key = os.getenv("DEEPL_API_KEY")
+            api_key = read_key_from_env("DEEPL_API_KEY")
             print("api key =",api_key)
             if not api_key:
                 return
             deepl_translator = deepl.Translator(api_key)
 
-        if translate_mode:
-            if text_translator == "deepl":
-                if target_lang == "en":
-                    target_lang = "en-US"
-                    
-                text_to_syntez = deepl_translator.translate_text(merged_text,source_lang=source_lang, target_lang=target_lang)
-                text_to_syntez = text_to_syntez.text
-                print("Deepl:",text_to_syntez)
-            else:
-              text_to_syntez = ts.translate_text(
-                  query_text=merged_text, translator=text_translator, from_language=source_lang, to_language=target_lang)
-            print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
+        if translate_mode and (detected_language != target_lang):
+              if text_translator == "deepl":
+                  if target_lang == "en":
+                      target_lang = "en-US"
+                      
+                  text_to_syntez = deepl_translator.translate_text(merged_text,source_lang=source_lang, target_lang=target_lang)
+                  text_to_syntez = text_to_syntez.text
+                  print("Deepl:",text_to_syntez)
+              else:
+                text_to_syntez = ts.translate_text(
+                    query_text=merged_text, translator=text_translator, from_language=source_lang, to_language=target_lang)
+              print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
         else:
             print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {merged_text}")
-            text_to_syntez = clean_text(text_to_syntez)
+            text_to_syntez = clean_text(merged_text)
 
         synthesized_audio_file = f"synthesized_segment_{i}.wav"
         if mode == 1:
@@ -368,54 +589,25 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
             tts_input_wavs = accumulated_files_for_tts_input
 
         current_datetime = str(datetime.now())
+        ready_segments_text.append(clean_text(text_to_syntez))
         # Start transformation using TTS system; assuming all required fields are correct
-        xtts.local_generation(
-            this_dir=this_dir,
-            text=text_to_syntez,
-            ref_speaker_wav=current_datetime,
-            speaker_wav=tts_input_wavs,
-            language=speaker_lang,
-            options=options,
-            output_file=temp_folder / synthesized_audio_file
-        )
+        # xtts.local_generation(
+        #     this_dir=this_dir,
+        #     text=text_to_syntez,
+        #     ref_speaker_wav=current_datetime,
+        #     speaker_wav=tts_input_wavs,
+        #     language=speaker_lang,
+        #     options=options,
+        #     output_file=temp_folder / synthesized_audio_file
+        # )
 
-        syntez_file = temp_folder / synthesized_audio_file
-        translated_segment_files.append(synthesized_audio_file)
-        # Update timestamps and durations
-        current_durration = get_audio_duration(syntez_file)
-        end_time_translate = start_time_translate + current_durration
-        new_segments_list.append({"start":start_time_translate,"end":end_time_translate,"text":text_to_syntez})
-        start_time_translate = end_time_translate
+        # syntez_file = temp_folder / synthesized_audio_file
+        # translated_segment_files.append(synthesized_audio_file)
+        # # Update timestamps and durations
+        # current_durration = get_audio_duration(syntez_file)
+        # end_time_translate = start_time_translate + current_durration
+        # new_segments_list.append({"start":start_time_translate,"end":end_time_translate,"text":text_to_syntez})
+        # start_time_translate = end_time_translate
 
         i+=num_sen
-
-    print(new_segments_list)
-    print(segments)
-    # Process output_filename and create the necessary directory structure
-    base_name_with_ext = os.path.basename(output_filename)  # File name with extension
-    base_directory = os.path.dirname(output_filename)  # File directory
-
-    # Define a base name without extension
-    base_name_without_ext = os.path.splitext(base_name_with_ext)[0]
-
-    # Create target folder if it does not exist yet
-    target_folder_path = os.path.join(base_directory, base_name_without_ext)
-    if not os.path.exists(target_folder_path):
-        os.makedirs(target_folder_path)
-
-    # Now let's perform the function of saving all: .txt, .srt and .ass files.
-    subtitles_files = save_subs_and_txt(new_segments_list, target_folder_path, base_name_without_ext)
-
-    combined_audio_output_filepath = os.path.join(target_folder_path, base_name_with_ext)
-
-    # Pass the correct path for the merged wav file - already inside the target directory.
-    combine_wav_files([os.path.join(temp_folder,f) for f in translated_segment_files], combined_audio_output_filepath)
-
-    # Optionally remove temporary files after combining them into final output.
-    clean_temporary_files(translated_segment_files +
-                          (segment_filenames if mode != 3 else []), temp_folder)
-
-    new_file_name = output_folder / Path(target_folder_path) / Path(output_filename).name
-    # print(new_file_name)
-    # shutil.move(output_filename, new_file_name)
-    return [new_file_name,subtitles_files]
+    return [ready_segments_text,segments]

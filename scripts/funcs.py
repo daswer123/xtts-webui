@@ -279,3 +279,37 @@ def resemble_enhance_audio(audio_path,
 
 def str_to_list(str):
     return str.replace("[", "").replace("]", "").replace("'", "").replace(" ", "").split(",")
+
+import json
+
+def write_key_value_to_env(key, value):
+    env_data = {}
+    env_file = '.env'
+
+    # Trying to read the current data if the file exists
+    if os.path.exists(env_file):
+        with open(env_file, 'r') as file:
+            try:
+                env_data = json.load(file)
+            except json.JSONDecodeError:
+                pass  # The file may be empty or contain non JSON
+
+    # Adding or updating a key
+    env_data[key] = value
+
+    # Write the updated data to a file
+    with open(env_file, 'w') as file:
+        json.dump(env_data, file)
+
+def read_key_from_env(key):
+    env_file = '.env'
+
+    if not os.path.exists(env_file):
+        return None  # If there is no file, return None
+
+    with open(env_file, 'r') as file:
+        try:
+            env_data = json.load(file)
+            return env_data.get(key)  # Return the value of the key or None if the key is not found
+        except json.JSONDecodeError:
+            return None  # Failed to decode JSON
