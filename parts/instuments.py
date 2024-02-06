@@ -5,7 +5,6 @@ from i18n.i18n import I18nAuto
 i18n = I18nAuto()
 
 with gr.Tab(i18n("Resemble Enhance")):
-    gr.Markdown("")
     with gr.Row():
         with gr.Column():
             with gr.Tab(i18n("Single")):
@@ -40,3 +39,6 @@ with gr.Tab(i18n("Resemble Enhance")):
             result_enhance = gr.Audio(
                 label=i18n("Result"), interactive=False, visible=True, value=None)
             resemble_generate_btn = gr.Button(value=i18n("Enhance"))
+
+with gr.Tab("WhisperX"):
+    gr.Markdown(i18n("Work in progress..."))
