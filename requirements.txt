@@ -1,7 +1,8 @@
 gradio==4.13.0
 torch==2.1.1
 torchaudio==2.1.1
-faster_whisper==0.10.0
+torchvision==0.16.1
+faster-whisper>=0.10.0
 tts>=0.22.0
 langid
 noisereduce
@@ -25,3 +26,4 @@ transformers==4.36.2
 deepl
 requests
 pysubs2
+whisperx

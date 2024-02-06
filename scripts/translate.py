@@ -16,6 +16,8 @@ import ffmpeg
 import time
 import os
 
+import whisperx
+
 
 import argparse
 
@@ -137,14 +139,14 @@ def save_subs_and_txt(segments, base_folder, base_name):
 def get_suitable_segment(i, segments):
     min_duration = 5
 
-    if i == 0 or (segments[i].end - segments[i].start) >= min_duration:
+    if i == 0 or (segments[i]["end"] - segments[i]["start"]) >= min_duration:
         print(f"Segment used N-{i}")
         return segments[i]
     else:
         # Iteration through previous segments starting from the current segment
         for prev_i in range(i - 1, -1, -1):
             print(f"Segment used N-{prev_i}")
-            if (segments[prev_i].end - segments[prev_i].start) >= min_duration:
+            if (segments[prev_i]["end"] - segments[prev_i]["start"]) >= min_duration:
                 return segments[prev_i]
         # If no suitable previous one is found,
         # return the current one regardless of its duration.
@@ -206,20 +208,32 @@ def clean_text(text):
     text = text.replace(".", "..")
     return text
 
-def transcribe_audio(whisper_model, filename, source_lang='auto'):
-    model = WhisperModel(whisper_model, device="cuda", compute_type="float16")
+def transcribe_audio(whisper_model,whisper_compute_type,whisper_device,whisper_batch_size,whisper_align,filename,source_lang="auto"):
+    # model = whisperx.load_model(whisper_model, device="cuda", compute_type="float16")
+    model = whisperx.load_model(whisper_model,device=whisper_device,compute_type=whisper_compute_type)
     print("Whisper model loaded")
-
+    
+    audio = whisperx.load_audio(filename)
+    
     language_for_whisper = None if source_lang == "auto" else source_lang
+    
+    result = model.transcribe(audio, batch_size=whisper_batch_size)
+    language = result["language"]
+    
+    if whisper_align:
+        print("Start aling result")
+        model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=whisper_device)
+        result = whisperx.align(result["segments"], model_a, metadata, audio, whisper_device, return_char_alignments=False)
 
-    segments, info = model.transcribe(
-        filename, language=language_for_whisper,vad_filter=True, beam_size=5)
+    segments = result["segments"]
+    
+    print(segments)
 
-    print("Detected language '%s' with probability %f" %
-          (info.language, info.language_probability))
+    print(f"Detected language {language}")
+    
 
     if source_lang == "auto":
-        detected_language = info.language  
+        detected_language = language  
     else:
         detected_language = source_lang
 
@@ -238,7 +252,7 @@ def accumulate_segments(segments, start_index, segment_filenames, temp_folder, d
             break
 
         segment = segments[current_index]
-        duration_of_segment = segment.end - segment.start
+        duration_of_segment = segment["end"] - segment["start"]
         original_audio_segment_file = temp_folder / segment_filenames[current_index]
 
         # Добавляем имя файла в список файлов для передачи в TTS.
@@ -260,13 +274,13 @@ from scripts.funcs import  read_key_from_env
 
 # Assuming translator, segment_audio, get_suitable_segment,
 # local_generation, combine_wav_files are defined elsewhere.
-def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, source_lang, target_lang,
+def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model,whisper_compute_type,whisper_batch_size,whisper_device,whisper_align, source_lang, target_lang,
                             speaker_lang, options={}, text_translator="google", translate_mode=True,
                             output_filename="result.mp3",ref_seconds=20,num_sen = 1,prepare_text = None,prepare_segments=None, speaker_wavs=None, improve_audio_func=False, progress=None):
 
     # STAGE - 1 TRANSCRIBE
     if not prepare_segments:
-      segments, detected_language = transcribe_audio(whisper_model,filename,source_lang)
+      segments, detected_language = transcribe_audio(whisper_model,whisper_compute_type,whisper_device,whisper_batch_size,whisper_align,filename,source_lang)
     else:
       segments = prepare_segments
       detected_language = None
@@ -303,11 +317,11 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
         original_audio_segment_file = f"original_segment_{i}.wav"
         segment_filenames.append(original_audio_segment_file)
 
-        # start_time = segment.start if mode == 1 else get_suitable_segment(i, segments).start
-        # end_time = segment.end if mode == 1 else get_suitable_segment(i, segments).end
+        # start_time = segment["start"] if mode == 1 else get_suitable_segment(i, segments)["start"]
+        # end_time = segment["end"] if mode == 1 else get_suitable_segment(i, segments)["end"]
 
-        start_time = segment.start
-        end_time = segment.end
+        start_time = segment["start"]
+        end_time = segment["end"]
 
         output_segment_folder = temp_folder / original_audio_segment_file
         segment_audio(start_time=start_time,
@@ -354,7 +368,7 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
           end_segment_index = min(i + num_sen, total_segments)
   
           for segment_index in range(i, end_segment_index):
-              merged_text += segments[segment_index].text
+              merged_text += segments[segment_index]["text"]
           
           if text_translator == "deepl":
               api_key = read_key_from_env("DEEPL_API_KEY")
@@ -369,14 +383,14 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
                       target_lang = "en-US"
                       
                   text_to_syntez = deepl_translator.translate_text(merged_text,source_lang=source_lang, target_lang=target_lang)
-                  text_to_syntez = text_to_syntez.text
+                  text_to_syntez = text_to_syntez["text"]
                   print("Deepl:",text_to_syntez)
               else:
                 text_to_syntez = ts.translate_text(
                     query_text=merged_text, translator=text_translator, from_language=source_lang, to_language=target_lang)
-              print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
+              print(f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {text_to_syntez}")
           else:
-              print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {merged_text}")
+              print(f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {merged_text}")
               text_to_syntez = clean_text(merged_text)
         else:
             text_to_syntez = prepare_text[preprare_text_i]
@@ -468,12 +482,12 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
 
 # Assuming translator, segment_audio, get_suitable_segment,
 # local_generation, combine_wav_files are defined elsewhere.
-def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model, source_lang, target_lang,
+def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model,whisper_compute_type,whisper_device,whisper_batch_size,whisper_align, source_lang, target_lang,
                             speaker_lang, options={}, text_translator="google", translate_mode=True,
                             output_filename="result.mp3",ref_seconds=20,num_sen = 1, speaker_wavs=None, improve_audio_func=False, progress=None):
 
     # STAGE - 1 TRANSCRIBE
-    segments, detected_language = transcribe_audio(whisper_model,filename,source_lang)
+    segments, detected_language = transcribe_audio(whisper_model,whisper_compute_type,whisper_device,whisper_batch_size,whisper_align,filename,source_lang)
 
     if source_lang == "auto":
         source_lang = detected_language
@@ -507,11 +521,11 @@ def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model, sour
         original_audio_segment_file = f"original_segment_{i}.wav"
         segment_filenames.append(original_audio_segment_file)
 
-        # start_time = segment.start if mode == 1 else get_suitable_segment(i, segments).start
-        # end_time = segment.end if mode == 1 else get_suitable_segment(i, segments).end
+        # start_time = segment["start"] if mode == 1 else get_suitable_segment(i, segments)["start"]
+        # end_time = segment["end"] if mode == 1 else get_suitable_segment(i, segments)["end"]
 
-        start_time = segment.start
-        end_time = segment.end
+        start_time = segment["start"]
+        end_time = segment["end"]
 
         output_segment_folder = temp_folder / original_audio_segment_file
         segment_audio(start_time=start_time,
@@ -541,7 +555,7 @@ def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model, sour
         end_segment_index = min(i + num_sen, total_segments)
 
         for segment_index in range(i, end_segment_index):
-            merged_text += segments[segment_index].text
+            merged_text += segments[segment_index]["text"]
         
         if text_translator == "deepl":
             api_key = read_key_from_env("DEEPL_API_KEY")
@@ -556,14 +570,14 @@ def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model, sour
                       target_lang = "en-US"
                       
                   text_to_syntez = deepl_translator.translate_text(merged_text,source_lang=source_lang, target_lang=target_lang)
-                  text_to_syntez = text_to_syntez.text
+                  text_to_syntez = text_to_syntez["text"]
                   print("Deepl:",text_to_syntez)
               else:
                 text_to_syntez = ts.translate_text(
                     query_text=merged_text, translator=text_translator, from_language=source_lang, to_language=target_lang)
-              print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
+              print(f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {text_to_syntez}")
         else:
-            print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {merged_text}")
+            print(f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {merged_text}")
             text_to_syntez = clean_text(merged_text)
 
         synthesized_audio_file = f"synthesized_segment_{i}.wav"
