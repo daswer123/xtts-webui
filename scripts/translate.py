@@ -377,10 +377,11 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
               print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
           else:
               print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {merged_text}")
-              text_to_syntez = clean_text(text_to_syntez)
+              text_to_syntez = clean_text(merged_text)
         else:
             text_to_syntez = prepare_text[preprare_text_i]
 
+        text_to_syntez = clean_text(text_to_syntez)
         synthesized_audio_file = f"synthesized_segment_{i}.wav"
         if mode == 1:
             # Use single file for TTS input as before.
