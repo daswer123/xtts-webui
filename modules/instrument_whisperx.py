@@ -39,28 +39,48 @@ def whisperx_transcribe_func(
     whisperx_youtube_audio,
     whisperx_audio_batch,
     whisperx_audio_batch_path,
-    # WHISPER SETTINGS
+    # Main
     whisperx_model,
-    whisperx_compute_type,
-    whisperx_device,
-    whisperx_batch_size,
-    # MAIN SETTINGS
     # whisperx_task,
     whisperx_language,
+    # OPTIONS
     whisperx_align,
     whisperx_timestamp,
     whisperx_timestamp_highlight,
-    # VAD OPTIONS
-    whisperx_vad_onset,
-    whisperx_vad_offset,
-    # DIARIZE
+    # DIARIZE MAIN
     whisperx_enable_diarize,
     whisperx_diarize_split,
-    # DIARIZE SETTINGS
     whisperx_diarize_speakers_max,
     whisperx_diarize_speakers_min,
-    # STATUS
-    whisperx_status_bar
+    # VAD
+    whisperx_vad_onset,
+    whisperx_vad_offset,
+    whisperx_vad_chunk_size,
+    # WHISPERX OPTIONS
+    whisperx_compute_type,
+    whisperx_device,
+    whisperx_batch_size,
+    whisperx_beam_size,
+    # ADVANCE SETTINGS
+    whisperx_device_index,
+    whisperx_threads,
+    whisperx_align_intropolate,
+    # ADVANCE WHISPER SETTINGS 
+    whisperx_temperature,
+    whisperx_bestof,
+    whisperx_patience,
+    whisperx_lenght_penalty,
+    whisperx_suppress_tokens,
+    whisperx_suppress_numerals,
+    whisperx_initial_prompt,
+    whisperx_condition_on_previous_text,
+    whisperx_temperature_increment_on_fallback,
+    whisperx_compression_ratio_threshold,
+    whisperx_logprob_threshold,
+    whisperx_no_speech_threshold,
+    # SUBTITLES
+    whisperx_max_line_width,
+    whisperx_max_line_count
 ):
     if not (whisperx_audio_single or whisperx_audio_batch or whisperx_audio_batch_path or whisperx_youtube_audio):
         return None, None, None, None,None, "Please Upload Audio"
@@ -70,7 +90,7 @@ def whisperx_transcribe_func(
         "vad_onset": whisperx_vad_onset,
         "vad_offset": whisperx_vad_offset
     }
-
+    
     output_folder = this_dir / OUTPUT_FOLDER
     folder_name = f"whisper_{datetime.now().strftime(DATE_FORMAT)}"
     audio_filename = f"{folder_name}.wav"
@@ -125,34 +145,56 @@ whisperx_transcribe_btn.click(
     whisperx_youtube_audio,
     whisperx_audio_batch,
     whisperx_audio_batch_path,
-    # WHISPER SETTINGS
+    # Main
     whisperx_model,
-    whisperx_compute_type,
-    whisperx_device,
-    whisperx_batch_size,
-    # MAIN SETTINGS
     # whisperx_task,
     whisperx_language,
+    # OPTIONS
     whisperx_align,
     whisperx_timestamp,
     whisperx_timestamp_highlight,
-    # VAD OPTIONS
-    whisperx_vad_onset,
-    whisperx_vad_offset,
-    # DIARIZE
+    # DIARIZE MAIN
     whisperx_enable_diarize,
     whisperx_diarize_split,
-    # DIARIZE SETTINGS
     whisperx_diarize_speakers_max,
     whisperx_diarize_speakers_min,
-    whisperx_status_bar,
+    # VAD
+    whisperx_vad_onset,
+    whisperx_vad_offset,
+    whisperx_vad_chunk_size,
+    # WHISPERX OPTIONS
+    whisperx_compute_type,
+    whisperx_device,
+    whisperx_batch_size,
+    whisperx_beam_size,
+    # ADVANCE SETTINGS
+    whisperx_device_index,
+    whisperx_threads,
+    whisperx_align_intropolate,
+    # ADVANCE WHISPER SETTINGS 
+    whisperx_temperature,
+    whisperx_bestof,
+    whisperx_patience,
+    whisperx_lenght_penalty,
+    whisperx_suppress_tokens,
+    whisperx_suppress_numerals,
+    whisperx_initial_prompt,
+    whisperx_condition_on_previous_text,
+    whisperx_temperature_increment_on_fallback,
+    whisperx_compression_ratio_threshold,
+    whisperx_logprob_threshold,
+    whisperx_no_speech_threshold,
+    # SUBTITLES
+    whisperx_max_line_width,
+    whisperx_max_line_count
     ],
     outputs=[
-        whisperx_subtitles,
-        whisperx_transcribe,
-        whisperx_segments,
-        # DIARIZE FILES
-        whisperx_diarize_files,
-        whisperx_diarize_files_list,
-        whisperx_status_bar
+    whisperx_subtitles,
+    whisperx_transcribe,
+    whisperx_segments,
+    # DIARIZE FILES
+    whisperx_diarize_files,
+    whisperx_diarize_files_list,
+    whisperx_status_bar
     ])
+

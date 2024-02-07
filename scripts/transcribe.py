@@ -36,46 +36,53 @@ def download_audio(url, output_folder, filename=None):
 
 
 
-def whisperx_work(hf_token,
+def whisperx_work(
+# TOKEN
+  hf_token,
+# INPUT DATA
   input_audio,
-  output_folder,
-  model_name,
-  compute_type,
-  device,
-  vad_options,
-  batch_size,
-  language,
-  align_enable,
-  timestamp_enable,
-  timestamp_highlight_enable,
-  diarize_enable,
-  diarize_split_enable,
-  diarize_speakers,
-  diarize_max_speakers,
-  dizarize_min_speakers,
+  output_folder=".",
+  output_format="all",
+# WHISPER SETTINGS
+  model="medium",
+  model_dir=None,
+  compute_type="float16",
+  device="cuda",
+  device_index=0,
+  batch_size=8,
+#   task="transcribe",
+  timestamp_enable = True,
+  timestamp_highlight_enable = False,
+  language=None,
+#   ALIGN SETTINGS
+  align_enable=False,
+  interpolate_method="nearest",
+  return_char_alignments=False,
+#   VAD
+  vad_onset=0.500,
+  vad_offset=0.363,
+  chunk_size=30,
+# DIARIZE PARAMS
+  diarize_enable = False,
+  diarize_split_enable = False,
+  diarize_max_speakers = None,
+  dizarize_min_speakers = None,
+# Advance Wihsper settings
+  temperature = 0,
+  best_of =  5,
+  beam_size = 5,
+  patience = 1.0,
+  length_penalty = 1.0,
+  suppress_tokens="-1",
+  suppress_numerals=False,
+  initial_prompt=None,
+  condition_on_previous_text=False,
+  temperature_increment_on_fallback=0.2,
+  compression_ratio_threshold = 2.4,
+  logprob_threshold = 1.0,
+  no_speech_threshold = 0.6,
+  max_line_width = None,
+  max_line_count = None,
+  threads = 4,
 ):
-    model = whisperx.load_model(model_name,device=device,compute_type=compute_type,language=language,vad_options=vad_options)
-    
-    print("Whisper model loaded")
-    audio = whisperx.load_audio(input_audio)
-    print("Audio loaded")
-    # self, audio: Union[str, np.ndarray], batch_size=None, num_workers=0, language=None, task=None, chunk_size=30, print_progress = False, combined_progress=False
-    result = whisperx.transcribe(audio, batch_size=batch_size,language=language)
-    
-    language = result["language"]
-    
-    if align_enable:
-        print("Start aling result")
-        model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=whisper_device)
-        result = whisperx.align(result["segments"], model_a, metadata, audio, whisper_device, return_char_alignments=False)
-    
-    if diarize_enable:
-        # 3. Assign speaker labels
-        diarize_model = whisperx.DiarizationPipeline(use_auth_token=hf_token, device=device,min_speakers=dizarize_min_speakers, max_speakers=diarize_max_speakers)
-
-        # add min/max number of speakers if known
-        diarize_segments = diarize_model(audio)
-        # diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
-        result = whisperx.assign_word_speakers(diarize_segments, result)
-
-    print(result)
+    return False

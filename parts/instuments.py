@@ -70,7 +70,6 @@ This project uses whisperX which in turn uses pyannote products. In order for al
                 whisperx_language = gr.Dropdown(choices=sorted(get_language_names()),info="Leave empty if you want auto-detection", label="Language", value="Auto")
             with gr.Accordion(label="Options",open=True):
                 whisperx_align = gr.Checkbox(label="Align whisper output",value=True)
-                # 
                 whisperx_timestamp = gr.Checkbox(label="Word Timestamps",visible=False, value=True)
                 whisperx_timestamp_highlight = gr.Checkbox(label="Word Timestamps - Highlight Words", value=False)
             with gr.Accordion(label="Diarize (need HF_TOKEN)",open=True):
