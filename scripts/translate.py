@@ -368,6 +368,9 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
                   if target_lang == "en":
                       target_lang = "en-US"
                       
+                  if target_lang == "pt":
+                      target_lang = "pt-BR"
+                      
                   text_to_syntez = deepl_translator.translate_text(merged_text,source_lang=source_lang, target_lang=target_lang)
                   text_to_syntez = text_to_syntez.text
                   print("Deepl:",text_to_syntez)
@@ -554,6 +557,9 @@ def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model, sour
               if text_translator == "deepl":
                   if target_lang == "en":
                       target_lang = "en-US"
+                      
+                  if target_lang == "pt":
+                      target_lang = "pt-BR"
                       
                   text_to_syntez = deepl_translator.translate_text(merged_text,source_lang=source_lang, target_lang=target_lang)
                   text_to_syntez = text_to_syntez.text
