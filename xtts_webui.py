@@ -63,7 +63,7 @@ logger.info(f"{i18n('Start loading model')} {MODEL_VERSION}")
 this_dir = Path(__file__).parent.resolve()
 
 logger.info(f"this dir: {this_dir}")
-XTTS.load_model(this_dir)
+# XTTS.load_model(this_dir)
 
 
 with gr.Blocks(css=css) as demo:

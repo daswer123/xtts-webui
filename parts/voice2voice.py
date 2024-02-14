@@ -19,8 +19,6 @@ with gr.Tab(i18n("Translate")):
                     translate_audio_batch_path = gr.Textbox(
                         label=i18n("Path to folder with audio files (High priority)"), value=None)
             with gr.Column():
-                translate_whisper_model = gr.Dropdown(label=i18n("Whisper Model"), choices=[
-                                                      "small", "medium", "large-v2", "large-v3"], value="medium")
                 translate_audio_mode = gr.Radio(label=i18n("Mode"), choices=[
                                                 1, 2,3], value=2, info=i18n("Mode Desk"))
                 translate_translator = gr.Radio(label=i18n("Translator"), choices=[
@@ -68,6 +66,15 @@ with gr.Tab(i18n("Translate")):
                         label=i18n("Target lang"), choices=supported_languages_list, value="ru")
                     translate_speaker_lang = gr.Dropdown(
                         label=i18n("Speaker Accent"), choices=supported_languages_list, value="ru")
+                with gr.Column():
+                    with gr.Accordion("Whisper settings",open=True):
+                        with gr.Row():
+                            translate_whisper_model = gr.Dropdown(label=i18n("Whisper Model"), choices=["small", "medium", "large-v2", "large-v3"], value="medium")
+                            translate_whisper_compute_time = gr.Radio(label="Compute Type",choices=["int8","float16"],value="float16",info="change to 'int8' if low on GPU mem (may reduce accuracy)")
+                            translate_whisper_device = gr.Radio(label="Device",choices=["cuda","cpu"],value="cuda",info="change to 'int8' if low on GPU mem (may reduce accuracy)")
+                        with gr.Row():
+                            translate_whisper_batch_size = gr.Slider(label="Batch Size", minimum=1, maximum=32, value=8, step=1,info="reduce if low on GPU mem")
+                            translate_whisper_aline = gr.Checkbox(value=True,label="Align whisper output")
                 with gr.Column():
                   with gr.Accordion(i18n("XTTS settings"), open=False,visible=True):
                     translate_speed = gr.Slider(

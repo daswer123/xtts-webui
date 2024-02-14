@@ -26,6 +26,11 @@ def translate_and_voiceover_advance(
     translate_audio_single,
     translate_audio_batch,
     translate_audio_batch_path,
+    # WHISPER
+    translate_whisper_compute_time,
+    translate_whisper_batch_size,
+    translate_whisper_aline,
+    translate_whisper_device,
     translate_whisper_model,
     translate_audio_mode,
     translate_source_lang,
@@ -86,6 +91,10 @@ def translate_and_voiceover_advance(
         num_sen=translate_num_sent,
         ref_seconds=translate_max_reference_seconds,
         output_filename=output_folder / tranlsated_filename,
+        whisper_align=translate_whisper_aline,
+        whisper_device = translate_whisper_device,
+        whisper_batch_size=translate_whisper_batch_size,
+        whisper_compute_type=translate_whisper_compute_time,
         progress=gr.Progress(track_tqdm=True),
     )
     openvoice_status_bar = gr.Progress(track_tqdm=True)
@@ -104,6 +113,11 @@ def translate_and_voiceover_advance_stage2(
     translate_audio_single,
     translate_audio_batch,
     translate_audio_batch_path,
+    # WHISPER
+    translate_whisper_compute_time,
+    translate_whisper_batch_size,
+    translate_whisper_aline,
+    translate_whisper_device,
     translate_whisper_model,
     translate_audio_mode,
     translate_source_lang,
@@ -173,7 +187,11 @@ def translate_and_voiceover_advance_stage2(
         ref_seconds=translate_max_reference_seconds,
         output_filename=output_folder / tranlsated_filename,
         prepare_text=translate_advance_stage1_text,
+        whisper_device = translate_whisper_device,
         prepare_segments=prepare_segments,
+        whisper_align=translate_whisper_aline,
+        whisper_batch_size=translate_whisper_batch_size,
+        whisper_compute_type=translate_whisper_compute_time,
         speaker_wavs=speaker_wavs,
         progress=gr.Progress(track_tqdm=True),
     )
@@ -187,6 +205,11 @@ def translate_and_voiceover(
     translate_audio_single,
     translate_audio_batch,
     translate_audio_batch_path,
+    # WHISPER
+    translate_whisper_compute_time,
+    translate_whisper_batch_size,
+    translate_whisper_aline,
+    translate_whisper_device,
     translate_whisper_model,
     translate_audio_mode,
     translate_source_lang,
@@ -253,6 +276,10 @@ def translate_and_voiceover(
         ref_seconds=translate_max_reference_seconds,
         output_filename=output_folder / tranlsated_filename,
         speaker_wavs=speaker_wavs,
+        whisper_device = translate_whisper_device,
+        whisper_align=translate_whisper_aline,
+        whisper_batch_size=translate_whisper_batch_size,
+        whisper_compute_type=translate_whisper_compute_time,
         progress=gr.Progress(track_tqdm=True),
     )
     openvoice_status_bar = gr.Progress(track_tqdm=True)
@@ -497,6 +524,13 @@ def switch_visible_mode3_params(translate_audio_mode):
         return translate_ref_speaker_list,translate_show_ref_speaker_from_list,translate_update_ref_speaker_list_btn,translate_ref_speaker_example
     return gr.Dropdown(visible=False,value=None),gr.Checkbox(visible=False),gr.Button(visible=False),gr.Audio(visible=False)
 
+def check_whisper_cpu(translate_whisper_device):
+    if translate_whisper_device == "cpu":
+        return gr.Radio(choices=["float16"],value="float16",label="compute type")
+    return gr.Radio(label="Compute Type",choices=["int8","float16"],value="float16",info="change to 'int8' if low on GPU mem (may reduce accuracy)")
+
+translate_whisper_device.change(fn=check_whisper_cpu,inputs=[translate_whisper_device],outputs=[translate_whisper_compute_time])
+
 translate_audio_mode.change(fn=switch_visible_mode1_params,inputs=[translate_audio_mode],outputs=[transalte_advance_markdown])
 translate_audio_mode.change(fn=switch_visible_mode2_params,inputs=[translate_audio_mode],outputs=[translate_num_sent,translate_max_reference_seconds])
 translate_audio_mode.change(fn=switch_visible_mode3_params,inputs=[translate_audio_mode],outputs=[translate_ref_speaker_list,translate_show_ref_speaker_from_list,translate_update_ref_speaker_list_btn,translate_ref_speaker_example])
@@ -523,6 +557,11 @@ translate_btn.click(fn=translate_and_voiceover, inputs=[
                                                         translate_audio_batch,
                                                         translate_audio_batch_path,
                                                         # TRANSLATE SETTIGNS
+                                                        # WHISPER
+                                                        translate_whisper_compute_time,
+                                                        translate_whisper_batch_size,
+                                                        translate_whisper_aline,
+                                                        translate_whisper_device,
                                                         translate_whisper_model,
                                                         translate_audio_mode,
                                                         translate_source_lang,
@@ -549,7 +588,7 @@ if RVC_ENABLE:
         rvc_voice_settings_model_path, rvc_voice_settings_index_path])
     rvc_voice_settings_update_btn.click(fn=update_rvc_model, inputs=[rvc_voice_settings_model_name], outputs=[
         rvc_voice_settings_model_name, rvc_voice_settings_model_path, rvc_voice_settings_index_path])
-    
+
     rvc_voice_infer_btn.click(fn=infer_rvc_audio, inputs=[
         # INPUT
         rvc_audio_single,
@@ -574,10 +613,10 @@ if RVC_ENABLE:
         rvc_voice_output,
         rvc_voice_status_bar
     ])
-    
+
     opvoice_voice_show_speakers.change(fn=update_openvoice_ref_list, inputs=[
         opvoice_voice_ref_list, opvoice_voice_show_speakers], outputs=[opvoice_voice_ref_list])
-    
+
     openvoice_voice_infer_btn.click(fn=infer_openvoice_audio, inputs=[openvoice_audio_single, openvoice_audio_batch, openvoice_audio_batch_path,
                                                                       opvoice_voice_ref_list, openvoice_status_bar, speaker_path_text], outputs=[openvoice_video_output, openvoice_voice_output, openvoice_status_bar])
 
@@ -588,6 +627,11 @@ translate_advance_stage1_btn.click(fn=translate_and_voiceover_advance, inputs=[
                                                         translate_audio_batch,
                                                         translate_audio_batch_path,
                                                         # TRANSLATE SETTIGNS
+                                                        # WHISPER
+                                                        translate_whisper_compute_time,
+                                                        translate_whisper_batch_size,
+                                                        translate_whisper_aline,
+                                                        translate_whisper_device,
                                                         translate_whisper_model,
                                                         translate_audio_mode,
                                                         translate_source_lang,
@@ -614,6 +658,11 @@ translate_advance_stage2_btn.click(fn=translate_and_voiceover_advance_stage2, in
                                                         translate_audio_batch,
                                                         translate_audio_batch_path,
                                                         # TRANSLATE SETTIGNS
+                                                        # WHISPER
+                                                        translate_whisper_compute_time,
+                                                        translate_whisper_batch_size,
+                                                        translate_whisper_aline,
+                                                        translate_whisper_device,
                                                         translate_whisper_model,
                                                         translate_audio_mode,
                                                         translate_source_lang,
