@@ -68,7 +68,7 @@ XTTS.load_model(this_dir)
 
 with gr.Blocks(css=css) as demo:
     gr.Markdown(
-        value=f"# XTTS-webui by [daswer123](https://github.com/daswer123)\n {i18n(' ')}.")
+        value=f"# XTTS-webui by [daswer123](https://github.com/daswer123)\n{i18n(' ')}")
     with gr.Row(elem_classes="model-choose"):
         models_list = get_folder_names_advanced(this_dir / "models")
         model = gr.Dropdown(

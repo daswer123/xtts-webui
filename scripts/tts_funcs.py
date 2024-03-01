@@ -43,6 +43,9 @@ supported_languages = {
 reversed_supported_languages = {
     name: code for code, name in supported_languages.items()}
 
+# Inbuild Speakers
+inbuild_speakers = ['Claribel Dervla', 'Daisy Studious', 'Gracie Wise', 'Tammie Ema', 'Alison','Dietlinde', 'Ana Florence', 'Annmarie Nele', 'Asya Anara', 'Brenda Stern', 'Gitta Nikolina', 'Henriette Usha', 'Sofia Hellen', 'Tammy Grit', 'Tanja Adelina', 'Vjollca Johnnie', 'Andrew Chipper', 'Badr Odhiambo', 'Dionisio Schuyler', 'Royston Min', 'Viktor Eka', 'Abrahan Mack', 'Adde Michal', 'Baldur Sanjin', 'Craig Gutsy', 'Damien Black', 'Gilberto Mathias', 'Ilkin Urbano', 'Kazuhiko Atallah', 'Ludvig Milivoj', 'Suad Qasim', 'Torcull Diarmuid', 'Viktor Menelaos', 'Zacharie Aimilios', 'Nova Hogarth', 'Maja Ruoho', 'Uta Obando', 'Lidiya Szekeres', 'Chandra MacFarland', 'Szofi Granger', 'Camilla Holmström', 'Lilya Stainthorpe', 'Zofija Kendrick', 'Narelle Moon', 'Barbora MacLean', 'Alexandra Hisakawa', 'Alma María', 'Rosemary Okafor', 'Ige Behringer', 'Filip Traverse', 'Damjan Chapman', 'Wulf Carlevaro', 'Aaron Dreschner', 'Kumar Dahl', 'Eugenio Mataracı', 'Ferran Simen', 'Xavier Hayasaka', 'Luis Moray', 'Marcos Rudaski']
+
 
 class TTSWrapper:
     def __init__(self, output_folder="./output", speaker_folder="./speakers", lowvram=False, model_source="local", model_version="2.0.2", device="cuda"):
@@ -111,12 +114,18 @@ class TTSWrapper:
         config_path = this_dir / 'models' / \
             f'{self.model_version}' / 'config.json'
         checkpoint_dir = this_dir / 'models' / f'{self.model_version}'
+        
+        speaker_file = this_dir / 'models' / f'{self.model_version}' / 'speakers_xtts.pth'
+        
+        # Check for exists
+        if not os.path.exists(speaker_file):
+            logger.info("No speaker file found")
+            speaker_file=None
 
         config.load_json(str(config_path))
 
         self.model = Xtts.init_from_config(config)
-        self.model.load_checkpoint(
-            config, use_deepspeed=USE_DEEPSPEED, checkpoint_dir=str(checkpoint_dir))
+        self.model.load_checkpoint(config, use_deepspeed=USE_DEEPSPEED,speaker_file_path=speaker_file, checkpoint_dir=str(checkpoint_dir))
         self.model_loaded = True
         self.model.to(self.device)
 
@@ -166,6 +175,9 @@ class TTSWrapper:
                 os.makedirs(absolute_path)
                 print(f"Folder in the path {absolute_path} has been created")
 
+    def get_inbuild_voices(self):
+        return inbuild_speakers
+    
     # SPEAKER FUNCS
     def get_or_create_latents(self, speaker_name, speaker_wav):
         # is_temp_reference_speaker = reference_speaker
@@ -260,9 +272,14 @@ class TTSWrapper:
                 })
         return speakers
 
-    def get_speakers(self):
+    def get_speakers(self,show_inbuild = False):
         """ Gets available speakers """
         speakers = [s['speaker_name'] for s in self._get_speakers()]
+        
+        if(show_inbuild):
+            for inbuild_speaker in inbuild_speakers:
+                speakers.append(inbuild_speaker)
+                
         return speakers
 
     # Special format for SillyTavern
@@ -299,7 +316,7 @@ class TTSWrapper:
         text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
         return text
 
-    def local_generation(self,this_dir, text, ref_speaker_wav, speaker_wav, language, options, output_file):
+    def local_generation(self,this_dir, text, ref_speaker_wav, speaker_wav, language, options, output_file,is_inbuild = False):
         # Log time
         if (self.model_loaded == False):
             print("Loading model")
@@ -307,8 +324,13 @@ class TTSWrapper:
 
         generate_start_time = time.time()  # Record the start time of loading the model
 
-        gpt_cond_latent, speaker_embedding = self.get_or_create_latents(
-            ref_speaker_wav, speaker_wav)
+        if (is_inbuild):
+            speaker_id = ref_speaker_wav
+            gpt_cond_latent, speaker_embedding = self.model.speaker_manager.speakers[speaker_id].values()
+        else:
+            gpt_cond_latent, speaker_embedding = self.get_or_create_latents(ref_speaker_wav, speaker_wav)
+                
+        # gpt_cond_latent, speaker_embedding = self.mode
 
         out = self.model.inference(
             text,
@@ -378,7 +400,15 @@ class TTSWrapper:
 
     def process_tts_to_file(self,this_dir, text, language, ref_speaker_wav, options, file_name_or_path="out.wav"):
         try:
-            speaker_wav = self.get_speaker_path(ref_speaker_wav)
+            print(ref_speaker_wav,"Test")
+            # Check if ref_speaker_wav is not in a list inbuild_speakers 
+            is_inbuild = False
+            
+            if ref_speaker_wav in inbuild_speakers:
+                speaker_wav = ref_speaker_wav
+                is_inbuild = True
+            else:
+                speaker_wav = self.get_speaker_path(ref_speaker_wav)
 
             # Determine output path based on whether a full path or a file name was provided
             if os.path.isabs(file_name_or_path):
@@ -401,7 +431,7 @@ class TTSWrapper:
             # Define generation if model via api or locally
             if self.model_source == "local":
                 self.local_generation(
-                    this_dir,clear_text, ref_speaker_wav, speaker_wav, language, options, output_file)
+                    this_dir,clear_text, ref_speaker_wav, speaker_wav, language, options, output_file,is_inbuild)
             else:
                 self.api_generation(clear_text, speaker_wav,
                                     language, options, output_file)
