@@ -21,8 +21,8 @@ with gr.Row():
             batch_sub_generation = gr.Files(
                 label=i18n("Upload srt or ass files"), file_types=[".ass",".srt"])
             batch_sub_generation_path = gr.Textbox(
-                label=i18n("Path to folder with srt or ass, Has priority over all "), value="")
-            sync_sub_generation = gr.Checkbox(label="Synchronise subtitle timings",value=False)
+                label=i18n("Path to folder with srt or ass, Has priority over all"), value="")
+            sync_sub_generation = gr.Checkbox(label=i18n("Synchronise subtitle timings"),value=False)
             
         language_auto_detect = gr.Checkbox(
             label=i18n("Enable language auto detect"), info=i18n("If your language is not supported or the text is less than 20 characters, this function will not work"))
