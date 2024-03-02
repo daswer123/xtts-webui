@@ -148,5 +148,8 @@
     "Advanced mode":"Advanced mode",
     "Step 1 - Transcribe, translate and edit the text":"Step 1 - Transcribe, translate and edit the text",
     "Stage 2 - Voice Text": "Step 2 - Voice Text",
-    "Translated Text": "Translated Text"
+    "Translated Text": "Translated Text",
+    "Sync timing with original ( Accuracy ~ 80 - 90% )" : "Sync timing with original ( Accuracy ~ 80 - 90% )",
+    "Synchronise subtitle timings" : "Synchronise subtitle timings",
+    "Path to folder with srt or ass, Has priority over all" : "Path to folder with srt or ass, Has priority over all"
 }

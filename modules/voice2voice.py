@@ -41,7 +41,7 @@ def translate_and_voiceover_advance(
     translate_top_k,
     translate_top_p,
     translate_sentence_split,
-    translate_status_bar
+    translate_status_bar,
 ):
     print("Hello world")
     if not translate_audio_single and not translate_audio_batch and not translate_audio_batch_path:
@@ -121,7 +121,8 @@ def translate_and_voiceover_advance_stage2(
     translate_sentence_split,
     translate_status_bar,
     translate_advance_stage1_text,
-    translate_ref_speaker_list
+    translate_ref_speaker_list,
+    sync_original
 ):
     print("Hello world")
     if not translate_audio_single and not translate_audio_batch and not translate_audio_batch_path:
@@ -162,6 +163,7 @@ def translate_and_voiceover_advance_stage2(
         filename=input_file,
         xtts=XTTS,
         options=options,
+        sync_original=sync_original,
         text_translator=translate_translator,
         translate_mode=True,
         whisper_model=translate_whisper_model,
@@ -203,7 +205,8 @@ def translate_and_voiceover(
     translate_top_p,
     translate_sentence_split,
     translate_status_bar,
-    translate_ref_speaker_list
+    translate_ref_speaker_list,
+    sync_original
 ):
     print("Hello world")
     if not translate_audio_single and not translate_audio_batch and not translate_audio_batch_path:
@@ -241,6 +244,7 @@ def translate_and_voiceover(
         this_dir=this_dir,
         filename=input_file,
         xtts=XTTS,
+        sync_original=sync_original,
         options=options,
         text_translator=translate_translator,
         translate_mode=True,
@@ -541,7 +545,8 @@ translate_btn.click(fn=translate_and_voiceover, inputs=[
                                                         translate_sentence_split,
                                                         # STATUS BAR
                                                         translate_status_bar,
-                                                        translate_ref_speaker_list
+                                                        translate_ref_speaker_list,
+                                                        sync_with_original_checkbox
                                                         ], outputs=[translate_video_output, translate_voice_output,translate_files_output, translate_status_bar])
 
 if RVC_ENABLE:
@@ -633,5 +638,6 @@ translate_advance_stage2_btn.click(fn=translate_and_voiceover_advance_stage2, in
                                                         # STATUS BAR
                                                         translate_status_bar,
                                                         translate_advance_stage1_text,
-                                                        translate_ref_speaker_list
+                                                        translate_ref_speaker_list,
+                                                        sync_with_original_checkbox
                                                         ], outputs=[translate_video_output, translate_voice_output,translate_files_output, translate_status_bar])

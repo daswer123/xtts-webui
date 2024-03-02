@@ -149,5 +149,8 @@
     "Show choises from the speakers folder": "Mostrar escolhas da pasta dos palestrantes",
     "Choose reference and click Infer button": "Escolha a referência e clique no botão Infer",
     "Waveform OpenVoice": "Forma de Onda OpenVoice",
-    "Translated Text": "Texto traduzido"
+    "Translated Text": "Texto traduzido",
+    "Sync timing with original ( Accuracy ~ 80 - 90% )" : "Sincronização de tempo com o original (precisão de 80 a 90%)",
+    "Synchronise subtitle timings" : "Sincronizar os tempos das legendas",
+    "Path to folder with srt or ass, Has priority over all" : "Caminho para a pasta com srt ou ass, tem prioridade sobre todos"
 }

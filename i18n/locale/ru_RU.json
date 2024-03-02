@@ -148,5 +148,8 @@
     "Choose reference and click Infer button": "Выберите образец и нажмите кнопку Перевод",
     "Waveform OpenVoice": "Waveform OpenVoice",
     "Step 1 - Transcribe, translate and edit the text":"Шаг 1 - транскрибация, перевод и редактирование текста",
-    "Translated Text": "Переведенный текст"
+    "Translated Text": "Переведенный текст",
+    "Sync timing with original ( Accuracy ~ 80 - 90% )" : "Синхронизировать тайминги с оригиналом ( Точность ~ 80 - 90% )",
+    "Synchronise subtitle timings" : "Синхронизировать скорость речи с таймингами",
+    "Path to folder with srt or ass, Has priority over all" : "Путь к папке с srt или ass субтитрам, имеет приоритет над всеми"
 }

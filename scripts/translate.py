@@ -32,9 +32,37 @@ from xtts_webui import deepl_auth_key_textbox,deepl_api_key
 
 from pydub import AudioSegment
 
+import ffmpeg
+from pathlib import Path
+
 def get_audio_duration(file_path):
     audio = AudioSegment.from_file(file_path)
     return len(audio) / 1000.0  # Returns the duration in seconds
+
+def adjust_audio_speed_to_match_timing(syntez_file_path, start_time,
+                                       end_time, current_duration):
+
+    target_duration = float(end_time) - float(start_time)
+    speed_factor = current_duration / target_duration
+
+    if not (0.5 <= speed_factor <= 2):
+        print(f"Коэффициент изменения скорости {speed_factor} выходит за пределы [0.5 - 2].")
+        return
+
+    temp_output_filepath = syntez_file_path.with_suffix('.temp.wav')
+
+    (
+        ffmpeg
+        .input(str(syntez_file_path))
+        .filter('atempo', speed_factor)
+        .output(str(temp_output_filepath), acodec='pcm_s16le')
+        .run(overwrite_output=True)
+    )
+
+    # Заменяем оригинальный файл новым с изменённой скоростью.
+    syntez_file_path.unlink()  # Удаляем оригинальный файл
+    temp_output_filepath.rename(syntez_file_path)  # Переименовываем временный файл
+
 
 
 def local_generation(xtts, text, speaker_wav, language, output_file, options={}):
@@ -261,7 +289,7 @@ from scripts.funcs import  read_key_from_env
 # Assuming translator, segment_audio, get_suitable_segment,
 # local_generation, combine_wav_files are defined elsewhere.
 def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, source_lang, target_lang,
-                            speaker_lang, options={}, text_translator="google", translate_mode=True,
+                            speaker_lang, sync_original = False, options={}, text_translator="google", translate_mode=True,
                             output_filename="result.mp3",ref_seconds=20,num_sen = 1,prepare_text = None,prepare_segments=None, speaker_wavs=None, improve_audio_func=False, progress=None):
 
     # STAGE - 1 TRANSCRIBE
@@ -429,12 +457,22 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
         translated_segment_files.append(synthesized_audio_file)
         # Update timestamps and durations
         current_durration = get_audio_duration(syntez_file)
+        
+        if sync_original:
+          adjust_audio_speed_to_match_timing(syntez_file,start_time,end_time,current_durration)
+          current_durration = get_audio_duration(syntez_file)
+          
         end_time_translate = start_time_translate + current_durration
         new_segments_list.append({"start":start_time_translate,"end":end_time_translate,"text":text_to_syntez})
-        start_time_translate = end_time_translate
-
+        
         i+=num_sen
         preprare_text_i +=1
+        
+        start_time_translate = end_time_translate
+        
+        # start_time, end_time
+        # current_duration
+        # syntez_file
 
     print(new_segments_list)
     print(segments)

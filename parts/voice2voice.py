@@ -31,7 +31,8 @@ with gr.Tab(i18n("Translate")):
                 with gr.Row():
                     translate_num_sent = gr.Slider(label=i18n("Number of sentences that will be voiced at one time"),minimum=1,maximum=6,step=1,visible=True)
                     translate_max_reference_seconds= gr.Slider(label=i18n("Number of reference seconds that will be used"),minimum=10,maximum=600,value=20,step=1,visible=True)
-                
+                with gr.Row():
+                    sync_with_original_checkbox = gr.Checkbox(label=i18n("Sync timing with original ( Accuracy ~ 80 - 90% )"), value=False)
                 # speakers_list = XTTS.get_speakers()
                 # speaker_value = ""
                 # if not speakers_list:
