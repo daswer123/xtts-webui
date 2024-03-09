@@ -25,4 +25,3 @@ transformers==4.36.2
 deepl
 requests
 pysubs2
-numpy==1.26.4
