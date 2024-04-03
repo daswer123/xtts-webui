@@ -1,7 +1,7 @@
 gradio==4.13.0
 torch==2.1.1
 torchaudio==2.1.1
-faster_whisper==0.10.0
+faster-whisper==1.0.1
 tts>=0.22.0
 langid
 noisereduce
