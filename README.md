@@ -1,5 +1,8 @@
 # XTTS-WebUI
 
+## The Train tab is broken, if you want to train a model use a separate webui
+## [xtts-finetune-webui](https://github.com/daswer123/xtts-finetune-webui)
+
 [English](https://github.com/daswer123/xtts-webui/blob/main/README.md)
 
 [Russian](https://github.com/daswer123/xtts-webui/blob/main/README_ru_RU.md)
