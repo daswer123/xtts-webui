@@ -94,7 +94,7 @@ with gr.Row():
             show_ref_speaker_from_list = gr.Checkbox(
                 value=False, label=i18n("Show reference sample"), info=i18n("This option will allow you to listen to your reference sample"))
             show_inbuildstudio_speaker = gr.Checkbox(
-                value=False, label=i18n("Show in list avalible speakers inbuild speakers"), info=i18n("This option will allow you to add pre-prepared voices from coqua studio to the list of available voices"))
+                value=False, label=i18n("Show built-in voices in the list of available speakers"), info=i18n("This option will allow you to add pre-prepared voices from coqua studio to the list of available voices"))
             update_ref_speaker_list_btn = gr.Button(
                 value=i18n("Update"), elem_classes="speaker-update__btn")
         ref_speaker_example = gr.Audio(

@@ -89,8 +89,8 @@ with gr.Blocks(css=css) as demo:
     with gr.Tab(i18n("Train")):
         from parts.train import *
 
-    with gr.Tab(i18n("Instuments")):
-        from parts.instuments import *
+    with gr.Tab(i18n("Tools")):
+        from parts.tools import *
 
     
     # LOAD FUNCTIONS AND HANDLERS
