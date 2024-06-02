@@ -151,5 +151,18 @@
     "Translated Text": "Переведенный текст",
     "Sync timing with original ( Accuracy ~ 80 - 90% )" : "Синхронизировать тайминги с оригиналом ( Точность ~ 80 - 90% )",
     "Synchronise subtitle timings" : "Синхронизировать скорость речи с таймингами",
-    "Path to folder with srt or ass, Has priority over all" : "Путь к папке с srt или ass субтитрам, имеет приоритет над всеми"
+    "Path to folder with srt or ass, Has priority over all" : "Путь к папке с srt или ass субтитрам, имеет приоритет над всеми",
+    "Max width per line": "Максимальное кол-во символов в строке",
+    "Max line":"Максимальное кол-во строк",
+    "Subtitle settings": "Настройки субтитров",
+    "Subtitle tools": "Субтитры",
+    "Change" : "Отредактировать",
+    "Subtitle file, srt": "Файл с субтитрами, только srt",
+    "Path to folder with subtitle files": "Путь к папке с файлами субтитров",
+    "Prompt": "Промпт",
+    "Choose what model you will use": "Выберите языковую модель",
+    "Edit subs": "Отредактировать субтитры",
+    "Correct": "Поправить субтитры",
+    "Get Subtitle": "Аудио в субтитры",
+    "Source lang": "Исходный язык"
 }

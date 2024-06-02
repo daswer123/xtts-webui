@@ -313,3 +313,48 @@ def read_key_from_env(key):
             return env_data.get(key)  # Return the value of the key or None if the key is not found
         except json.JSONDecodeError:
             return None  # Failed to decode JSON
+
+def save_whisper_audio_to_wav(rate, y, this_dir, max_duration=None):
+    # Determine the bit rate of the source audio.
+    bit_depth = y.dtype.itemsize * 8
+
+    # Convert to 16-bit data if necessary.
+    if not (bit_depth == 16):
+        if bit_depth == 32:
+            audio_data = np.asarray(
+                y / np.max(np.abs(y)) * 32767, dtype=np.int16)
+        elif bit_depth == 24:
+            audio_data = np.asarray(
+                (y / (2**8)) // (2**(bit_depth - 16)), dtype=np.int16)
+        else:  # For other types of bitness we apply the general normalization method.
+            max_val = float(np.iinfo(np.int16).max)
+            min_val = float(np.iinfo(np.int16).min)
+            audio_data = np.asarray(
+                ((y - y.min()) / (y.max() - y.min())) * (max_val - min_val) + min_val, dtype=np.int16)
+    else:
+        # If the data is already in int16 format, use it directly.
+        audio_data = np.asarray(y, dtype=np.int16)
+
+    temp_folder = Path(this_dir)
+    # print(rate,y)
+
+    os.makedirs(temp_folder, exist_ok=True)
+
+    wav_name = f'whisper_transcribe_{uuid.uuid4()}.wav'
+
+    original_wav_path = str(temp_folder / wav_name)
+
+    # Save the audio data to a file without changing the sampling rate.
+    wavfile.write(original_wav_path, rate, audio_data)
+
+    if max_duration is not None and max_duration != 0:
+        output_wav_path = str(temp_folder / f'cut_{wav_name}')
+        (
+            ffmpeg.input(original_wav_path)
+            .output(output_wav_path, t=max_duration)
+            .run(overwrite_output=True, quiet=True)
+        )
+        os.remove(original_wav_path)
+        return output_wav_path
+
+    return original_wav_path

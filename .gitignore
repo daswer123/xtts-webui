@@ -22,3 +22,8 @@ voice2voice/openVoice/*.mp3
 scripts/resemble_enhance/model_repo.zip
 *.pyc
 .env
+*.body
+/pip
+/python
+/tmp
+*.pyc

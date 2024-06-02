@@ -10,6 +10,17 @@ from scripts.funcs import save_audio_to_wav
 
 from xtts_webui import *
 
+import ffmpeg
+
+def convert_to_mp3(input_file, output_file):
+  """Конвертирует входной аудиофайл в формат MP3 с помощью ffmpeg"""
+  try:
+    stream = ffmpeg.input(str(input_file))
+    stream = ffmpeg.output(stream, str(output_file))
+    ffmpeg.run(stream)
+  except ffmpeg.Error as e:
+    print(f'Ошибка при конвертации аудио: {e.stderr}')
+
 # Constants
 WAV_EXTENSION = "*.wav"
 MP3_EXTENSION = "*.mp3"
@@ -26,6 +37,11 @@ def translate_and_voiceover_advance(
     translate_audio_single,
     translate_audio_batch,
     translate_audio_batch_path,
+    # WHISPER
+    translate_whisper_compute_time,
+    translate_whisper_batch_size,
+    translate_whisper_aline,
+    translate_whisper_device,
     translate_whisper_model,
     translate_audio_mode,
     translate_source_lang,
@@ -42,6 +58,10 @@ def translate_and_voiceover_advance(
     translate_top_p,
     translate_sentence_split,
     translate_status_bar,
+    # Sub settings
+    max_line_sub_v2v,
+    max_width_sub_v2v,
+    highlight_words_v2v
 ):
     print("Hello world")
     if not translate_audio_single and not translate_audio_batch and not translate_audio_batch_path:
@@ -87,6 +107,14 @@ def translate_and_voiceover_advance(
         ref_seconds=translate_max_reference_seconds,
         output_filename=output_folder / tranlsated_filename,
         progress=gr.Progress(track_tqdm=True),
+        # Sub settings
+        max_line_sub_v2v = max_line_sub_v2v,
+        max_width_sub_v2v = max_width_sub_v2v,
+        highlight_words_v2v = highlight_words_v2v,
+        whisper_align=translate_whisper_aline,
+        whisper_device = translate_whisper_device,
+        whisper_batch_size=translate_whisper_batch_size,
+        whisper_compute_type=translate_whisper_compute_time,
     )
     openvoice_status_bar = gr.Progress(track_tqdm=True)
     
@@ -104,6 +132,11 @@ def translate_and_voiceover_advance_stage2(
     translate_audio_single,
     translate_audio_batch,
     translate_audio_batch_path,
+    # WHISPER
+    translate_whisper_compute_time,
+    translate_whisper_batch_size,
+    translate_whisper_aline,
+    translate_whisper_device,
     translate_whisper_model,
     translate_audio_mode,
     translate_source_lang,
@@ -122,7 +155,12 @@ def translate_and_voiceover_advance_stage2(
     translate_status_bar,
     translate_advance_stage1_text,
     translate_ref_speaker_list,
-    sync_original
+    sync_original,
+    # Sub settings
+    max_line_sub_v2v,
+    max_width_sub_v2v,
+    highlight_words_v2v
+    
 ):
     print("Hello world")
     if not translate_audio_single and not translate_audio_batch and not translate_audio_batch_path:
@@ -178,6 +216,14 @@ def translate_and_voiceover_advance_stage2(
         prepare_segments=prepare_segments,
         speaker_wavs=speaker_wavs,
         progress=gr.Progress(track_tqdm=True),
+        # Sub settings
+        max_line_sub_v2v = max_line_sub_v2v,
+        max_width_sub_v2v = max_width_sub_v2v,
+        highlight_words_v2v = highlight_words_v2v,
+        whisper_align=translate_whisper_aline,
+        whisper_batch_size=translate_whisper_batch_size,
+        whisper_compute_type=translate_whisper_compute_time,
+        whisper_device = translate_whisper_device,
     )
     openvoice_status_bar = gr.Progress(track_tqdm=True)
     
@@ -189,6 +235,10 @@ def translate_and_voiceover(
     translate_audio_single,
     translate_audio_batch,
     translate_audio_batch_path,
+    translate_whisper_compute_time,
+    translate_whisper_batch_size,
+    translate_whisper_aline,
+    translate_whisper_device,
     translate_whisper_model,
     translate_audio_mode,
     translate_source_lang,
@@ -206,7 +256,11 @@ def translate_and_voiceover(
     translate_sentence_split,
     translate_status_bar,
     translate_ref_speaker_list,
-    sync_original
+    sync_original,
+    # Sub settings
+    max_line_sub_v2v ,
+    max_width_sub_v2v,
+    highlight_words_v2v
 ):
     print("Hello world")
     if not translate_audio_single and not translate_audio_batch and not translate_audio_batch_path:
@@ -258,6 +312,15 @@ def translate_and_voiceover(
         output_filename=output_folder / tranlsated_filename,
         speaker_wavs=speaker_wavs,
         progress=gr.Progress(track_tqdm=True),
+        # Sub settings
+        max_line_sub_v2v = max_line_sub_v2v,
+        max_width_sub_v2v = max_width_sub_v2v,
+        highlight_words_v2v = highlight_words_v2v,
+        whisper_device = translate_whisper_device,
+        whisper_align=translate_whisper_aline,
+        whisper_batch_size=translate_whisper_batch_size,
+        whisper_compute_type=translate_whisper_compute_time,
+        
     )
     openvoice_status_bar = gr.Progress(track_tqdm=True)
     
@@ -370,6 +433,7 @@ def infer_rvc_audio(
         rvc_audio_single,
         rvc_audio_batch,
         rvc_audio_batch_path,
+        rvc_voice_settings_output_type,
         rvc_voice_settings_model_name,
         rvc_voice_settings_model_path,
         rvc_voice_settings_index_path,
@@ -403,11 +467,14 @@ def infer_rvc_audio(
 
     rvc_voice_status_bar = gr.Progress(track_tqdm=True)
     # Process batches of files
+    # Обработка пакетов файлов
     if audio_files:
-        output_folder = output_folder / folder_name / "temp"
+        output_folder = output_folder / folder_name
         os.makedirs(output_folder, exist_ok=True)
+        temp_folder = output_folder / "temp"
+        os.makedirs(temp_folder, exist_ok=True)
 
-        output_audio = infer_rvc_batch(
+        infer_rvc_batch(
             model_name=rvc_voice_settings_model_name,
             pitch=rvc_voice_settings_pitch,
             index_rate=rvc_voice_settings_index_rate,
@@ -416,14 +483,29 @@ def infer_rvc_audio(
             index_path=rvc_voice_settings_model_path,
             model_path=rvc_voice_settings_index_path,
             paths=audio_files,
-            opt_path=output_folder,
+            opt_path=temp_folder,
             filter_radius=rvc_voice_filter_radius,
             resemple_rate=rvc_voice_resemple_rate,
             envelope_mix=rvc_voice_envelope_mix,
         )
 
-        done_message = f"Done, file saved in {folder_name} folder"
+        if rvc_voice_settings_output_type == "mp3":
+            for file in os.listdir(temp_folder):
+                if file.endswith(".wav"):
+                    input_file = temp_folder / file
+                    output_file = output_folder / f"{file[:-4]}.mp3"
+                    convert_to_mp3(input_file, output_file)
+
+            # shutil.rmtree(temp_folder)  # Удаляем временную папку с wav файлами
+        else:
+            for file in os.listdir(temp_folder):
+                shutil.move(str(temp_folder / file), str(output_folder / file))
+
+        # shutil.rmtree(temp_folder)
+
+        done_message = f"Готово, файлы сохранены в папке {folder_name}"
         return None, None, done_message
+
 
     # Process single file
     elif rvc_audio_single:
@@ -445,6 +527,15 @@ def infer_rvc_audio(
 
         done_message = "Done"
         output_audio = output_file_name
+        
+        if rvc_voice_settings_output_type == "wav":
+            output_audio = output_file_name
+        
+        if rvc_voice_settings_output_type == "mp3":
+            output_file = output_folder / f"rvc_{rvc_voice_settings_model_name}_{datetime.now().strftime(DATE_FORMAT)}.mp3"
+            convert_to_mp3(output_file_name, output_file)
+            output_audio = output_file
+        
         return None, gr.Audio(label="Result", value=output_audio), done_message
 
     # If none of the conditions are met, return an error message
@@ -501,6 +592,14 @@ def switch_visible_mode3_params(translate_audio_mode):
         return translate_ref_speaker_list,translate_show_ref_speaker_from_list,translate_update_ref_speaker_list_btn,translate_ref_speaker_example
     return gr.Dropdown(visible=False,value=None),gr.Checkbox(visible=False),gr.Button(visible=False),gr.Audio(visible=False)
 
+def check_whisper_cpu(translate_whisper_device):
+    if translate_whisper_device == "cpu":
+        return gr.Radio(choices=["float16"],value="float16",label="compute type")
+    return gr.Radio(label="Compute Type",choices=["int8","float16"],value="float16",info="change to 'int8' if low on GPU mem (may reduce accuracy)")
+
+translate_whisper_device.change(fn=check_whisper_cpu,inputs=[translate_whisper_device],outputs=[translate_whisper_compute_time])
+
+
 translate_audio_mode.change(fn=switch_visible_mode1_params,inputs=[translate_audio_mode],outputs=[transalte_advance_markdown])
 translate_audio_mode.change(fn=switch_visible_mode2_params,inputs=[translate_audio_mode],outputs=[translate_num_sent,translate_max_reference_seconds])
 translate_audio_mode.change(fn=switch_visible_mode3_params,inputs=[translate_audio_mode],outputs=[translate_ref_speaker_list,translate_show_ref_speaker_from_list,translate_update_ref_speaker_list_btn,translate_ref_speaker_example])
@@ -521,11 +620,19 @@ deepl_auth_key_textbox.change(fn=save_auth_key,inputs=[deepl_auth_key_textbox])
 # translate_audio_mode.change(fn=switch_translate_modes,inputs=[translate_audio_mode],
 #                             outputs=[translate_advance_stage1_btn,translate_advance_stage1_text,translate_advance_stage2_btn,transalte_advance_markdown])
 
+# max_width_sub_v2v = gr.Slider(label=i18n("Max width per line"), minimum=1, maximum=100, value=40, step=1)
+#                         max_line_sub_v2v = gr.Slider(label=i18n("Max line"), minimum=1, maximum=20, value=2, step=1)
+
 translate_btn.click(fn=translate_and_voiceover, inputs=[
                                                         # INPUTS
                                                         translate_audio_single,
                                                         translate_audio_batch,
                                                         translate_audio_batch_path,
+                                                        # WHISPER
+                                                        translate_whisper_compute_time,
+                                                        translate_whisper_batch_size,
+                                                        translate_whisper_aline,
+                                                        translate_whisper_device,
                                                         # TRANSLATE SETTIGNS
                                                         translate_whisper_model,
                                                         translate_audio_mode,
@@ -546,7 +653,11 @@ translate_btn.click(fn=translate_and_voiceover, inputs=[
                                                         # STATUS BAR
                                                         translate_status_bar,
                                                         translate_ref_speaker_list,
-                                                        sync_with_original_checkbox
+                                                        sync_with_original_checkbox,
+                                                        # Sub settings
+                                                        max_line_sub_v2v,
+                                                        max_width_sub_v2v,
+                                                        highlight_words_v2v
                                                         ], outputs=[translate_video_output, translate_voice_output,translate_files_output, translate_status_bar])
 
 if RVC_ENABLE:
@@ -560,6 +671,7 @@ if RVC_ENABLE:
         rvc_audio_single,
         rvc_audio_batch,
         rvc_audio_batch_path,
+        rvc_voice_settings_output_type,
         # PATH
         rvc_voice_settings_model_name,
         rvc_voice_settings_model_path,
@@ -592,6 +704,11 @@ translate_advance_stage1_btn.click(fn=translate_and_voiceover_advance, inputs=[
                                                         translate_audio_single,
                                                         translate_audio_batch,
                                                         translate_audio_batch_path,
+                                                        # WHISPER
+                                                        translate_whisper_compute_time,
+                                                        translate_whisper_batch_size,
+                                                        translate_whisper_aline,
+                                                        translate_whisper_device,
                                                         # TRANSLATE SETTIGNS
                                                         translate_whisper_model,
                                                         translate_audio_mode,
@@ -610,7 +727,11 @@ translate_advance_stage1_btn.click(fn=translate_and_voiceover_advance, inputs=[
                                                         translate_top_p,
                                                         translate_sentence_split,
                                                         # STATUS BAR
-                                                        translate_status_bar
+                                                        translate_status_bar,
+                                                        # Sub settings
+                                                        max_line_sub_v2v,
+                                                        max_width_sub_v2v,
+                                                        highlight_words_v2v
                                                         ], outputs=[translate_advance_stage1_text,translate_advance_stage2_btn,translate_status_bar])
 
 translate_advance_stage2_btn.click(fn=translate_and_voiceover_advance_stage2, inputs=[
@@ -618,6 +739,11 @@ translate_advance_stage2_btn.click(fn=translate_and_voiceover_advance_stage2, in
                                                         translate_audio_single,
                                                         translate_audio_batch,
                                                         translate_audio_batch_path,
+                                                        # WHISPER
+                                                        translate_whisper_compute_time,
+                                                        translate_whisper_batch_size,
+                                                        translate_whisper_aline,
+                                                        translate_whisper_device,
                                                         # TRANSLATE SETTIGNS
                                                         translate_whisper_model,
                                                         translate_audio_mode,
@@ -639,5 +765,9 @@ translate_advance_stage2_btn.click(fn=translate_and_voiceover_advance_stage2, in
                                                         translate_status_bar,
                                                         translate_advance_stage1_text,
                                                         translate_ref_speaker_list,
-                                                        sync_with_original_checkbox
+                                                        sync_with_original_checkbox,
+                                                        # Sub settings
+                                                        max_line_sub_v2v,
+                                                        max_width_sub_v2v,
+                                                        highlight_words_v2v
                                                         ], outputs=[translate_video_output, translate_voice_output,translate_files_output, translate_status_bar])

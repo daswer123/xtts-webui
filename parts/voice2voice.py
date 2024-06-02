@@ -24,7 +24,7 @@ with gr.Tab(i18n("Translate")):
                 translate_audio_mode = gr.Radio(label=i18n("Mode"), choices=[
                                                 1, 2,3], value=2, info=i18n("Mode Desk"))
                 translate_translator = gr.Radio(label=i18n("Translator"), choices=[
-                                                "google", "bing", "baidu","deepl"], value="google")
+                                                "google", "bing", "baidu"], value="google")
                 
                 deepl_auth_key_textbox = gr.Textbox(label="Deepl API Key", value="",type="password",visible=False)
                 
@@ -33,6 +33,12 @@ with gr.Tab(i18n("Translate")):
                     translate_max_reference_seconds= gr.Slider(label=i18n("Number of reference seconds that will be used"),minimum=10,maximum=600,value=20,step=1,visible=True)
                 with gr.Row():
                     sync_with_original_checkbox = gr.Checkbox(label=i18n("Sync timing with original ( Accuracy ~ 80 - 90% )"), value=False)
+                with gr.Accordion(label=i18n("Subtitle settings")):
+                    with gr.Row():
+                        max_width_sub_v2v = gr.Slider(label=i18n("Max width per line"), minimum=1, maximum=100, value=40, step=1)
+                        max_line_sub_v2v = gr.Slider(label=i18n("Max line"),visible=True, minimum=1, maximum=20, value=2, step=1)
+                    with gr.Row():
+                        highlight_words_v2v = gr.Checkbox(label=i18n("Highlight Words"),visible=False, value=False)
                 # speakers_list = XTTS.get_speakers()
                 # speaker_value = ""
                 # if not speakers_list:
@@ -69,6 +75,15 @@ with gr.Tab(i18n("Translate")):
                         label=i18n("Target lang"), choices=supported_languages_list, value="ru")
                     translate_speaker_lang = gr.Dropdown(
                         label=i18n("Speaker Accent"), choices=supported_languages_list, value="ru")
+                with gr.Column():
+                    with gr.Accordion("Whisper settings",open=False):
+                        with gr.Row():
+                            # translate_whisper_model = gr.Dropdown(label=i18n("Whisper Model"), choices=["small", "medium", "large-v2", "large-v3"], value="medium")
+                            translate_whisper_compute_time = gr.Radio(label="Compute Type",choices=["int8","float16"],value="float16",info="change to 'int8' if low on GPU mem (may reduce accuracy)")
+                            translate_whisper_device = gr.Radio(label="Device",choices=["cuda","cpu"],value="cuda",info="change to 'int8' if low on GPU mem (may reduce accuracy)")
+                        with gr.Row():
+                            translate_whisper_batch_size = gr.Slider(label="Batch Size", minimum=1, maximum=32, value=8, step=1,info="reduce if low on GPU mem")
+                            translate_whisper_aline = gr.Checkbox(value=True,label="Align whisper output")
                 with gr.Column():
                   with gr.Accordion(i18n("XTTS settings"), open=False,visible=True):
                     translate_speed = gr.Slider(
@@ -149,6 +164,8 @@ if RVC_ENABLE:
                     label=i18n("Path to folder with audio files (High priority)"), value=None)
             with gr.Column():
                 with gr.Row():
+                    rvc_voice_settings_output_type = gr.Radio(
+                        ["wav", "mp3"], value="wav", label=i18n("Output type"))
                     rvc_voice_settings_model_name = gr.Dropdown(
                         label=i18n("RVC Model name"), info=i18n("Create a folder with your model name in the rvc folder and put .pth and .index there , .index optional"), choices=rvc_models)
                     rvc_voice_settings_update_btn = gr.Button(

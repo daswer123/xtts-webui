@@ -16,7 +16,7 @@ import ffmpeg
 import time
 import os
 
-
+import whisperx
 import argparse
 
 import noisereduce
@@ -124,41 +124,199 @@ def segment_audio(start_time, end_time, input_file, output_file):
                 to=end_time)
         .run(capture_stdout=True, capture_stderr=True)
     )
+    
+import textwrap
+import pysubs2
+import os
 
-def save_subs_and_txt(segments, base_folder, base_name):
-    # Инициализируем список для хранения путей к файлам
+# from scripts.llm import process_subtitle_chunk
+
+def save_old_subs_and_txt(segments, base_folder, base_name, max_line_width=40, max_line_count=2, save_only_src = False):
+    
     files_paths = []
 
-    # Сохраняем txt
-    txt_output_path = os.path.join(base_folder, base_name + '.txt')
-    with open(txt_output_path, 'w', encoding='utf-8') as f:
-        for segment in segments:
-            f.write(f"[{segment['start']:.2f}s -> {segment['end']:.2f}s] {segment['text']}\n")
+    if not save_only_src:
+        txt_path = os.path.join(base_folder, f"{base_name}.txt")
+        with open(txt_path, "w", encoding='utf-8') as f:
+            for segment in segments:
+                f.write(f"[{segment['start']:.2f} --> {segment['end']:.2f}] {segment['text']}\n")
+        files_paths.append(txt_path)
 
-    # Добавляем путь к txt файлу в список
-    files_paths.append(txt_output_path)
-
-    # Создаем и сохраняем srt & ass subtitles
     subs = pysubs2.SSAFile()
-
     for segment in segments:
-        start_time = int(segment['start'] * 1000)
-        end_time = int(segment['end'] * 1000)
-        text = segment['text']
-        subs.events.append(pysubs2.SSAEvent(start=start_time, end=end_time, text=text))
+        start = int(segment["start"] * 1000)
+        end = int(segment["end"] * 1000)
+        text = segment["text"]
 
-    srt_output_path = os.path.join(base_folder, base_name + '.srt')
-    ass_output_path = os.path.join(base_folder, base_name + '.ass')
+        lines = textwrap.wrap(text, width=max_line_width)
+        # lines = lines[:max_line_count]
+        lines = [line.strip() for line in lines]
+        text = "\\N".join(lines)
 
-    subs.save(srt_output_path)
-    subs.save(ass_output_path)
+        subs.events.append(pysubs2.SSAEvent(start=start, end=end, text=text))
 
-    # Добавляем пути к srt и ass файлам в список
-    files_paths.append(srt_output_path)
-    files_paths.append(ass_output_path)
-    
+    srt_path = os.path.join(base_folder, f"{base_name}.srt")
+    subs.save(srt_path)
+    files_paths.append(srt_path)
+
+    if not save_only_src:
+        ass_path = os.path.join(base_folder, f"{base_name}.ass")
+        subs.save(ass_path)
+        files_paths.append(ass_path)
+
     return files_paths
 
+
+# from scripts.llm import process_subtitle_chunk
+
+def save_subs_and_txt(segments, base_folder, base_name, max_line_width=40, max_line_count=2, save_only_src=False, highlight_words=False):
+    files_paths = []
+
+    if not save_only_src:
+        txt_path = os.path.join(base_folder, f"{base_name}.txt")
+        with open(txt_path, "w", encoding='utf-8') as f:
+            for segment in segments:
+                f.write(f"[{segment['start']:.2f} --> {segment['end']:.2f}] {segment['text']}\n")
+        files_paths.append(txt_path)
+
+    subs = pysubs2.SSAFile()
+
+    if highlight_words:
+        subs.styles["Default"].fontname = "Arial"
+        subs.styles["Default"].fontsize = 24
+        subs.styles["Default"].primary_color = pysubs2.Color(255, 255, 255, 255)  # White color
+
+    print(segments, "subs")
+
+    for segment in segments:
+        start = int(segment["start"] *1000)
+        text = segment["text"]
+        words = segment["words"]
+
+        # Вставка слов без ключа 'start'
+        for i, word in enumerate(words):
+            if "start" not in word:
+                if i > 0:
+                    prev_word = words[i - 1]
+                    next_word = words[i + 1] if i + 1 < len(words) else None
+
+                    if "end" in prev_word and next_word and "start" in next_word:
+                        estimated_start = (prev_word["end"] + next_word["start"]) / 2
+                        word["start"] = estimated_start
+                        word["end"] = estimated_start + 0.3
+                    elif "end" in prev_word:
+                        word["start"] = prev_word["end"]
+                        word["end"] = word["start"] + 0.3
+                    else:
+                        word["start"] = prev_word.get("start", 0)
+                        word["end"] = word["start"] + 0.3
+                else:
+                    word["start"] = 0
+                    word["end"] = 0.3
+
+        lines = []
+        current_line = ""
+
+        for word in words:
+            word_text = word["word"]
+            word_start = int(word["start"]* 1000)
+            word_end = int(word["end"]*1000)
+            word_duration = word_end - word_start
+
+            if len(current_line + " " + word_text) <= max_line_width:
+                current_line += " " + word_text
+            else:
+                if current_line:
+                    lines.append(current_line.strip())
+                if len(lines) == max_line_count:
+                    subs.events.append(pysubs2.SSAEvent(start=start, end=word_start, text="\\N".join(lines)))
+                    start = word_start
+                    lines = []
+                current_line = word_text
+
+        if current_line:
+            lines.append(current_line.strip())
+
+        end = int(segment["end"] * 1000)
+        if lines:
+            subs.events.append(pysubs2.SSAEvent(start=start, end=end, text="\\N".join(lines)))
+
+    if not highlight_words:
+        srt_path = os.path.join(base_folder, f"{base_name}.srt")
+        subs.save(srt_path)
+        files_paths.append(srt_path)
+
+    if highlight_words or not save_only_src:
+        ass_path = os.path.join(base_folder, f"{base_name}.ass")
+        subs.save(ass_path)
+        files_paths.append(ass_path)
+
+    return files_paths
+
+
+
+import re
+
+def timecode_to_seconds(timecode):
+    hours, minutes, seconds, milliseconds = re.match(r'(\d+):(\d+):(\d+),(\d+)', timecode).groups()
+    return int(hours) * 3600 + int(minutes) * 60 + int(seconds) + int(milliseconds) / 1000
+
+def parse_srt(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        lines = file.read().splitlines()
+
+    entries = []
+    entry = None
+    
+    for line in lines:
+        if '-->' in line:
+            # If current entry exists, add it to the list
+            if entry:
+                entries.append(entry)
+            
+            start, end = line.split(' --> ')
+            entry = {
+                'start': timecode_to_seconds(start),
+                'end': timecode_to_seconds(end),
+                'text': ''
+            }
+        elif line.strip().isdigit():
+            continue
+        elif line.strip() == '':
+            continue
+        else:
+            # Append text for the current entry
+            entry['text'] += ' ' + line.strip()
+
+    # Don't forget to add the last entry
+    if entry:
+        entries.append(entry)
+        
+    # If start and end same combine
+    filtred_entries = []
+    current_start = ""
+    current_end = ""
+    tmp_text = ""
+    
+    for entry in entries:
+        if current_start != entry['start'] or current_end != entry['end']:
+            if tmp_text != "":
+                filtred_entries.append({"start": current_start, "end": current_end, "text": tmp_text})
+            current_start = entry['start']
+            current_end = entry['end']
+            tmp_text = entry['text']
+        else:
+            tmp_text += " " + entry['text']
+            
+    # Add the last entry if it's unique
+    if len(filtred_entries) == 0 or filtred_entries[-1]['end'] != current_end:
+        if tmp_text == "":
+            pass
+        filtred_entries.append({"start": current_start, "end": current_end, "text": tmp_text})
+
+    return filtred_entries
+
+    return entries
 
 
 
@@ -234,24 +392,37 @@ def clean_text(text):
     text = text.replace(".", "..")
     return text
 
-def transcribe_audio(whisper_model, filename, source_lang='auto'):
-    model = WhisperModel(whisper_model, device="cuda", compute_type="float16")
+def transcribe_audio(whisper_model,whisper_compute_type,whisper_device,whisper_batch_size,whisper_align,filename,source_lang="auto"):
+    # model = whisperx.load_model(whisper_model, device="cuda", compute_type="float16")
+    model = whisperx.load_model(whisper_model,device=whisper_device,compute_type=whisper_compute_type)
     print("Whisper model loaded")
-
+    
+    audio = whisperx.load_audio(filename)
+    
     language_for_whisper = None if source_lang == "auto" else source_lang
+    
+    result = model.transcribe(audio, batch_size=whisper_batch_size,language=language_for_whisper)
+    language = result["language"]
+    
+    if whisper_align:
+        print("Start aling result")
+        model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=whisper_device)
+        result = whisperx.align(result["segments"], model_a, metadata, audio, whisper_device, return_char_alignments=False)
 
-    segments, info = model.transcribe(
-        filename, language=language_for_whisper,vad_filter=True, beam_size=5)
+    segments = result["segments"]
+    
+    # print(segments)
 
-    print("Detected language '%s' with probability %f" %
-          (info.language, info.language_probability))
+    print(f"Detected language {language}")
+    
 
     if source_lang == "auto":
-        detected_language = info.language  
+        detected_language = language  
     else:
         detected_language = source_lang
 
     return segments, detected_language
+
 
 def accumulate_segments(segments, start_index, segment_filenames, temp_folder, desired_duration=20):
     accumulated_duration = 0
@@ -266,7 +437,7 @@ def accumulate_segments(segments, start_index, segment_filenames, temp_folder, d
             break
 
         segment = segments[current_index]
-        duration_of_segment = segment.end - segment.start
+        duration_of_segment = segment["end"] - segment["start"]
         original_audio_segment_file = temp_folder / segment_filenames[current_index]
 
         # Добавляем имя файла в список файлов для передачи в TTS.
@@ -283,18 +454,19 @@ def accumulate_segments(segments, start_index, segment_filenames, temp_folder, d
     return accumulated_segment_files
 
 
-
+# Sub settings
 from scripts.funcs import  read_key_from_env 
 
 # Assuming translator, segment_audio, get_suitable_segment,
 # local_generation, combine_wav_files are defined elsewhere.
-def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, source_lang, target_lang,
+def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model,whisper_compute_type,whisper_batch_size,whisper_device,whisper_align, source_lang, target_lang,
                             speaker_lang, sync_original = False, options={}, text_translator="google", translate_mode=True,
-                            output_filename="result.mp3",ref_seconds=20,num_sen = 1,prepare_text = None,prepare_segments=None, speaker_wavs=None, improve_audio_func=False, progress=None):
+                            output_filename="result.mp3",ref_seconds=20,num_sen = 1,prepare_text = None,prepare_segments=None, speaker_wavs=None, improve_audio_func=False, progress=None,
+                            max_line_sub_v2v = 2, max_width_sub_v2v = 40,highlight_words_v2v=False):
 
     # STAGE - 1 TRANSCRIBE
     if not prepare_segments:
-      segments, detected_language = transcribe_audio(whisper_model,filename,source_lang)
+      segments, detected_language = transcribe_audio(whisper_model,whisper_compute_type,whisper_device,whisper_batch_size,whisper_align,filename,source_lang)
     else:
       segments = prepare_segments
       detected_language = None
@@ -331,11 +503,11 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
         original_audio_segment_file = f"original_segment_{i}.wav"
         segment_filenames.append(original_audio_segment_file)
 
-        # start_time = segment.start if mode == 1 else get_suitable_segment(i, segments).start
-        # end_time = segment.end if mode == 1 else get_suitable_segment(i, segments).end
+        # start_time = segment["start"] if mode == 1 else get_suitable_segment(i, segments).start
+        # end_time = segment["end"] if mode == 1 else get_suitable_segment(i, segments).end
 
-        start_time = segment.start
-        end_time = segment.end
+        start_time = segment["start"]
+        end_time = segment["end"]
 
         output_segment_folder = temp_folder / original_audio_segment_file
         segment_audio(start_time=start_time,
@@ -382,7 +554,7 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
           end_segment_index = min(i + num_sen, total_segments)
   
           for segment_index in range(i, end_segment_index):
-              merged_text += segments[segment_index].text
+              merged_text += segments[segment_index]["text"]
           
           if text_translator == "deepl":
               api_key = read_key_from_env("DEEPL_API_KEY")
@@ -405,9 +577,9 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
               else:
                 text_to_syntez = ts.translate_text(
                     query_text=merged_text, translator=text_translator, from_language=source_lang, to_language=target_lang)
-              print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
+            #   print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
           else:
-              print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {merged_text}")
+            #   print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {merged_text}")
               text_to_syntez = clean_text(merged_text)
         else:
             text_to_syntez = prepare_text[preprare_text_i]
@@ -436,7 +608,7 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
             tts_input_combined_path_temporary_output_filename=temp_folder/synthesized_audio_starting_from_i_wav_name_pattern
 
             tts_input_wavs = accumulated_files_for_tts_input
-            print(tts_input_wavs)
+            # print(tts_input_wavs)
         
         if mode == 3:
             tts_input_wavs = speaker_wavs
@@ -475,7 +647,7 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
         # syntez_file
 
     print(new_segments_list)
-    print(segments)
+    # print(segments)
     # Process output_filename and create the necessary directory structure
     base_name_with_ext = os.path.basename(output_filename)  # File name with extension
     base_directory = os.path.dirname(output_filename)  # File directory
@@ -488,9 +660,8 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
     if not os.path.exists(target_folder_path):
         os.makedirs(target_folder_path)
 
-    # Now let's perform the function of saving all: .txt, .srt and .ass files.
-    subtitles_files = save_subs_and_txt(new_segments_list, target_folder_path, base_name_without_ext)
-
+    
+    
     combined_audio_output_filepath = os.path.join(target_folder_path, base_name_with_ext)
 
     # Pass the correct path for the merged wav file - already inside the target directory.
@@ -501,6 +672,12 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
                           (segment_filenames if mode != 3 else []), temp_folder)
 
     new_file_name = output_folder / Path(target_folder_path) / Path(output_filename).name
+    
+    segments, detected_language = transcribe_audio(whisper_model,whisper_compute_type,whisper_device,whisper_batch_size,whisper_align,new_file_name,target_lang)
+    
+     # Now let's perform the function of saving all: .txt, .srt and .ass files.
+    subtitles_files = save_subs_and_txt(segments, target_folder_path, base_name_without_ext,max_width_sub_v2v,max_line_sub_v2v,False,highlight_words_v2v)
+    
     # print(new_file_name)
     # shutil.move(output_filename, new_file_name)
     return [new_file_name,subtitles_files]
@@ -509,13 +686,14 @@ def translate_and_get_voice(this_dir, filename, xtts, mode, whisper_model, sourc
 
 # Assuming translator, segment_audio, get_suitable_segment,
 # local_generation, combine_wav_files are defined elsewhere.
-def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model, source_lang, target_lang,
+def translate_advance_stage1(this_dir, filename, xtts, mode,whisper_model,whisper_compute_type,whisper_device,whisper_batch_size,whisper_align, source_lang, target_lang,
                             speaker_lang, options={}, text_translator="google", translate_mode=True,
-                            output_filename="result.mp3",ref_seconds=20,num_sen = 1, speaker_wavs=None, improve_audio_func=False, progress=None):
+                            output_filename="result.mp3",ref_seconds=20,num_sen = 1, speaker_wavs=None, improve_audio_func=False, progress=None,max_line_sub_v2v = 2, max_width_sub_v2v = 40,highlight_words_v2v=False):
 
     # STAGE - 1 TRANSCRIBE
-    segments, detected_language = transcribe_audio(whisper_model,filename,source_lang)
+    segments, detected_language = transcribe_audio(whisper_model,whisper_compute_type,whisper_device,whisper_batch_size,whisper_align,filename,source_lang)
 
+    # print(segments)
     if source_lang == "auto":
         source_lang = detected_language
 
@@ -548,11 +726,11 @@ def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model, sour
         original_audio_segment_file = f"original_segment_{i}.wav"
         segment_filenames.append(original_audio_segment_file)
 
-        # start_time = segment.start if mode == 1 else get_suitable_segment(i, segments).start
-        # end_time = segment.end if mode == 1 else get_suitable_segment(i, segments).end
+        # start_time = segment["start"] if mode == 1 else get_suitable_segment(i, segments).start
+        # end_time = segment["end"] if mode == 1 else get_suitable_segment(i, segments).end
 
-        start_time = segment.start
-        end_time = segment.end
+        start_time = segment["start"]
+        end_time = segment["end"]
 
         output_segment_folder = temp_folder / original_audio_segment_file
         segment_audio(start_time=start_time,
@@ -582,7 +760,7 @@ def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model, sour
         end_segment_index = min(i + num_sen, total_segments)
 
         for segment_index in range(i, end_segment_index):
-            merged_text += segments[segment_index].text
+            merged_text += segments[segment_index]["text"]
         
         if text_translator == "deepl":
             api_key = read_key_from_env("DEEPL_API_KEY")
@@ -605,9 +783,9 @@ def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model, sour
               else:
                 text_to_syntez = ts.translate_text(
                     query_text=merged_text, translator=text_translator, from_language=source_lang, to_language=target_lang)
-              print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
+            #   print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {text_to_syntez}")
         else:
-            print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {merged_text}")
+            # print(f"[{segment.start:.2f}s -> {segment.end:.2f}s] {merged_text}")
             text_to_syntez = clean_text(merged_text)
 
         synthesized_audio_file = f"synthesized_segment_{i}.wav"
@@ -656,3 +834,65 @@ def translate_advance_stage1(this_dir, filename, xtts, mode, whisper_model, sour
 
         i+=num_sen
     return [ready_segments_text,segments]
+
+def transcribe_audio(whisper_model,whisper_compute_type,whisper_device,whisper_batch_size,whisper_align,filename,source_lang="auto"):
+    # model = whisperx.load_model(whisper_model, device="cuda", compute_type="float16")
+    model = whisperx.load_model(whisper_model,device=whisper_device,compute_type=whisper_compute_type)
+    print("Whisper model loaded")
+    
+    audio = whisperx.load_audio(filename)
+    
+    language_for_whisper = None if source_lang == "auto" else source_lang
+    
+    result = model.transcribe(audio, batch_size=whisper_batch_size,language=language_for_whisper)
+    language = result["language"]
+    
+    if whisper_align:
+        print("Start aling result")
+        model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=whisper_device)
+        result = whisperx.align(result["segments"], model_a, metadata, audio, whisper_device, return_char_alignments=False)
+
+    segments = result["segments"]
+    
+    # print(segments)
+
+    print(f"Detected language {language}")
+    
+
+    if source_lang == "auto":
+        detected_language = language  
+    else:
+        detected_language = source_lang
+
+    return segments, detected_language
+
+def transcribe_for_gradio(subtitle_file_get, get_sub_whisper_model, 
+             get_sub_source_lang, get_sub_max_width_sub_v2v, get_sub_max_line_sub_v2v, get_sub_highlight_words_v2v,
+             get_sub_translator, deepl_auth_key_textbox, get_sub_whisper_compute_time, get_sub_whisper_device,
+             get_sub_whisper_batch_size, get_sub_whisper_aline,output_folder):
+    
+    language_for_whisper = None if get_sub_source_lang == "auto" else get_sub_source_lang
+    
+    model = whisperx.load_model(get_sub_whisper_model,language=language_for_whisper,device=get_sub_whisper_device,compute_type=get_sub_whisper_compute_time)
+    audio = whisperx.load_audio(subtitle_file_get)
+    
+    
+    # print("language = ", language_for_whisper)
+    result = model.transcribe(audio, batch_size=get_sub_whisper_batch_size,language=language_for_whisper)
+    
+    if get_sub_whisper_aline:
+        model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=get_sub_whisper_device)
+        result = whisperx.align(result["segments"], model_a, metadata, audio, get_sub_whisper_device, return_char_alignments=False)
+
+    segments = result["segments"]
+    
+    if get_sub_source_lang == "auto":
+        detected_language = get_sub_source_lang  
+    else:
+        detected_language = get_sub_source_lang
+
+    # Set timestamp formated for files
+    formated_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    sub_base_name = "sub" + formated_timestamp
+    subtitles_files = save_subs_and_txt(segments,output_folder, sub_base_name, get_sub_max_width_sub_v2v, get_sub_max_line_sub_v2v, False,get_sub_highlight_words_v2v )
+    return subtitles_files

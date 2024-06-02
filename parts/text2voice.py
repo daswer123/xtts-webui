@@ -2,6 +2,9 @@
 import gradio as gr
 from scripts.voice2voice import get_rvc_models, find_rvc_model_by_name, get_openvoice_refs
 
+# from silero_tts.silero_tts import SileroTTS
+
+
 from xtts_webui import *
 
 from i18n.i18n import I18nAuto
@@ -23,117 +26,142 @@ with gr.Row():
             batch_sub_generation_path = gr.Textbox(
                 label=i18n("Path to folder with srt or ass, Has priority over all"), value="")
             sync_sub_generation = gr.Checkbox(label=i18n("Synchronise subtitle timings"),value=False)
-            
-        language_auto_detect = gr.Checkbox(
-            label=i18n("Enable language auto detect"), info=i18n("If your language is not supported or the text is less than 20 characters, this function will not work"))
-        languages = gr.Dropdown(
-            label=i18n("Language"), choices=reversed_supported_languages_list, value="English")
-        speed = gr.Slider(
-            label=i18n("speed"),
-            minimum=0.1,
-            maximum=2,
-            step=0.05,
-            value=1,
-        )
-        with gr.Accordion(i18n("Advanced settings"), open=False) as acr:
-            temperature = gr.Slider(
-                label=i18n("Temperature"),
-                minimum=0.01,
-                maximum=1,
+        
+        with gr.Column():
+          voice_engine = gr.Radio(label=i18n("Select Voice Engine"), choices=["XTTS", "SILERO"], value="XTTS", visible=False)
+          with gr.Tab("XTTS"):    
+            language_auto_detect = gr.Checkbox(
+                label=i18n("Enable language auto detect"), info=i18n("If your language is not supported or the text is less than 20 characters, this function will not work"))
+            languages = gr.Dropdown(
+                label=i18n("Language"), choices=reversed_supported_languages_list, value="English")
+        
+            speed = gr.Slider(
+                label=i18n("speed"),
+                minimum=0.1,
+                maximum=2,
                 step=0.05,
-                value=0.75,
-            )
-            length_penalty = gr.Slider(
-                label=i18n("Length Penalty"),
-                minimum=-10.0,
-                maximum=10.0,
-                step=0.5,
                 value=1,
             )
-            repetition_penalty = gr.Slider(
-                label=i18n("Repetition Penalty"),
-                minimum=1,
-                maximum=10,
-                step=0.5,
-                value=5,
-            )
-            top_k = gr.Slider(
-                label=i18n("Top K"),
-                minimum=1,
-                maximum=100,
-                step=1,
-                value=50,
-            )
-            top_p = gr.Slider(
-                label=i18n("Top P"),
-                minimum=0.01,
-                maximum=1,
-                step=0.05,
-                value=0.85,
-            )
-            sentence_split = gr.Checkbox(
-                label=i18n("Enable text splitting"),
-                value=True,
-            )
+            with gr.Accordion(i18n("Advanced settings"), open=False) as acr:
+                temperature = gr.Slider(
+                    label=i18n("Temperature"),
+                    minimum=0.01,
+                    maximum=1,
+                    step=0.05,
+                    value=0.75,
+                )
+                length_penalty = gr.Slider(
+                    label=i18n("Length Penalty"),
+                    minimum=-10.0,
+                    maximum=10.0,
+                    step=0.5,
+                    value=1,
+                )
+                repetition_penalty = gr.Slider(
+                    label=i18n("Repetition Penalty"),
+                    minimum=1,
+                    maximum=10,
+                    step=0.5,
+                    value=5,
+                )
+                top_k = gr.Slider(
+                    label=i18n("Top K"),
+                    minimum=1,
+                    maximum=100,
+                    step=1,
+                    value=50,
+                )
+                top_p = gr.Slider(
+                    label=i18n("Top P"),
+                    minimum=0.01,
+                    maximum=1,
+                    step=0.05,
+                    value=0.85,
+                )
+                sentence_split = gr.Checkbox(
+                    label=i18n("Enable text splitting"),
+                    value=True,
+                )
 
-            # infer_type = gr.Radio(["api", "local"], value="local", label="Type of Processing",
-            #                       info="Defines how the text will be processed,local gives you more options. Api does not allow you to use advanced settings")
+                # infer_type = gr.Radio(["api", "local"], value="local", label="Type of Processing",
+                #                       info="Defines how the text will be processed,local gives you more options. Api does not allow you to use advanced settings")
 
-        speakers_list = XTTS.get_speakers()
-        speaker_value = ""
-        if not speakers_list:
-            speakers_list = ["None"]
-            speaker_value = "None"
-        else:
-            speaker_value = speakers_list[0]
-            XTTS.speaker_wav = speaker_value
+            speakers_list = XTTS.get_speakers()
+            speaker_value = ""
+            if not speakers_list:
+                speakers_list = ["None"]
+                speaker_value = "None"
+            else:
+                speaker_value = speakers_list[0]
+                XTTS.speaker_wav = speaker_value
 
-        with gr.Row():
-            ref_speaker_list = gr.Dropdown(
-                label=i18n("Reference Speaker from folder 'speakers'"), value=speaker_value, choices=speakers_list,allow_custom_value=True)
-            show_ref_speaker_from_list = gr.Checkbox(
-                value=False, label=i18n("Show reference sample"), info=i18n("This option will allow you to listen to your reference sample"))
-            show_inbuildstudio_speaker = gr.Checkbox(
-                value=False, label=i18n("Show in list avalible speakers inbuild speakers"), info=i18n("This option will allow you to add pre-prepared voices from coqua studio to the list of available voices"))
-            update_ref_speaker_list_btn = gr.Button(
-                value=i18n("Update"), elem_classes="speaker-update__btn")
-        ref_speaker_example = gr.Audio(
-            label=i18n("speaker sample"), sources="upload", visible=False, interactive=False)
-
-        with gr.Tab(label=i18n("Single")):
-            ref_speaker = gr.Audio(
-                label=i18n("Reference Speaker (mp3, wav, flac)"), editable=False)
-        with gr.Tab(label=i18n("Multiple")):
-            ref_speakers = gr.Files(
-                label=i18n("Reference Speakers (mp3, wav, flac)"), file_types=["audio"])
-
-        with gr.Accordion(label=i18n("Reference Speaker settings."), open=False):
-            gr.Markdown(
-                value=i18n("**Note: the settings only work when you enable them and upload files when they are enabled**"))
-            gr.Markdown(
-                value=i18n("Take a look at how to create good samples [here](https://github.com/daswer123/xtts-api-server?tab=readme-ov-file#note-on-creating-samples-for-quality-voice-cloning)"))
             with gr.Row():
-                use_resample = gr.Checkbox(
-                    label=i18n("Resample reference audio to 22050Hz"), info=i18n("This is for better processing"), value=True)
-                improve_reference_audio = gr.Checkbox(
-                    label=i18n("Clean up reference audio"), info=i18n("Trim silence, use lowpass and highpass filters"), value=False)
-                improve_reference_resemble = gr.Checkbox(
-                    label=i18n("Resemble enhancement (Uses extra 4GB VRAM)"), info=i18n("You can find the settings next to the settings for the result"), value=False)
-            auto_cut = gr.Slider(
-                label=i18n("Automatically trim audio up to x seconds, 0 without trimming "),
-                minimum=0,
-                maximum=30,
-                step=1,
-                value=0,
-            )
-            gr.Markdown(
-                value=i18n("You can save the downloaded recording or microphone recording to a shared list, you need to set a name and click save"))
-            speaker_wav_save_name = gr.Textbox(
-                label=i18n("Speaker save name"), value="new_speaker_name")
-            save_speaker_btn = gr.Button(
-                value=i18n("Save a single sample for the speaker"), visible=False)
-            save_multiple_speaker_btn = gr.Button(
-                value=i18n("Save multiple samples for the speaker"), visible=False)
+                ref_speaker_list = gr.Dropdown(
+                    label=i18n("Reference Speaker from folder 'speakers'"), value=speaker_value, choices=speakers_list,allow_custom_value=True)
+                show_ref_speaker_from_list = gr.Checkbox(
+                    value=False, label=i18n("Show reference sample"), info=i18n("This option will allow you to listen to your reference sample"))
+                show_inbuildstudio_speaker = gr.Checkbox(
+                    value=False, label=i18n("Show in list avalible speakers inbuild speakers"), info=i18n("This option will allow you to add pre-prepared voices from coqua studio to the list of available voices"))
+                update_ref_speaker_list_btn = gr.Button(
+                    value=i18n("Update"), elem_classes="speaker-update__btn")
+            ref_speaker_example = gr.Audio(
+                label=i18n("speaker sample"), sources="upload", visible=False, interactive=False)
+
+            with gr.Tab(label=i18n("Single")):
+                ref_speaker = gr.Audio(
+                    label=i18n("Reference Speaker (mp3, wav, flac)"), editable=False)
+            with gr.Tab(label=i18n("Multiple")):
+                ref_speakers = gr.Files(
+                    label=i18n("Reference Speakers (mp3, wav, flac)"), file_types=["audio"])
+
+            with gr.Accordion(label=i18n("Reference Speaker settings."), open=False):
+                gr.Markdown(
+                    value=i18n("**Note: the settings only work when you enable them and upload files when they are enabled**"))
+                gr.Markdown(
+                    value=i18n("Take a look at how to create good samples [here](https://github.com/daswer123/xtts-api-server?tab=readme-ov-file#note-on-creating-samples-for-quality-voice-cloning)"))
+                with gr.Row():
+                    use_resample = gr.Checkbox(
+                        label=i18n("Resample reference audio to 22050Hz"), info=i18n("This is for better processing"), value=True)
+                    improve_reference_audio = gr.Checkbox(
+                        label=i18n("Clean up reference audio"), info=i18n("Trim silence, use lowpass and highpass filters"), value=False)
+                    improve_reference_resemble = gr.Checkbox(
+                        label=i18n("Resemble enhancement (Uses extra 4GB VRAM)"), info=i18n("You can find the settings next to the settings for the result"), value=False)
+                auto_cut = gr.Slider(
+                    label=i18n("Automatically trim audio up to x seconds, 0 without trimming "),
+                    minimum=0,
+                    maximum=30,
+                    step=1,
+                    value=0,
+                )
+                gr.Markdown(
+                    value=i18n("You can save the downloaded recording or microphone recording to a shared list, you need to set a name and click save"))
+                speaker_wav_save_name = gr.Textbox(
+                    label=i18n("Speaker save name"), value="new_speaker_name")
+                save_speaker_btn = gr.Button(
+                    value=i18n("Save a single sample for the speaker"), visible=False)
+                save_multiple_speaker_btn = gr.Button(
+                    value=i18n("Save multiple samples for the speaker"), visible=False)
+
+          with gr.Tab("Silero", render=False):
+                with gr.Column():
+                    
+                    # Get Data
+                    silero_avalible_models = list(SILERO.get_available_models()["ru"])
+                    silero_avalible_speakers = list(SILERO.get_available_speakers())
+                    silero_avalible_sample_rate = list(SILERO.get_available_sample_rates())
+                    
+                    print(silero_avalible_speakers)
+            
+                    silero_language = gr.Dropdown(label=i18n("Language Silero"), choices=["ru", "en", "de", "es", "fr", "ba", "xal", "tt", "uz", "ua", "indic"], value="ru")
+                    silero_models = gr.Dropdown(label=i18n("Model"), choices=silero_avalible_models, value=silero_avalible_models[0])
+                    with gr.Row():
+                        silero_speaker = gr.Dropdown(label=i18n("Speaker"), choices=silero_avalible_speakers, value=silero_avalible_speakers[0])
+                    # TODO
+                    #     siler_show_speaker_sample = gr.Checkbox(label=i18n("Show sample"),info=i18n("This option will allow you to listen to speaker sample"), value=False, interactive=False)
+                    # silero_speaker_sample = gr.Audio(label=i18n("Speaker sample"),visible=False, interactive=False)    
+                    
+                    silero_sample_rate = gr.Radio(label=i18n("Sample rate"), choices=silero_avalible_sample_rate, value=silero_avalible_sample_rate[-1])
+                    silero_device = gr.Radio(label=i18n("Device"),info=i18n("Cpu pretty fast"), choices=["cpu", "cuda:0"], value="cpu")
 
     with gr.Column():
         status_bar = gr.Label(

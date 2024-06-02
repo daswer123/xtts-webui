@@ -151,5 +151,19 @@
     "Translated Text": "Translated Text",
     "Sync timing with original ( Accuracy ~ 80 - 90% )" : "Sync timing with original ( Accuracy ~ 80 - 90% )",
     "Synchronise subtitle timings" : "Synchronise subtitle timings",
-    "Path to folder with srt or ass, Has priority over all" : "Path to folder with srt or ass, Has priority over all"
+    "Path to folder with srt or ass, Has priority over all" : "Path to folder with srt or ass, Has priority over all",
+    "Max width per line": "Max width per line",
+    "Max line":"Max line",
+    "Subtitle settings": "Subtitle settings",
+    "Subtitle tools": "Subtitle tools",
+    "Change" : "Change",
+    "Subtitle file, srt": "Subtitle file, srt only",
+    "Path to folder with subtitle files": "Path to folder with subtitle files",
+    "Prompt": "Prompt",
+    "Choose what model you will use": "Choose what model you will use",
+    "Edit subs": "Edit subs",
+    "Correct": "Correct",
+    "Get Subtitle": "Audio2Subtitles",
+    "Source lang": "Source lang",
+    "Subtitle Target lang": "Subtitles Target Language"
 }

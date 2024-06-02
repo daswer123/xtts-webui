@@ -1,6 +1,7 @@
 
 from scripts.modeldownloader import get_folder_names_advanced
 from scripts.tts_funcs import TTSWrapper
+from silero_tts.silero_tts import SileroTTS
 
 import os
 import gradio as gr
@@ -54,6 +55,10 @@ reversed_supported_languages = {
     name: code for code, name in supported_languages.items()}
 reversed_supported_languages_list = list(reversed_supported_languages.keys())
 supported_languages_list = list(supported_languages.keys())
+
+# INIT SILERO TTS 
+SILERO = SileroTTS(language="ru", model_id="v4_ru")
+
 # INIT MODEL
 XTTS = TTSWrapper(OUTPUT_FOLDER, SPEAKER_FOLDER, LOWVRAM_MODE,
                   MODEL_SOURCE, MODEL_VERSION, DEVICE)
@@ -86,7 +91,9 @@ with gr.Blocks(css=css) as demo:
     with gr.Tab(i18n("Voice2Voice")):
         from parts.voice2voice import *
 
-    with gr.Tab(i18n("Train")):
+    # TODO 
+    # Fix train Tab
+    with gr.Tab(i18n("Train"),render=False):
         from parts.train import *
 
     with gr.Tab(i18n("Instuments")):

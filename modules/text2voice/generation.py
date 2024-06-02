@@ -63,13 +63,30 @@ def move_and_replace(original_file_path):
 
 
 def get_audio_duration(file_path):
-    probe = ffmpeg.probe(file_path)
-    duration = float(probe['format']['duration'])
-    return duration
+    """
+    Возвращает длительность аудиофайла в секундах.
+
+    :param file_path: Путь к аудиофайлу
+    :return: Длительность аудио в секундах
+    """
+    try:
+        probe = ffmpeg.probe(file_path)
+        duration = float(probe['format']['duration'])
+        return duration
+    except ffmpeg.Error as e:
+        print(f"Ошибка при получении длительности аудио: {e.stderr}")
+        return None
 
 def apply_atempo_filter(input_filepath, output_filepath, speed_factor):
-    # Создаем комплексный фильтр для atempo если это требуется.
+    """
+    Применяет фильтр atempo к аудиофайлу для изменения скорости воспроизведения.
+
+    :param input_filepath: Путь к входному аудиофайлу
+    :param output_filepath: Путь к выходному аудиофайлу
+    :param speed_factor: Коэффициент изменения скорости воспроизведения
+    """
     filters = []
+
     while speed_factor > 2:
         filters.append('atempo=2.0')
         speed_factor /= 2
@@ -77,53 +94,71 @@ def apply_atempo_filter(input_filepath, output_filepath, speed_factor):
         filters.append('atempo=0.5')
         speed_factor *= 2
 
-    # Добавляем последнее значение atempo к фильтрам.
-    filters.append(f'atempo={speed_factor}')
-
+    filters.append(f'{speed_factor}')  # Убираем "atempo="
     filter_str = ','.join(filters)
 
-    # Применяем фильтры и записываем вывод в файл.
-    (
-        ffmpeg.input(str(input_filepath))
-             .filter_('atempo', f'"{filter_str}"')
-             .output(str(output_filepath))
-             .run(overwrite_output=True)
-    )
+
+    try:
+        (
+            ffmpeg
+            .input(str(input_filepath))
+            .filter('atempo', filter_str)
+            .output(str(output_filepath))
+            .run(overwrite_output=True)
+        )
+    except ffmpeg.Error as e:
+        print(f"Ошибка при применении фильтра atempo: {e.stderr}")
+
+
 
 def adjust_audio_speed(input_file_path, target_duration):
-    actual_duration = get_audio_duration(input_file_path)
-    speed_factor = actual_duration / target_duration
+    """
+    Корректирует скорость воспроизведения аудиофайла до заданной длительности.
 
-    # Указываем путь к временному файлу.
+    :param input_file_path: Путь к входному аудиофайлу
+    :param target_duration: Целевая длительность аудио в секундах
+    :return: Путь к выходному аудиофайлу
+    """
+    if not Path(input_file_path).is_file():
+        print(f"Входной файл {input_file_path} не найден.")
+        return None
+
+    actual_duration = get_audio_duration(input_file_path)
+    if actual_duration is None:
+        return None
+
+    if target_duration == 0:
+        print("Целевая длительность равна нулю. Возвращаем исходный файл.")
+        return input_file_path
+
+    speed_factor = actual_duration / target_duration
     temp_output_filepath = input_file_path.with_name(f"temp_{input_file_path.name}")
 
     if 0.5 <= speed_factor <= 2:
-        (
-            ffmpeg
-            .input(str(input_file_path))
-            .filter('atempo', speed_factor)
-            .output(str(temp_output_filepath))
-            .run(overwrite_output=True)
-        )
-        # move_and_replace(input_file_path)  # Вызывается с одним аргументом.
-
+        apply_atempo_filter(input_file_path, temp_output_filepath, speed_factor)
     else:
-         filters_chain = []
-         while speed_factor > 2 or speed_factor < 0.5:
-             if speed_factor > 2:
-                 filters_chain.append('atempo=2.0')
-                 speed_factor /= 2
-             elif speed_factor < 0.5:
-                 filters_chain.append('atempo=0.5')
-                 speed_factor *= 2
+        filters_chain = []
+        while speed_factor > 2:
+            filters_chain.append('atempo=2.0')
+            speed_factor /= 2
+        while speed_factor < 0.5:
+            filters_chain.append('atempo=0.5')
+            speed_factor *= 2
+        filters_chain.append(f'atempo={speed_factor}')
 
-         filters_chain.append(f'atempo={speed_factor}')
+        stream = ffmpeg.input(str(input_file_path))
+        for filter_str in filters_chain:
+            stream = stream.filter('atempo', float(filter_str))  # Передаем просто значение
 
-         stream = ffmpeg.input(str(input_file_path))
-         for filter_ in filters_chain:
-             stream = stream.filter('atempo', filter_.split('=')[1])
 
-         stream.output(str(temp_output_filepath)).run(overwrite_output=True)
+        try:
+            stream.output(str(temp_output_filepath)).run(overwrite_output=True)
+        except ffmpeg.Error as e:
+            print(f"Ошибка при применении цепочки фильтров: {e.stderr}")
+            return None
+
+    return temp_output_filepath
+
 
     # move_and_replace(temp_output_filepath)   # Теперь передаем сформированный путь к временному файлу.
 
@@ -243,6 +278,8 @@ def generate_audio(
     speaker_value_text,
     speaker_path_text,
     additional_text,
+    # Voice Engine
+    voice_engine,
     # TTS settings
     temperature, length_penalty,
     repetition_penalty,
@@ -367,8 +404,14 @@ def generate_audio(
                 filename = filename.split(".")[0]
 
                 output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.{output_type}"
-                output_file = XTTS.process_tts_to_file(
-                    this_dir,text, lang_code, ref_speaker_wav, options, output_file_path)
+                
+                if voice_engine == "XTTS":
+                    output_file = XTTS.process_tts_to_file(
+                        this_dir,text, lang_code, ref_speaker_wav, options, output_file_path)
+                
+                if voice_engine == "SILERO":
+                    output_file = SILERO.tts(text, output_file_path)
+                    output_file = output_file_path
 
                 if improve_output_audio:
                     output_file = improve_and_convert_audio(
@@ -443,7 +486,8 @@ def generate_audio(
                     sub_dirname, os.path.basename(output_file_path))
                 shutil.move(output_file, new_output_file)
                 output_file = new_output_file
-        if True:
+        print(f"SYNC : {sync_sub_generation}")
+        if sync_sub_generation:
           for sub_folder in final_output_folders:
               audio_files_paths = list(Path(sub_folder).glob("*.wav"))
               for audio_file in audio_files_paths:
@@ -463,6 +507,7 @@ def generate_audio(
           
                   adjust_audio_speed(audio_file,time_difference)
                   move_and_replace(audio_file)
+                  output_file = audio_file
         
         for sub_folder in final_output_folders:
             concatenate_audios(sub_folder)
@@ -497,9 +542,17 @@ def generate_audio(
                 filename = os.path.basename(file_path)
                 filename = filename.split(".")[0]
 
+                
                 output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.{output_type}"
-                output_file = XTTS.process_tts_to_file(
+                
+                if voice_engine == "XTTS":
+                    output_file = XTTS.process_tts_to_file(
                     this_dir,text, lang_code, ref_speaker_wav, options, output_file_path)
+                
+                if voice_engine == "SILERO":
+                    output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.{output_type}"
+                    output_file = SILERO.tts(text, output_file_path)
+                    output_file = output_file_path
 
                 if improve_output_audio:
                     output_file = improve_and_convert_audio(
@@ -582,16 +635,30 @@ def generate_audio(
 
     # Check if the file already exists, if yes, add a number to the filename
     count = 1
+    
     output_file_path = f"{additional_text}_({count})_{speaker_value_text}.{output_type}"
+    
+    if voice_engine == "SILERO":
+        output_file_path = f"output/{additional_text}_({count})_SILERO.wav"
+        
+    
     while os.path.exists(os.path.join('output', output_file_path)):
         count += 1
         output_file_path = f"{additional_text}_({count})_{speaker_value_text}.{output_type}"
+        
+        if voice_engine == "SILERO":
+            output_file_path = f"output/{additional_text}_({count})_SILERO.wav"
 
     status_message = "Done"
     # Perform TTS and save to the generated filename
-    output_file = XTTS.process_tts_to_file(
-       this_dir, text, lang_code, ref_speaker_wav, options, output_file_path)
-
+    
+    if voice_engine == "XTTS":
+        output_file = XTTS.process_tts_to_file(this_dir, text, lang_code, ref_speaker_wav, options, output_file_path)
+                
+    if voice_engine == "SILERO":
+        output_file = SILERO.tts(text, output_file_path)
+        output_file = output_file_path
+                    
     if improve_output_audio:
         output_file = improve_and_convert_audio(output_file, output_type)
 
@@ -663,6 +730,24 @@ def generate_audio(
         return None, output_file, status_message
 
 
+
+
+# SILERO
+
+# voice_engine
+# Models
+# silero_language = gr.Dropdown(label=i18n("Language Silero"), choices=["ru", "en", "de", "es", "fr", "ba", "xal", "tt", "uz", "ua", "indic"], value="ru")
+# silero_models = gr.Dropdown(label=i18n("Model"), choices=silero_avalible_models, value=silero_avalible_models[0])
+# with gr.Row():
+#     silero_speaker = gr.Dropdown(label=i18n("Speaker"), choices=silero_avalible_speakers, value=silero_avalible_speakers[0])
+# # TODO
+# #     siler_show_speaker_sample = gr.Checkbox(label=i18n("Show sample"),info=i18n("This option will allow you to listen to speaker sample"), value=False, interactive=False)
+# # silero_speaker_sample = gr.Audio(label=i18n("Speaker sample"),visible=False, interactive=False)    
+
+# silero_sample_rate = gr.Radio(label=i18n("Sample rate"), choices=silero_avalible_sample_rate, value=silero_avalible_sample_rate[-1])
+# silero_device = gr.Radio(label=i18n("Device"),info=i18n("Cpu pretty fast"), choices=["cpu", "cuda:0"], value="cpu")
+
+
 # GENERATION HANDLERS
 generate_btn.click(
     fn=generate_audio,
@@ -709,7 +794,9 @@ generate_btn.click(
         speaker_value_text,
         speaker_path_text,
         additional_text_input,
-        # TTS settings
+        # Voice engine Select
+        voice_engine,
+        # XTTS settings
         temperature,
         length_penalty,
         repetition_penalty,
