@@ -1,7 +1,17 @@
 # XTTS-WebUI
 
+## Portable version
+
+The project now has a portable version, so you don't have to go to the trouble of installing all the dependencies.
+
+[Click here to download](https://huggingface.co/daswer123/xtts_portable/resolve/main/xtts-webui-v1_0-portable.zip?download=true)
+
+You don't need anything but Windows and an Nvidia graphics card with 6 GB of video memory to run it.
+
 ## The Train tab is broken, if you want to train a model use a separate webui
 ## [xtts-finetune-webui](https://github.com/daswer123/xtts-finetune-webui)
+
+## Readme is available in the following languages
 
 [English](https://github.com/daswer123/xtts-webui/blob/main/README.md)
 

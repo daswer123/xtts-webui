@@ -1,7 +1,17 @@
 # XTTS-WebUI
 
+## Портативная версия
+
+У проекта появилась портативная версия, вам больше не прийдется мучаться устанавливая все зависимости.
+
+[Нажмите здесь, чтобы скачать](https://huggingface.co/daswer123/xtts_portable/resolve/main/xtts-webui-v1_0-portable.zip?download=true)
+
+Для запуска вам ненужно ничего кроме, Windows и видеокарты от Nvidia с 6 ГБ видеопамяти.
+
 ## Вкладка Train не работает, если вы хотите обучить модель, используйте отдельный webui.
 ## [xtts-finetune-webui](https://github.com/daswer123/xtts-finetune-webui)
+
+## Readme доступен на следущих языках
 
 [English](https://github.com/daswer123/xtts-webui/blob/main/README.md)
 

@@ -1,5 +1,13 @@
 # XTTS-WebUI
 
+## Portátil O projeto agora tem uma versão portátil, portanto, você não precisa se dar ao trabalho de instalar todas as dependências.
+
+[Clique aqui para fazer o download](https://huggingface.co/daswer123/xtts_portable/resolve/main/xtts-webui-v1_0-portable.zip?download=true)
+
+Você não precisa de nada além do Windows e de uma placa de vídeo Nvidia com 6 GB de memória de vídeo para executá-lo.
+
+## Idiomas do Leiame
+
 [English](https://github.com/daswer123/xtts-webui/blob/main/README.md)
 
 [Russian](https://github.com/daswer123/xtts-webui/blob/main/README_ru_RU.md)
