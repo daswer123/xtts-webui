@@ -11,7 +11,7 @@ import uuid
 
 from xtts_webui import *
 import shutil
-from datetime import datetime
+from datetime import datetime, time
 
 import re
 
@@ -139,17 +139,16 @@ def adjust_audio_speed(input_file_path, target_duration):
     else:
         filters_chain = []
         while speed_factor > 2:
-            filters_chain.append('atempo=2.0')
+            filters_chain.append(2.0)
             speed_factor /= 2
         while speed_factor < 0.5:
-            filters_chain.append('atempo=0.5')
+            filters_chain.append(0.5)
             speed_factor *= 2
-        filters_chain.append(f'atempo={speed_factor}')
+        filters_chain.append(speed_factor)
 
         stream = ffmpeg.input(str(input_file_path))
-        for filter_str in filters_chain:
-            stream = stream.filter('atempo', float(filter_str))  # Передаем просто значение
-
+        for filter_value in filters_chain:
+            stream = stream.filter('atempo', filter_value)  # Передаем просто значение
 
         try:
             stream.output(str(temp_output_filepath)).run(overwrite_output=True)
@@ -158,6 +157,7 @@ def adjust_audio_speed(input_file_path, target_duration):
             return None
 
     return temp_output_filepath
+
 
 
     # move_and_replace(temp_output_filepath)   # Теперь передаем сформированный путь к временному файлу.
@@ -228,6 +228,15 @@ def predict_lang(text, selected_lang):
 
 # GENERATION AND GENERATION OPTIONS
 
+def modify_text(text):
+    # We will replace all . to ..
+    text = text.replace(".", "..")
+    text = text.replace("\n", " ")
+    text = text.replace("  ", " ")
+    text = text.strip()
+    text = text.replace(",", ",,")
+    
+    return text
 
 def switch_waveform(enable_waveform, video_gr):
     if enable_waveform:
@@ -301,6 +310,7 @@ def generate_audio(
     }
 
     ref_speaker_wav = ""
+    
 
     print("Using ready reference")
     ref_speaker_wav = speaker_value_text
@@ -404,6 +414,7 @@ def generate_audio(
                 filename = filename.split(".")[0]
 
                 output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.{output_type}"
+                text = modify_text(text)
                 
                 if voice_engine == "XTTS":
                     output_file = XTTS.process_tts_to_file(
@@ -411,6 +422,10 @@ def generate_audio(
                 
                 if voice_engine == "SILERO":
                     output_file = SILERO.tts(text, output_file_path)
+                    output_file = output_file_path
+                    
+                if voice_engine == "YANDEX_API":
+                    output_file = YandexSpeachKitDATA.synthesize(text, output_file_path)
                     output_file = output_file_path
 
                 if improve_output_audio:
@@ -544,14 +559,24 @@ def generate_audio(
 
                 
                 output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.{output_type}"
+                text = modify_text(text)
                 
                 if voice_engine == "XTTS":
                     output_file = XTTS.process_tts_to_file(
                     this_dir,text, lang_code, ref_speaker_wav, options, output_file_path)
                 
                 if voice_engine == "SILERO":
-                    output_file_path = f"{filename}_{additional_text}_{speaker_value_text}.{output_type}"
+                    # Add timestamp
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    output_file_path = f"{filename}_{timestamp}_{additional_text}_{speaker_value_text}.{output_type}"
                     output_file = SILERO.tts(text, output_file_path)
+                    output_file = output_file_path
+                    
+                if voice_engine == "YANDEX_API":
+                    # Add timestamp
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    output_file_path = f"{filename}_{timestamp}_{additional_text}_{speaker_value_text}.{output_type}"
+                    output_file = YandexSpeachKitDATA.synthesize(text, output_file_path)
                     output_file = output_file_path
 
                 if improve_output_audio:
@@ -637,26 +662,44 @@ def generate_audio(
     count = 1
     
     output_file_path = f"{additional_text}_({count})_{speaker_value_text}.{output_type}"
+    timestamp  = datetime.now().strftime("%Y%m%d%H%M%S")
     
     if voice_engine == "SILERO":
-        output_file_path = f"output/{additional_text}_({count})_SILERO.wav"
-        
+        # Add timestamp
+        output_file_path = f"output/{additional_text}_({timestamp})_SILERO.wav"
+    
+    if voice_engine == "YANDEX_API":
+        # Add timestamp
+        output_file_path = f"output/{additional_text}_({timestamp})_YANDEX_API.wav"
     
     while os.path.exists(os.path.join('output', output_file_path)):
         count += 1
         output_file_path = f"{additional_text}_({count})_{speaker_value_text}.{output_type}"
         
+        timestamp  = datetime.now().strftime("%Y%m%d%H%M%S")
+        
         if voice_engine == "SILERO":
-            output_file_path = f"output/{additional_text}_({count})_SILERO.wav"
+            output_file_path = f"output/{additional_text}_({timestamp})_SILERO.wav"
 
+        if voice_engine == "YANDEX_API":
+            # Add timestamp
+            output_file_path = f"output/{additional_text}_({timestamp})_YANDEX_API.wav"
+    
     status_message = "Done"
     # Perform TTS and save to the generated filename
+    
+    text = modify_text(text)
     
     if voice_engine == "XTTS":
         output_file = XTTS.process_tts_to_file(this_dir, text, lang_code, ref_speaker_wav, options, output_file_path)
                 
     if voice_engine == "SILERO":
         output_file = SILERO.tts(text, output_file_path)
+        output_file = output_file_path
+        
+    if voice_engine == "YANDEX_API":
+        # print(YandexSpeachKitDATA.model,output_file_path)
+        output_file = YandexSpeachKitDATA.synthesize(text, output_file_path)
         output_file = output_file_path
                     
     if improve_output_audio:
