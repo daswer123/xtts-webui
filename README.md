@@ -149,3 +149,5 @@ In order for the model to work in RVC settings you need to select a model that y
 2. Removed the display of logs as it was causing problems when restarted
 3. The finished result is copied to the ready folder, these are fully finished files, you can move them anywhere and use them as a standard model
 4. Added support for Japanese [here](https://github.com/daswer123/xtts-webui/issues/15#issuecomment-1869090189)
+
+This project is tested with BrowserStack
