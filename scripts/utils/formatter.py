@@ -144,7 +144,7 @@ def format_audio_list(audio_files, target_language="en", whisper_model = "large-
         for word_idx, word in enumerate(words_list):
             if first_word:
                 sentence_start = word.start
-                # If it is the first sentence, add buffer or get the begining of the file
+                # If it is the first sentence, add buffer or get the beginning of the file
                 if word_idx == 0:
                     sentence_start = max(sentence_start - buffer, 0)  # Add buffer to the sentence start
                 else:
